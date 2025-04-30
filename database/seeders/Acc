@@ -1,0 +1,197 @@
+<?php
+
+namespace Database\Seeders;
+
+use Illuminate\Database\Seeder;
+use App\Models\Account;
+
+class AccountsTableSeeder extends Seeder
+{
+    public function run()
+    {
+        // الفئات الرئيسية (GROUPS)
+
+        $assets = Account::create([
+            'name' => 'الأصول',
+            'parent_id' => null,
+            'type' => 'asset',
+            'nature' => null,
+            'is_group' => 1,
+        ]);
+
+        $liabilities = Account::create([
+            'name' => 'الالتزامات',
+            'parent_id' => null,
+            'type' => 'liability',
+            'nature' => null,
+            'is_group' => 1,
+        ]);
+
+        $revenues = Account::create([
+            'name' => 'الإيرادات',
+            'parent_id' => null,
+            'type' => 'revenue',
+            'nature' => null,
+            'is_group' => 1,
+        ]);
+
+        $expenses = Account::create([
+            'name' => 'المصاريف',
+            'parent_id' => null,
+            'type' => 'expense',
+            'nature' => null,
+            'is_group' => 1,
+        ]);
+
+        $equity = Account::create([
+            'name' => 'رأس المال',
+            'parent_id' => null,
+            'type' => 'equity',
+            'nature' => null,
+            'is_group' => 1,
+        ]);
+
+        // فئات فرعية تحت الأصول
+        $cash = Account::create([
+            'name' => 'النقدية',
+            'parent_id' => $assets->id,
+            'type' => 'asset',
+            'nature' => null,
+            'is_group' => 1,
+        ]);
+
+        $customers = Account::create([
+            'name' => 'حسابات العملاء',
+            'parent_id' => $assets->id,
+            'type' => 'asset',
+            'nature' => null,
+            'is_group' => 1,
+        ]);
+
+        $fixedAssets = Account::create([
+            'name' => 'أصول ثابتة',
+            'parent_id' => $assets->id,
+            'type' => 'asset',
+            'nature' => null,
+            'is_group' => 1,
+        ]);
+
+        // حسابات فعلية (Accounts)
+
+        Account::create([
+            'name' => 'صندوق رئيسي دينار',
+            'parent_id' => $cash->id,
+            'type' => 'asset',
+            'nature' => 'debit',
+            'is_group' => 0,
+        ]);
+
+        Account::create([
+            'name' => 'حساب بنك رئيسي',
+            'parent_id' => $cash->id,
+            'type' => 'asset',
+            'nature' => 'debit',
+            'is_group' => 0,
+        ]);
+
+        // فئات تحت الالتزامات
+        $suppliers = Account::create([
+            'name' => 'حسابات الموردين',
+            'parent_id' => $liabilities->id,
+            'type' => 'liability',
+            'nature' => null,
+            'is_group' => 1,
+        ]);
+
+        Account::create([
+            'name' => 'مورد رئيسي',
+            'parent_id' => $suppliers->id,
+            'type' => 'liability',
+            'nature' => 'credit',
+            'is_group' => 0,
+        ]);
+
+        // فئات تحت الإيرادات
+        $productSales = Account::create([
+            'name' => 'مبيعات المنتجات',
+            'parent_id' => $revenues->id,
+            'type' => 'revenue',
+            'nature' => null,
+            'is_group' => 1,
+        ]);
+
+        $serviceSales = Account::create([
+            'name' => 'مبيعات الخدمات',
+            'parent_id' => $revenues->id,
+            'type' => 'revenue',
+            'nature' => null,
+            'is_group' => 1,
+        ]);
+
+        Account::create([
+            'name' => 'مبيعات نقدية',
+            'parent_id' => $productSales->id,
+            'type' => 'revenue',
+            'nature' => 'credit',
+            'is_group' => 0,
+        ]);
+
+        Account::create([
+            'name' => 'مبيعات بالتقسيط',
+            'parent_id' => $serviceSales->id,
+            'type' => 'revenue',
+            'nature' => 'credit',
+            'is_group' => 0,
+        ]);
+
+        // فئات تحت المصاريف
+        $salaries = Account::create([
+            'name' => 'رواتب الموظفين',
+            'parent_id' => $expenses->id,
+            'type' => 'expense',
+            'nature' => null,
+            'is_group' => 1,
+        ]);
+
+        $officeRent = Account::create([
+            'name' => 'مصاريف إيجار',
+            'parent_id' => $expenses->id,
+            'type' => 'expense',
+            'nature' => null,
+            'is_group' => 1,
+        ]);
+
+        Account::create([
+            'name' => 'راتب موظف رئيسي',
+            'parent_id' => $salaries->id,
+            'type' => 'expense',
+            'nature' => 'debit',
+            'is_group' => 0,
+        ]);
+
+        Account::create([
+            'name' => 'فاتورة إيجار مكتب',
+            'parent_id' => $officeRent->id,
+            'type' => 'expense',
+            'nature' => 'debit',
+            'is_group' => 0,
+        ]);
+
+        // فئات تحت رأس المال
+        Account::create([
+            'name' => 'رأس مال المؤسسين',
+            'parent_id' => $equity->id,
+            'type' => 'equity',
+            'nature' => null,
+            'is_group' => 1,
+        ]);
+
+        Account::create([
+            'name' => 'رأس مال المالك',
+            'parent_id' => $equity->id,
+            'type' => 'equity',
+            'nature' => 'credit',
+            'is_group' => 0,
+        ]);
+    }
+}
