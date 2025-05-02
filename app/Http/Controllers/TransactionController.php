@@ -4,14 +4,19 @@ namespace App\Http\Controllers;
 
 use App\Models\Transaction;
 use App\Models\Account;
+use App\Models\JournalEntry;
+use App\Models\JournalEntryLine;
 use Illuminate\Http\Request;
 
 class TransactionController extends Controller
 {
     public function index()
     {
-        $transactions = Transaction::latest()->paginate(20);
-        return view('transactions.index', compact('transactions'));
+        // جلب جميع السطور المحاسبية مع القيد والحساب
+        $lines = JournalEntryLine::with(['journalEntry', 'account'])
+            ->orderByDesc('created_at')
+            ->paginate(30);
+        return view('transactions.index', compact('lines'));
     }
 
     public function create()

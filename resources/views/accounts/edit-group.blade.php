@@ -34,7 +34,8 @@
 
                 <div class="form-group">
                     <label>رمز الفئة</label>
-                    <input type="text" name="code" class="form-control" value="{{ $account->code }}" required>
+                    <input type="text" class="form-control" value="{{ $account->code }}" disabled>
+                    <input type="hidden" name="code" value="{{ $account->code }}">
                 </div>
 
                 <div class="form-group">

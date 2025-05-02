@@ -31,12 +31,13 @@
 
                 <div class="form-group">
                     <label>رمز الفئة</label>
-                    <input type="text" name="code" class="form-control" required>
+                    <input type="text" id="groupCode" class="form-control" value="{{ $nextCode }}" disabled>
+                    <input type="hidden" id="groupCodeInput" name="code" value="{{ $nextCode }}">
                 </div>
 
                 <div class="form-group">
                     <label>نوع الحساب</label>
-                    <select name="type" class="form-control" required>
+                    <select name="type" id="type" class="form-control" required>
                         <option value="">-- اختر --</option>
                         <option value="asset">أصول</option>
                         <option value="liability">خصوم</option>
@@ -48,7 +49,7 @@
 
                 <div class="form-group">
                     <label>الفئة الرئيسية (اختياري)</label>
-                    <select name="parent_id" class="form-control">
+                    <select name="parent_id" id="parent_id" class="form-control">
                         <option value="">-- لا شيء --</option>
                         @foreach ($categories as $cat)
                             <option value="{{ $cat->id }}">{{ $cat->name }}</option>
@@ -63,3 +64,21 @@
     </section>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+$(function(){
+    function refreshGroupCode(){
+        let isGroup = 1;
+        let parentId = $('#parent_id').val() || '';
+        let typeVal = $('#type').val() || '';
+        $.getJSON("{{ route('accounts.nextCode') }}", { is_group: isGroup, parent_id: parentId, type: typeVal }, function(data){
+            $('#groupCode').val(data.nextCode);
+            $('#groupCodeInput').val(data.nextCode);
+        });
+    }
+    $('#type, #parent_id').on('change', refreshGroupCode);
+    refreshGroupCode();
+});
+</script>
+@endpush

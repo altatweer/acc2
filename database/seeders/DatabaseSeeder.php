@@ -20,7 +20,12 @@ class DatabaseSeeder extends Seeder
 
         // استدعاء Seeder الحسابات
         $this->call(CurrencySeeder::class);
-
+        // استدعاء Seeder للشجرة الحسابية (الفئات والحسابات)
+        $this->call(AccountsTableSeeder::class);
+        // إنشاء مستخدم المدير الافتراضي
+        $this->call(AdminUserSeeder::class);
+        // استدعاء Seeder أرصدة الحسابات للعملة الافتراضية
+        $this->call(AccountBalanceSeeder::class);
 
     }
 }

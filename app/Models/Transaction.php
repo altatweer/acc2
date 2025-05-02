@@ -20,6 +20,7 @@ class Transaction extends Model
        'exchange_rate',
        'description',
        'user_id', // ✅ أضفنا user_id هنا
+       'invoice_id',
    ];
 
    /**
@@ -44,5 +45,11 @@ class Transaction extends Model
    public function targetAccount()
    {
        return $this->belongsTo(Account::class, 'target_account_id');
+   }
+
+   // Relationship with the invoice
+   public function invoice()
+   {
+       return $this->belongsTo(Invoice::class, 'invoice_id');
    }
 }

@@ -1,65 +1,98 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="content-wrapper">
-    <div class="content-header">
-        <div class="container-fluid">
-            <h3>عرض الحسابات الفعلية</h3>
-            <a href="{{ route('accounts.createAccount') }}" class="btn btn-primary">إضافة حساب فعلي</a>
-        </div>
-    </div>
+<div class="row">
+    <div class="col-12">
+        <div class="card card-primary card-outline shadow-sm">
+            <div class="card-header">
+                <h3 class="card-title">قائمة الحسابات الفعلية</h3>
+                <div class="card-tools">
+                    <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                    <button type="button" class="btn btn-tool" data-card-widget="remove">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body p-3">
+                @if(session('success'))
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        {{ session('success') }}
+                        <button type="button" class="close" data-dismiss="alert" aria-label="إغلاق">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                @endif
 
-    <section class="content">
-        <div class="container-fluid">
-            @if(session('success'))
-                <div class="alert alert-success">{{ session('success') }}</div>
-            @endif
-
-            <div class="card mt-3">
-                <div class="card-body">
-                    <table class="table table-bordered table-striped">
-                        <thead class="thead-dark">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover text-center mb-0">
+                        <thead>
                             <tr>
-                                <th>#</th>
-                                <th>رقم الحساب</th>
+                                <th style="width:60px;">#</th>
+                                <th>رمز الحساب</th>
                                 <th>اسم الحساب</th>
                                 <th>الفئة الرئيسية</th>
                                 <th>طبيعة الحساب</th>
-                                <th>صندوق نقدي؟</th>
-                                <th>الخيارات</th>
+                                <th>صندوق نقدي</th>
+                                <th style="width:120px;">إجراءات</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach ($accounts as $account)
+                            @forelse($accounts as $i => $account)
                                 <tr>
-                                    <td>{{ $loop->iteration }}</td>
+                                    <td>{{ $accounts->firstItem() + $i }}</td>
                                     <td>{{ $account->code }}</td>
-                                    <td>{{ $account->name }}</td>
+                                    <td class="text-left">{{ $account->name }}</td>
                                     <td>{{ $account->parent->name ?? '-' }}</td>
                                     <td>
-                                        @if ($account->nature == 'debit') مدين
-                                        @elseif ($account->nature == 'credit') دائن
-                                        @else -
+                                        @if($account->nature == 'debit')
+                                            <span class="badge badge-info">مدين</span>
+                                        @elseif($account->nature == 'credit')
+                                            <span class="badge badge-warning">دائن</span>
+                                        @else
+                                            <span class="badge badge-secondary">-</span>
                                         @endif
                                     </td>
-                                    <td>{{ $account->is_cash_box ? 'نعم' : 'لا' }}</td>
                                     <td>
-                                        <a href="{{ route('accounts.edit', $account->id) }}" class="btn btn-sm btn-info">تعديل</a>
-                                        <form action="{{ route('accounts.destroy', $account->id) }}" method="POST" style="display:inline-block;">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button class="btn btn-sm btn-danger" onclick="return confirm('هل أنت متأكد من الحذف؟')">حذف</button>
-                                        </form>
+                                        @if($account->is_cash_box)
+                                            <span class="badge badge-success">نعم</span>
+                                        @else
+                                            <span class="badge badge-secondary">لا</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a href="{{ route('accounts.show', $account) }}" class="btn btn-outline-info" title="تفاصيل">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{{ route('accounts.edit', $account) }}" class="btn btn-outline-primary" title="تعديل">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <form action="{{ route('accounts.destroy', $account) }}" method="POST" onsubmit="return confirm('هل أنت متأكد من الحذف؟');">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="btn btn-outline-danger" title="حذف">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
                                     </td>
                                 </tr>
-                            @endforeach
+                            @empty
+                                <tr>
+                                    <td colspan="7" class="py-4">لا توجد حسابات لعرضها.</td>
+                                </tr>
+                            @endforelse
                         </tbody>
                     </table>
-
-                    {{ $accounts->links() }}
                 </div>
             </div>
+            <div class="card-footer clearfix d-flex justify-content-between align-items-center">
+                <div>إجمالي الحسابات: <strong>{{ $accounts->total() }}</strong></div>
+                <div>{{ $accounts->links() }}</div>
+            </div>
         </div>
-    </section>
+    </div>
 </div>
 @endsection

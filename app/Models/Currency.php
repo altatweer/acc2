@@ -14,5 +14,19 @@ class Currency extends Model
         'code',
         'symbol',
         'exchange_rate',
+        'is_default',
     ];
+
+    protected $casts = [
+        'is_default' => 'boolean',
+        'exchange_rate' => 'decimal:6',
+    ];
+
+    /**
+     * Get account balances for this currency
+     */
+    public function accountBalances()
+    {
+        return $this->hasMany(AccountBalance::class, 'currency_id');
+    }
 }

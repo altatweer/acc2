@@ -10,22 +10,30 @@ class JournalEntry extends Model
     use HasFactory;
 
     protected $fillable = [
-        'transaction_id',
-        'account_id',
-        'debit',
-        'credit',
+        'date',
+        'description',
+        'source_type',
+        'source_id',
+        'created_by',
         'currency',
         'exchange_rate',
-        'description',
+        'total_debit',
+        'total_credit',
     ];
 
-    public function transaction()
+    public function lines()
     {
-        return $this->belongsTo(Transaction::class);
+        return $this->hasMany(JournalEntryLine::class);
     }
 
-    public function account()
+    public function user()
     {
-        return $this->belongsTo(Account::class);
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    // Polymorphic source (invoice, voucher, manual)
+    public function source()
+    {
+        return $this->morphTo(null, 'source_type', 'source_id');
     }
 }

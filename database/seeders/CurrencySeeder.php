@@ -14,6 +14,7 @@ class CurrencySeeder extends Seeder
             'code' => 'IQD',
             'symbol' => 'د.ع',
             'exchange_rate' => 1,
+            'is_default' => true,
         ]);
 
         Currency::create([
@@ -21,6 +22,7 @@ class CurrencySeeder extends Seeder
             'code' => 'USD',
             'symbol' => '$',
             'exchange_rate' => 1500, // مثال لسعر الصرف مقابل الدينار
+            'is_default' => false,
         ]);
     }
 }
