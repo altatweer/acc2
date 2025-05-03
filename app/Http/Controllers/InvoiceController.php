@@ -77,13 +77,12 @@ class InvoiceController extends Controller
                     ]);
                 }
             }
-            // إنشاء قيد محاسبي آجل (مدين: حساب العميل، دائن: حساب الإيرادات)
-            $arAccountId = $invoice->customer->account_id;
-            $revenueAccount = \App\Models\Account::where('type', 'revenue')->where('is_group', 0)->first();
-            if ($revenueAccount) {
+            // إنشاء قيد محاسبي آجل (مدين: حساب العملاء الافتراضي حسب العملة، دائن: حساب المبيعات الافتراضي حسب العملة)
+            $settings = \App\Models\AccountingSetting::where('currency', $invoice->currency)->first();
+            if ($settings && $settings->receivables_account_id && $settings->sales_account_id) {
                 $lines = [
                     [
-                        'account_id' => $arAccountId,
+                        'account_id' => $settings->receivables_account_id,
                         'description' => 'استحقاق فاتورة ' . $invoice->invoice_number,
                         'debit' => $invoice->total,
                         'credit' => 0,
@@ -91,7 +90,7 @@ class InvoiceController extends Controller
                         'exchange_rate' => $invoice->exchange_rate,
                     ],
                     [
-                        'account_id' => $revenueAccount->id,
+                        'account_id' => $settings->sales_account_id,
                         'description' => 'إيراد فاتورة ' . $invoice->invoice_number,
                         'debit' => 0,
                         'credit' => $invoice->total,

@@ -30,6 +30,12 @@ class Account extends Model
         return $this->hasMany(Account::class, 'parent_id');
     }
 
+    // علاقة متكررة لجلب جميع الأبناء بشكل هرمي
+    public function childrenRecursive()
+    {
+        return $this->children()->with('childrenRecursive');
+    }
+
     /**
      * Get the account balances for this account.
      */
@@ -64,5 +70,24 @@ class Account extends Model
     public function journalEntryLines()
     {
         return $this->hasMany(\App\Models\JournalEntryLine::class, 'account_id');
+    }
+
+    public function balance()
+    {
+        // مجموع المدين والدائن
+        $debit = $this->journalEntryLines()->sum('debit');
+        $credit = $this->journalEntryLines()->sum('credit');
+        // إذا كانت طبيعة الحساب مدين: الرصيد = المدين - الدائن
+        // إذا كانت طبيعة الحساب دائن: الرصيد = الدائن - المدين
+        if ($this->nature === 'مدين' || $this->nature === 'debit') {
+            return $debit - $credit;
+        } else {
+            return $credit - $debit;
+        }
+    }
+
+    public function canWithdraw($amount)
+    {
+        return $this->balance() >= $amount;
     }
 }

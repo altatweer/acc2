@@ -39,17 +39,8 @@
               <input type="text" name="phone" value="{{ old('phone') }}" class="form-control">
             </div>
             <div class="form-group">
-              <label>العنوان</label>
-              <textarea name="address" class="form-control">{{ old('address') }}</textarea>
-            </div>
-            <div class="form-group">
-              <label>حساب الذمم</label>
-              <select name="account_id" class="form-control select2" required>
-                <option value="" disabled selected>-- اختر الحساب --</option>
-                @foreach($accounts as $acc)
-                  <option value="{{ $acc->id }}" {{ old('account_id') == $acc->id ? 'selected' : '' }}>{{ $acc->name }}</option>
-                @endforeach
-              </select>
+              <label for="address">العنوان</label>
+              <textarea name="address" id="address" class="form-control">{{ old('address') }}</textarea>
             </div>
           </div>
           <div class="card-footer text-right">

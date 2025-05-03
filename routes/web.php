@@ -13,6 +13,11 @@ use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\ItemController;
 use App\Http\Controllers\JournalEntryController;
+use App\Http\Controllers\EmployeeController;
+use App\Http\Controllers\SalaryController;
+use App\Http\Controllers\SalaryPaymentController;
+use App\Http\Controllers\SalaryBatchController;
+use App\Http\Controllers\AccountingSettingController;
 
 // الصفحة الرئيسية
 Route::get('/', function () {
@@ -43,6 +48,9 @@ Route::post('accounts/next-code', [AccountController::class, 'nextCode'])
     ->middleware('auth')
     ->name('accounts.nextCode');
 
+// شجرة الحسابات (قبل تفاصيل الحساب)
+Route::get('accounts/chart', [AccountController::class, 'chart'])->name('accounts.chart')->middleware('auth');
+
 // تعديل وحذف الحسابات
 Route::get('accounts/{account}/edit', [AccountController::class, 'edit'])->name('accounts.edit')->middleware('auth');
 Route::put('accounts/{account}', [AccountController::class, 'update'])->name('accounts.update')->middleware('auth');
@@ -50,8 +58,6 @@ Route::delete('accounts/{account}', [AccountController::class, 'destroy'])->name
 
 // تفاصيل الحساب (يجب أن يأتي بعد جميع المسارات الخاصة)
 Route::get('accounts/{account}', [AccountController::class, 'show'])->name('accounts.show')->middleware('auth');
-
-Route::get('accounts/chart', [AccountController::class, 'chart'])->name('accounts.chart')->middleware('auth');
 
 // الحركات المالية
 Route::resource('transactions', TransactionController::class)->middleware('auth');
@@ -89,3 +95,21 @@ Route::get('accounts/next-code', [AccountController::class, 'nextCode'])
 Route::resource('journal-entries', JournalEntryController::class)->only(['index','show','create','store']);
 
 Route::get('accounts/by-currency/{currency}', [\App\Http\Controllers\AccountController::class, 'byCurrency'])->middleware('auth');
+
+// الموظفين
+Route::resource('employees', EmployeeController::class)->middleware('auth');
+
+// الرواتب
+Route::resource('salaries', SalaryController::class)->middleware('auth');
+
+// دفعات الرواتب
+Route::resource('salary-payments', SalaryPaymentController::class)->middleware('auth');
+Route::post('salary-payments/update-allowances-deductions', [SalaryPaymentController::class, 'updateAllowancesDeductions'])->name('salary-payments.update-allowances-deductions')->middleware('auth');
+
+// كشوف الرواتب
+Route::resource('salary-batches', SalaryBatchController::class)->only(['index','create','store','show','destroy'])->middleware('auth');
+Route::post('salary-batches/{salaryBatch}/approve', [\App\Http\Controllers\SalaryBatchController::class, 'approve'])->name('salary-batches.approve')->middleware('auth');
+
+// إعدادات الحسابات الافتراضية
+Route::get('settings/accounting', [AccountingSettingController::class, 'edit'])->name('accounting-settings.edit')->middleware('auth');
+Route::put('settings/accounting', [AccountingSettingController::class, 'update'])->name('accounting-settings.update')->middleware('auth');

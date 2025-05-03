@@ -10,7 +10,7 @@
     <!-- AdminLTE -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
     <!-- Bootstrap RTL -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.rtl.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-rtl@4.6.0-1/dist/css/bootstrap-rtl.min.css">
 
     <style>
         body {
@@ -101,6 +101,12 @@
                             <a href="{{ route('accounts.createAccount') }}" class="nav-link">
                                 <i class="far fa-circle nav-icon"></i>
                                 <p>إضافة حساب جديد</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{{ route('accounts.chart') }}" class="nav-link {{ Request::routeIs('accounts.chart') ? 'active' : '' }}">
+                                <i class="fas fa-sitemap nav-icon"></i>
+                                <p>شجرة الحسابات</p>
                             </a>
                         </li>
                     </ul>
@@ -232,6 +238,39 @@
                     <a class="nav-link" href="{{ route('journal-entries.index') }}">
                         <i class="fas fa-book"></i>
                         <span>القيود المحاسبية</span>
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a href="{{ route('salary-payments.index') }}" class="nav-link">
+                        <i class="nav-icon fas fa-money-check-alt"></i>
+                        <p>دفعات الرواتب</p>
+                    </a>
+                </li>
+
+                <li class="nav-header">الموارد البشرية</li>
+                <li class="nav-item">
+                    <a href="{{ route('employees.index') }}" class="nav-link">
+                        <i class="nav-icon fas fa-user-tie"></i>
+                        <p>الموظفون</p>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ route('salaries.index') }}" class="nav-link">
+                        <i class="nav-icon fas fa-money-bill-wave"></i>
+                        <p>الرواتب</p>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ route('salary-payments.index') }}" class="nav-link">
+                        <i class="nav-icon fas fa-money-check-alt"></i>
+                        <p>دفعات الرواتب</p>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ route('salary-batches.index') }}" class="nav-link">
+                        <i class="nav-icon fas fa-file-invoice-dollar"></i>
+                        <p>كشوف الرواتب</p>
                     </a>
                 </li>
 

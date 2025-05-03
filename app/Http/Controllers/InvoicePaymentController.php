@@ -30,6 +30,15 @@ class InvoicePaymentController extends Controller
             'date' => 'required|date',
         ]);
 
+        // تحقق من مطابقة العملة
+        $invoice = \App\Models\Invoice::findOrFail($validated['invoice_id']);
+        $cashAccount = \App\Models\Account::findOrFail($validated['cash_account_id']);
+        if ($cashAccount->currency !== $invoice->currency) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'cash_account_id' => ['عملة الصندوق يجب أن تطابق عملة الفاتورة.']
+            ]);
+        }
+
         DB::transaction(function () use ($validated) {
             $invoice = Invoice::findOrFail($validated['invoice_id']);
             $cashAccount = Account::findOrFail($validated['cash_account_id']);
@@ -46,7 +55,9 @@ class InvoicePaymentController extends Controller
                 'invoice_id' => $invoice->id,
             ]);
             $amount = $validated['payment_amount'];
-            // إنشاء قيد محاسبي مالي (مدين: الصندوق/البنك، دائن: حساب العميل)
+            // إنشاء قيد محاسبي مالي (مدين: الصندوق/البنك، دائن: حساب العملاء الافتراضي حسب عملة الفاتورة)
+            $settings = \App\Models\AccountingSetting::where('currency', $invoice->currency)->first();
+            $receivablesAccountId = $settings?->receivables_account_id;
             $lines = [
                 [
                     'account_id' => $cashAccount->id,
@@ -57,7 +68,7 @@ class InvoicePaymentController extends Controller
                     'exchange_rate' => $validated['exchange_rate'],
                 ],
                 [
-                    'account_id' => $invoice->customer->account_id,
+                    'account_id' => $receivablesAccountId,
                     'description' => 'تسوية فاتورة ' . $invoice->invoice_number,
                     'debit' => 0,
                     'credit' => $amount,

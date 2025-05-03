@@ -65,22 +65,29 @@ class VoucherController extends Controller
            }
        }
 
+       // Prevent cash box from going negative on withdrawal/payment
+       foreach ($validated['transactions'] as $index => $tx) {
+           $acc = Account::find($tx['account_id']);
+           if ($acc && $acc->is_cash_box && in_array($validated['type'], ['payment','withdraw','transfer'])) {
+               if (!$acc->canWithdraw($tx['amount'])) {
+                   throw \Illuminate\Validation\ValidationException::withMessages([
+                       "transactions.$index.account_id" => ["لا يوجد رصيد كافٍ في الصندوق النقدي لتنفيذ العملية."]
+                   ]);
+               }
+           }
+       }
+
        // Fetch exchange rate for the voucher currency
        $exchangeRate = Currency::where('code', $validated['currency'])->value('exchange_rate');
        // Prevent cash box from going negative on withdrawal/payment
        if (in_array($validated['type'], ['withdraw', 'payment'])) {
            foreach ($validated['transactions'] as $tx) {
                $account = Account::find($tx['account_id']);
-               // calculate current balance for this currency
-               $currentBalance = Transaction::where('account_id', $account->id)
+               // احتساب الرصيد من القيود المحاسبية فقط
+               $currentBalance = $account->journalEntryLines()
                    ->where('currency', $validated['currency'])
-                   ->get()
-                   ->reduce(function($carry, $t) {
-                       if (in_array($t->type, ['deposit', 'receipt'])) {
-                           return $carry + $t->amount;
-                       }
-                       return $carry - $t->amount;
-                   }, 0);
+                   ->selectRaw('SUM(debit - credit) as balance')
+                   ->value('balance') ?? 0;
                if ($currentBalance < $tx['amount']) {
                    throw \Illuminate\Validation\ValidationException::withMessages([
                        'transactions' => ["رصيد الصندوق {$account->name} لا يكفي للسحب (الرصيد الحالي: {$currentBalance})."]
@@ -100,26 +107,64 @@ class VoucherController extends Controller
                'created_by' => auth()->id(),
            ]);
 
-           // بناء سطور القيد المحاسبي
+           // بناء سطور القيد المحاسبي حسب نوع السند
            $lines = [];
            foreach ($validated['transactions'] as $tx) {
-               // مدين: حساب الصندوق/البنك، دائن: الحساب المستهدف
-               $lines[] = [
-                   'account_id' => $tx['account_id'],
-                   'description' => $tx['description'] ?? null,
-                   'debit' => $tx['amount'],
-                   'credit' => 0,
-                   'currency' => $validated['currency'],
-                   'exchange_rate' => $exchangeRate,
-               ];
-               $lines[] = [
-                   'account_id' => $tx['target_account_id'],
-                   'description' => $tx['description'] ?? null,
-                   'debit' => 0,
-                   'credit' => $tx['amount'],
-                   'currency' => $validated['currency'],
-                   'exchange_rate' => $exchangeRate,
-               ];
+               if (in_array($validated['type'], ['receipt', 'deposit'])) {
+                   // قبض: الصندوق/البنك مدين، الحساب المستهدف دائن
+                   $lines[] = [
+                       'account_id' => $tx['account_id'],
+                       'description' => $tx['description'] ?? null,
+                       'debit' => $tx['amount'],
+                       'credit' => 0,
+                       'currency' => $validated['currency'],
+                       'exchange_rate' => $exchangeRate,
+                   ];
+                   $lines[] = [
+                       'account_id' => $tx['target_account_id'],
+                       'description' => $tx['description'] ?? null,
+                       'debit' => 0,
+                       'credit' => $tx['amount'],
+                       'currency' => $validated['currency'],
+                       'exchange_rate' => $exchangeRate,
+                   ];
+               } elseif (in_array($validated['type'], ['payment', 'withdraw'])) {
+                   // صرف: الصندوق/البنك دائن، الحساب المستفيد مدين
+                   $lines[] = [
+                       'account_id' => $tx['account_id'],
+                       'description' => $tx['description'] ?? null,
+                       'debit' => 0,
+                       'credit' => $tx['amount'],
+                       'currency' => $validated['currency'],
+                       'exchange_rate' => $exchangeRate,
+                   ];
+                   $lines[] = [
+                       'account_id' => $tx['target_account_id'],
+                       'description' => $tx['description'] ?? null,
+                       'debit' => $tx['amount'],
+                       'credit' => 0,
+                       'currency' => $validated['currency'],
+                       'exchange_rate' => $exchangeRate,
+                   ];
+               } elseif ($validated['type'] === 'transfer') {
+                   // تحويل: الصندوق الأول دائن، الصندوق الثاني مدين
+                   $lines[] = [
+                       'account_id' => $tx['account_id'],
+                       'description' => $tx['description'] ?? null,
+                       'debit' => 0,
+                       'credit' => $tx['amount'],
+                       'currency' => $validated['currency'],
+                       'exchange_rate' => $exchangeRate,
+                   ];
+                   $lines[] = [
+                       'account_id' => $tx['target_account_id'],
+                       'description' => $tx['description'] ?? null,
+                       'debit' => $tx['amount'],
+                       'credit' => 0,
+                       'currency' => $validated['currency'],
+                       'exchange_rate' => $exchangeRate,
+                   ];
+               }
            }
            $totalDebit = collect($lines)->sum('debit');
            $totalCredit = collect($lines)->sum('credit');

@@ -65,19 +65,34 @@ class AccountsTableSeeder extends Seeder
             'nature' => null,
             'is_group' => 1,
         ]);
-
-        $customers = Account::create([
+        $banks = Account::create([
             'code' => '1200',
+            'name' => 'البنوك',
+            'parent_id' => $assets->id,
+            'type' => 'asset',
+            'nature' => null,
+            'is_group' => 1,
+        ]);
+        $customers = Account::create([
+            'code' => '1300',
             'name' => 'حسابات العملاء',
             'parent_id' => $assets->id,
             'type' => 'asset',
             'nature' => null,
             'is_group' => 1,
         ]);
-
+        $inventory = Account::create([
+            'code' => '1400',
+            'name' => 'المخزون',
+            'parent_id' => $assets->id,
+            'type' => 'asset',
+            'nature' => null,
+            'is_group' => 1,
+        ]);
+        // --- أصول ثابتة ---
         $fixedAssets = Account::create([
-            'code' => '1300',
-            'name' => 'أصول ثابتة',
+            'code' => '1500',
+            'name' => 'الأصول الثابتة',
             'parent_id' => $assets->id,
             'type' => 'asset',
             'nature' => null,
@@ -86,22 +101,35 @@ class AccountsTableSeeder extends Seeder
 
         // حسابات فعلية (Accounts)
 
-        Account::create([
+        $cash_iqd = Account::create([
             'code' => '1101',
             'name' => 'صندوق رئيسي دينار',
             'parent_id' => $cash->id,
             'type' => 'asset',
             'nature' => 'debit',
             'is_group' => 0,
+            'currency' => 'IQD',
+            'is_cash_box' => 1,
         ]);
 
-        Account::create([
-            'code' => '1102',
-            'name' => 'حساب بنك رئيسي',
-            'parent_id' => $cash->id,
+        $bank_iqd = Account::create([
+            'code' => '1201',
+            'name' => 'بنك رئيسي دينار',
+            'parent_id' => $banks->id,
             'type' => 'asset',
             'nature' => 'debit',
             'is_group' => 0,
+            'currency' => 'IQD',
+        ]);
+
+        $customer_iqd = Account::create([
+            'code' => '1301',
+            'name' => 'عميل رئيسي دينار',
+            'parent_id' => $customers->id,
+            'type' => 'asset',
+            'nature' => 'debit',
+            'is_group' => 0,
+            'currency' => 'IQD',
         ]);
 
         // فئات تحت الالتزامات
@@ -113,14 +141,32 @@ class AccountsTableSeeder extends Seeder
             'nature' => null,
             'is_group' => 1,
         ]);
+        $taxes = Account::create([
+            'code' => '2200',
+            'name' => 'الضرائب المستحقة',
+            'parent_id' => $liabilities->id,
+            'type' => 'liability',
+            'nature' => null,
+            'is_group' => 1,
+        ]);
+        // --- التزامات طويلة الأجل ---
+        $loans = Account::create([
+            'code' => '2300',
+            'name' => 'قروض طويلة الأجل',
+            'parent_id' => $liabilities->id,
+            'type' => 'liability',
+            'nature' => null,
+            'is_group' => 1,
+        ]);
 
-        Account::create([
+        $supplier_iqd = Account::create([
             'code' => '2101',
-            'name' => 'مورد رئيسي',
+            'name' => 'مورد رئيسي دينار',
             'parent_id' => $suppliers->id,
             'type' => 'liability',
             'nature' => 'credit',
             'is_group' => 0,
+            'currency' => 'IQD',
         ]);
 
         // فئات تحت الإيرادات
@@ -179,22 +225,34 @@ class AccountsTableSeeder extends Seeder
             'is_group' => 1,
         ]);
 
-        Account::create([
+        $salary_expense_iqd = Account::create([
             'code' => '4101',
-            'name' => 'راتب موظف رئيسي',
+            'name' => 'مصروف رواتب دينار',
             'parent_id' => $salaries->id,
             'type' => 'expense',
             'nature' => 'debit',
             'is_group' => 0,
+            'currency' => 'IQD',
         ]);
 
-        Account::create([
-            'code' => '4201',
-            'name' => 'فاتورة إيجار مكتب',
-            'parent_id' => $officeRent->id,
-            'type' => 'expense',
-            'nature' => 'debit',
+        $liabilities_iqd = Account::create([
+            'code' => '2102',
+            'name' => 'ذمم مستحقة للموظفين دينار',
+            'parent_id' => $suppliers->id,
+            'type' => 'liability',
+            'nature' => 'credit',
             'is_group' => 0,
+            'currency' => 'IQD',
+        ]);
+
+        $deductions_iqd = Account::create([
+            'code' => '2201',
+            'name' => 'خصومات رواتب دينار',
+            'parent_id' => $taxes->id,
+            'type' => 'liability',
+            'nature' => 'credit',
+            'is_group' => 0,
+            'currency' => 'IQD',
         ]);
 
         // فئات تحت رأس المال
@@ -214,6 +272,102 @@ class AccountsTableSeeder extends Seeder
             'type' => 'equity',
             'nature' => 'credit',
             'is_group' => 0,
+        ]);
+
+        // --- حسابات فعلية دولار ---
+        $cash_usd = Account::create([
+            'code' => '1102',
+            'name' => 'صندوق رئيسي دولار',
+            'parent_id' => $cash->id,
+            'type' => 'asset',
+            'nature' => 'debit',
+            'is_group' => 0,
+            'currency' => 'USD',
+            'is_cash_box' => 1,
+        ]);
+
+        $bank_usd = Account::create([
+            'code' => '1202',
+            'name' => 'بنك رئيسي دولار',
+            'parent_id' => $banks->id,
+            'type' => 'asset',
+            'nature' => 'debit',
+            'is_group' => 0,
+            'currency' => 'USD',
+        ]);
+
+        $customer_usd = Account::create([
+            'code' => '1302',
+            'name' => 'عميل رئيسي دولار',
+            'parent_id' => $customers->id,
+            'type' => 'asset',
+            'nature' => 'debit',
+            'is_group' => 0,
+            'currency' => 'USD',
+        ]);
+
+        $supplier_usd = Account::create([
+            'code' => '2103',
+            'name' => 'مورد رئيسي دولار',
+            'parent_id' => $suppliers->id,
+            'type' => 'liability',
+            'nature' => 'credit',
+            'is_group' => 0,
+            'currency' => 'USD',
+        ]);
+
+        $salary_expense_usd = Account::create([
+            'code' => '4102',
+            'name' => 'مصروف رواتب دولار',
+            'parent_id' => $salaries->id,
+            'type' => 'expense',
+            'nature' => 'debit',
+            'is_group' => 0,
+            'currency' => 'USD',
+        ]);
+
+        $liabilities_usd = Account::create([
+            'code' => '2104',
+            'name' => 'ذمم مستحقة للموظفين دولار',
+            'parent_id' => $suppliers->id,
+            'type' => 'liability',
+            'nature' => 'credit',
+            'is_group' => 0,
+            'currency' => 'USD',
+        ]);
+
+        $deductions_usd = Account::create([
+            'code' => '2202',
+            'name' => 'خصومات رواتب دولار',
+            'parent_id' => $taxes->id,
+            'type' => 'liability',
+            'nature' => 'credit',
+            'is_group' => 0,
+            'currency' => 'USD',
+        ]);
+
+        // --- تحديث إعدادات الحسابات الافتراضية ---
+        \App\Models\AccountingSetting::updateOrCreate([
+            'currency' => 'IQD',
+        ], [
+            'sales_account_id' => $productSales->id,
+            'purchases_account_id' => null,
+            'receivables_account_id' => $customer_iqd->id,
+            'payables_account_id' => $supplier_iqd->id,
+            'expenses_account_id' => $salary_expense_iqd->id,
+            'liabilities_account_id' => $liabilities_iqd->id,
+            'deductions_account_id' => $deductions_iqd->id,
+        ]);
+        \App\Models\AccountingSetting::updateOrCreate([
+            'currency' => 'USD',
+        ], [
+            'sales_account_id' => $productSales->id,
+            'purchases_account_id' => null,
+            'receivables_account_id' => $customer_usd->id,
+            'payables_account_id' => $supplier_usd->id,
+            'expenses_account_id' => $salary_expense_usd->id,
+            'liabilities_account_id' => $liabilities_usd->id,
+            'deductions_account_id' => $deductions_usd->id,
         ]);
     }
 } 

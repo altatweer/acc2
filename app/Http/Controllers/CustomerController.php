@@ -36,8 +36,11 @@ class CustomerController extends Controller
             'email'      => 'required|email|unique:customers,email',
             'phone'      => 'nullable|string|max:50',
             'address'    => 'nullable|string',
-            'account_id' => 'required|exists:accounts,id',
         ]);
+        // جلب حساب العملاء الافتراضي حسب العملة الافتراضية للنظام
+        $defaultCurrency = \App\Models\Currency::where('is_default', true)->first();
+        $setting = \App\Models\AccountingSetting::where('currency', $defaultCurrency->code)->first();
+        $validated['account_id'] = $setting?->receivables_account_id;
         Customer::create($validated);
         return redirect()->route('customers.index')->with('success', 'تم إضافة العميل بنجاح.');
     }

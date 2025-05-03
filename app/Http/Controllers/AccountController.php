@@ -205,31 +205,19 @@ class AccountController extends Controller
     {
         $defaultCurrency = Currency::where('is_default', true)->first();
 
-        // جلب الحركات من القيود الجديدة
-        $lines = $account->journalEntryLines()->with('journalEntry')->orderByDesc('created_at')->get();
+        // جلب الحركات من القيود الجديدة فقط بعملة الحساب
+        $lines = $account->journalEntryLines()
+            ->where('currency', $account->currency)
+            ->with('journalEntry')
+            ->orderBy('created_at')
+            ->get();
 
-        // تجميع الحركات حسب العملة
-        $currencies = Currency::all();
-        $linesGrouped = $lines->groupBy('currency');
-        $balances = $currencies->mapWithKeys(function($currency) use ($linesGrouped) {
-            $lines = $linesGrouped->get($currency->code, collect());
-            $balance = $lines->reduce(function($carry, $line) {
-                return $carry + $line->debit - $line->credit;
-            }, 0);
-            return [$currency->code => [
-                'currency' => $currency,
-                'balance' => $balance,
-                'exchange_rate' => $currency->exchange_rate,
-            ]];
-        });
-        $totalInDefault = $balances->sum(function($item) {
-            return $item['balance'] * $item['exchange_rate'];
-        });
-        $linesByCurrency = $currencies->mapWithKeys(function($currency) use ($linesGrouped) {
-            $lines = $linesGrouped->get($currency->code, collect());
-            return [$currency->code => $lines];
-        });
-        return view('accounts.show', compact('account', 'defaultCurrency', 'balances', 'totalInDefault', 'linesByCurrency'));
+        // حساب الرصيد فقط بعملة الحساب
+        $balance = $lines->reduce(function($carry, $line) {
+            return $carry + $line->debit - $line->credit;
+        }, 0);
+
+        return view('accounts.show', compact('account', 'defaultCurrency', 'lines', 'balance'));
     }
 
     /**

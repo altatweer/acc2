@@ -40,6 +40,22 @@ class TransactionController extends Controller
 
         $validated['user_id'] = auth()->id();
 
+        // تحقق من مطابقة العملة مع الحسابات
+        $account = \App\Models\Account::find($validated['account_id']);
+        if (!$account || $account->currency !== $validated['currency']) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'account_id' => ['عملة الحساب يجب أن تطابق العملة المدخلة.']
+            ]);
+        }
+        if (!empty($validated['target_account_id'])) {
+            $target = \App\Models\Account::find($validated['target_account_id']);
+            if (!$target || $target->currency !== $validated['currency']) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'target_account_id' => ['عملة الحساب الهدف يجب أن تطابق العملة المدخلة.']
+                ]);
+            }
+        }
+
         Transaction::create($validated);
 
         return redirect()->route('transactions.index')->with('success', 'تم تسجيل الحركة بنجاح.');

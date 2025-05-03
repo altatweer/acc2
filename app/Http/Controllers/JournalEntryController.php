@@ -68,6 +68,15 @@ class JournalEntryController extends Controller
         if (round($totalDebit,2) !== round($totalCredit,2)) {
             return back()->withErrors(['lines'=>'يجب أن يتساوى مجموع المدين مع مجموع الدائن'])->withInput();
         }
+        // تحقق من مطابقة العملة مع الحساب
+        foreach ($validated['lines'] as $idx => $line) {
+            $account = \App\Models\Account::find($line['account_id']);
+            if (!$account || $account->currency !== $line['currency']) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    "lines.$idx.account_id" => ["عملة الحساب يجب أن تطابق العملة المدخلة في السطر."]
+                ]);
+            }
+        }
         DB::transaction(function() use ($validated, $totalDebit, $totalCredit) {
             $entry = JournalEntry::create([
                 'date' => $validated['date'],
