@@ -41,11 +41,6 @@
                                         @if($payment->status == 'pending')
                                             <a href="{{ route('salary-payments.create', ['salary_batch_id' => $payment->salary_batch_id, 'employee_id' => $payment->employee_id]) }}" class="btn btn-sm btn-success">دفع</a>
                                         @endif
-                                        <form action="{{ route('salary-payments.destroy', $payment) }}" method="POST" style="display:inline-block" onsubmit="return confirm('هل أنت متأكد من الحذف؟');">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button class="btn btn-sm btn-danger">حذف</button>
-                                        </form>
                                     </td>
                                 </tr>
                             @endforeach

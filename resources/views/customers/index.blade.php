@@ -7,7 +7,10 @@
             <div class="card-header">
                 <h3 class="card-title">قائمة العملاء</h3>
                 <div class="card-tools">
+                    @php $isSuperAdmin = auth()->check() && auth()->user()->isSuperAdmin(); @endphp
+                    @if($isSuperAdmin || auth()->user()->can('إضافة عميل'))
                     <a href="{{ route('customers.create') }}" class="btn btn-sm btn-success">عميل جديد</a>
+                    @endif
                     <button type="button" class="btn btn-tool" data-card-widget="collapse"><i class="fas fa-minus"></i></button>
                     <button type="button" class="btn btn-tool" data-card-widget="remove"><i class="fas fa-times"></i></button>
                 </div>
@@ -36,9 +39,15 @@
                                 <td>{{ $cust->account->name }}</td>
                                 <td>
                                     <div class="btn-group btn-group-sm" role="group">
+                                        @if($isSuperAdmin || auth()->user()->can('عرض العملاء'))
                                         <a href="{{ route('customers.show', $cust) }}" class="btn btn-outline-info" title="عرض"><i class="fas fa-eye"></i></a>
+                                        @endif
+                                        @if($isSuperAdmin || auth()->user()->can('تعديل عميل'))
                                         <a href="{{ route('customers.edit', $cust) }}" class="btn btn-outline-primary" title="تعديل"><i class="fas fa-edit"></i></a>
+                                        @endif
+                                        @if($isSuperAdmin || auth()->user()->can('حذف عميل'))
                                         <form action="{{ route('customers.destroy', $cust) }}" method="POST" onsubmit="return confirm('هل أنت متأكد من الحذف؟');">@csrf @method('DELETE')<button type="submit" class="btn btn-outline-danger" title="حذف"><i class="fas fa-trash"></i></button></form>
+                                        @endif
                                     </div>
                                 </td>
                             </tr>

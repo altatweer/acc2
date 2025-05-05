@@ -8,6 +8,15 @@ use Illuminate\Http\Request;
 
 class AccountController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('can:عرض الحسابات')->only(['index', 'realAccounts', 'show', 'chart', 'byCurrency']);
+        $this->middleware('can:إضافة حساب')->only(['createAccount', 'storeAccount']);
+        $this->middleware('can:إضافة فئة')->only(['createGroup', 'storeGroup']);
+        $this->middleware('can:تعديل حساب')->only(['edit', 'update']);
+        $this->middleware('can:حذف حساب')->only(['destroy']);
+    }
+
     public function index() // عرض الفئات
     {
         $categories = Account::where('is_group', 1)->with('parent')->paginate(20);

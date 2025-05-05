@@ -4,12 +4,28 @@
 <div class="content-wrapper">
     <div class="content-header">
         <div class="container-fluid">
+            <div class="alert alert-warning">[تشخيص] حالة السند الحالية: <b>{{ $voucher->status }}</b></div>
+            <div class="alert alert-info">[تشخيص] قيد محاسبي مرتبط: {{ $voucher->journalEntry ? 'نعم' : 'لا' }} | عدد السطور: {{ $voucher->journalEntry && $voucher->journalEntry->lines ? $voucher->journalEntry->lines->count() : 0 }}</div>
             <h1 class="m-0">عرض تفاصيل السند</h1>
         </div>
     </div>
 
     <section class="content">
         <div class="container-fluid">
+
+            @if(session('success'))
+                <div class="alert alert-success">{{ session('success') }}</div>
+            @endif
+            @if(session('error'))
+                <div class="alert alert-danger">{{ session('error') }}</div>
+            @endif
+
+            @if($voucher->status == 'canceled')
+                <div class="alert alert-danger text-center font-weight-bold">
+                    هذا السند ملغي (تم توليد قيد عكسي تلقائيًا لإبطال أثره المحاسبي).<br>
+                    لا يمكن طباعته أو استخدامه في أي عملية مالية.
+                </div>
+            @endif
 
             <div class="card mt-3">
                 <div class="card-body">
@@ -26,7 +42,7 @@
                         </tr>
                         <tr>
                             <th>التاريخ</th>
-                            <td>{{ $voucher->date }}</td>
+                            <td>{{ $voucher->date ? $voucher->date->format('Y-m-d H:i:s') : '-' }}</td>
                         </tr>
                         <tr>
                             <th>المحاسب</th>
@@ -46,6 +62,22 @@
 
                     <h5>الحركات المالية المرتبطة:</h5>
 
+                    @php
+                        $voucherStatus = $voucher->status;
+                        if (is_null($voucherStatus)) $voucherStatus = 'active';
+                    @endphp
+                    @if(trim((string)$voucherStatus) === 'active')
+                        <a href="{{ route('vouchers.print', $voucher->id) }}" class="btn btn-success" target="_blank">طباعة السند</a>
+                        <form action="{{ route('vouchers.cancel', $voucher) }}" method="POST" style="display:inline-block;">
+                            @csrf
+                            <button type="submit" class="btn btn-danger" onclick="return confirm('هل أنت متأكد من إلغاء السند؟ سيتم توليد قيد عكسي ولن يمكن التراجع.')">إلغاء السند</button>
+                        </form>
+                    @else
+                        <div class="mt-3 alert alert-info">
+                            <strong>ملاحظة:</strong> لا يمكن حذف أو تعديل السندات المالية بعد اعتمادها. في حال وجود خطأ، يتم إلغاء السند وتوليد قيد عكسي تلقائيًا وفقًا للمعايير المحاسبية الدولية (IFRS/GAAP)، ويجب إنشاء سند جديد بالقيم الصحيحة.
+                        </div>
+                    @endif
+
                     <table class="table table-bordered table-striped">
                         <thead>
                             <tr>
@@ -57,7 +89,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @if($voucher->journalEntry && $voucher->journalEntry->lines)
+                            @if($voucher->journalEntry && $voucher->journalEntry->lines && $voucher->journalEntry->lines->count())
                                 @foreach($voucher->journalEntry->lines as $line)
                                     <tr>
                                         <td>{{ $line->account->name ?? '-' }}</td>
@@ -72,8 +104,6 @@
                             @endif
                         </tbody>
                     </table>
-
-                    <a href="{{ route('vouchers.print', $voucher->id) }}" class="btn btn-success" target="_blank">طباعة السند</a>
 
                 </div>
             </div>

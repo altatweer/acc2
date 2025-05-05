@@ -89,7 +89,13 @@
                                         <tr>
                                             <td>{{ $loop->iteration }}</td>
                                             <td>{{ $line->journalEntry->date ?? '-' }}</td>
-                                            <td>{{ $line->journalEntry->id ?? '-' }}</td>
+                                            <td>
+                                                @if($line->journalEntry)
+                                                    <a href="#" class="journal-link" data-journal-id="{{ $line->journalEntry->id }}">{{ $line->journalEntry->id }}</a>
+                                                @else
+                                                    -
+                                                @endif
+                                            </td>
                                             <td>{{ $line->description ?? '-' }}</td>
                                             <td>{{ number_format($line->debit, 2) }}</td>
                                             <td>{{ number_format($line->credit, 2) }}</td>
@@ -105,4 +111,38 @@
         </div>
     </div>
 </section>
+
+{{-- نافذة منبثقة لعرض تفاصيل القيد --}}
+<div class="modal fade" id="journalModal" tabindex="-1" role="dialog" aria-labelledby="journalModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="journalModalLabel">تفاصيل القيد المحاسبي</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="إغلاق">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body" id="journalModalBody">
+        <div class="text-center text-muted">جاري التحميل...</div>
+      </div>
+    </div>
+  </div>
+</div>
+@push('scripts')
+<script>
+$(function(){
+    $('.journal-link').on('click', function(e){
+        e.preventDefault();
+        var journalId = $(this).data('journal-id');
+        $('#journalModalBody').html('<div class="text-center text-muted">جاري التحميل...</div>');
+        $('#journalModal').modal('show');
+        $.get('/journal-entries/' + journalId + '/modal', function(data){
+            $('#journalModalBody').html(data);
+        }).fail(function(){
+            $('#journalModalBody').html('<div class="alert alert-danger">حدث خطأ أثناء جلب تفاصيل القيد.</div>');
+        });
+    });
+});
+</script>
+@endpush
 @endsection 

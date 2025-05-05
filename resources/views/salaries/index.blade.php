@@ -5,7 +5,14 @@
     <div class="content-header">
         <div class="container-fluid">
             <h1 class="m-0">قائمة الرواتب</h1>
-            <a href="{{ route('salaries.create') }}" class="btn btn-primary">إضافة راتب جديد</a>
+            <div class="card-tools">
+                @php $isSuperAdmin = auth()->check() && auth()->user()->isSuperAdmin(); @endphp
+                @if($isSuperAdmin || auth()->user()->can('إضافة راتب'))
+                <a href="{{ route('salaries.create') }}" class="btn btn-sm btn-success">إضافة راتب</a>
+                @endif
+                <button type="button" class="btn btn-tool" data-card-widget="collapse"><i class="fas fa-minus"></i></button>
+                <button type="button" class="btn btn-tool" data-card-widget="remove"><i class="fas fa-times"></i></button>
+            </div>
         </div>
     </div>
     <section class="content">
@@ -51,13 +58,17 @@
                                     <td>{{ $salary->effective_from }}</td>
                                     <td>{{ $salary->effective_to ?? '-' }}</td>
                                     <td>
-                                        <a href="{{ route('salaries.show', $salary->id) }}" class="btn btn-info btn-sm">عرض</a>
-                                        <a href="{{ route('salaries.edit', $salary->id) }}" class="btn btn-warning btn-sm">تعديل</a>
-                                        <form action="{{ route('salaries.destroy', $salary->id) }}" method="POST" style="display:inline-block;">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('هل أنت متأكد من الحذف؟')">حذف</button>
-                                        </form>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            @if($isSuperAdmin || auth()->user()->can('عرض الرواتب'))
+                                            <a href="{{ route('salaries.show', $salary) }}" class="btn btn-outline-info" title="عرض"><i class="fas fa-eye"></i></a>
+                                            @endif
+                                            @if($isSuperAdmin || auth()->user()->can('تعديل راتب'))
+                                            <a href="{{ route('salaries.edit', $salary) }}" class="btn btn-outline-primary" title="تعديل"><i class="fas fa-edit"></i></a>
+                                            @endif
+                                            @if($isSuperAdmin || auth()->user()->can('حذف راتب'))
+                                            <form action="{{ route('salaries.destroy', $salary) }}" method="POST" onsubmit="return confirm('هل أنت متأكد من الحذف؟');">@csrf @method('DELETE')<button type="submit" class="btn btn-outline-danger" title="حذف"><i class="fas fa-trash"></i></button></form>
+                                            @endif
+                                        </div>
                                     </td>
                                 </tr>
                             @endforeach

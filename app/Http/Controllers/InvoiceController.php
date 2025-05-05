@@ -15,6 +15,14 @@ use App\Models\Transaction;
 
 class InvoiceController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('can:عرض الفواتير')->only(['index', 'show']);
+        $this->middleware('can:إضافة فاتورة')->only(['create', 'store']);
+        $this->middleware('can:تعديل فاتورة')->only(['edit', 'update']);
+        $this->middleware('can:حذف فاتورة')->only(['destroy']);
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -58,63 +66,40 @@ class InvoiceController extends Controller
         // Set invoice exchange_rate automatically based on selected currency
         $currencyModel = Currency::where('code', $validated['currency'])->first();
         $validated['exchange_rate'] = $currencyModel->exchange_rate;
-        $validated['status'] = 'unpaid';
+        // اجعل الفاتورة الجديدة تبدأ بحالة draft
+        $validated['status'] = 'draft';
         $validated['created_by'] = auth()->id();
 
+        // دمج المنتجات المكررة في items
+        $mergedItems = [];
+        if (isset($validated['items'])) {
+            foreach ($validated['items'] as $itm) {
+                $key = $itm['item_id'];
+                if (!isset($mergedItems[$key])) {
+                    $mergedItems[$key] = $itm;
+                } else {
+                    $mergedItems[$key]['quantity'] += $itm['quantity'];
+                }
+            }
+        }
+
         // Create invoice within DB transaction
-        DB::transaction(function() use ($validated) {
+        DB::transaction(function() use ($validated, $mergedItems) {
             // Persist invoice
             $invoice = Invoice::create($validated);
             // Save invoice items
-            if (isset($validated['items'])) {
-                foreach ($validated['items'] as $itm) {
-                    $lineTotal = $itm['quantity'] * $itm['unit_price'];
-                    $invoice->invoiceItems()->create([
-                        'item_id'    => $itm['item_id'],
-                        'quantity'   => $itm['quantity'],
-                        'unit_price' => $itm['unit_price'],
-                        'line_total' => $lineTotal,
-                    ]);
-                }
-            }
-            // إنشاء قيد محاسبي آجل (مدين: حساب العملاء الافتراضي حسب العملة، دائن: حساب المبيعات الافتراضي حسب العملة)
-            $settings = \App\Models\AccountingSetting::where('currency', $invoice->currency)->first();
-            if ($settings && $settings->receivables_account_id && $settings->sales_account_id) {
-                $lines = [
-                    [
-                        'account_id' => $settings->receivables_account_id,
-                        'description' => 'استحقاق فاتورة ' . $invoice->invoice_number,
-                        'debit' => $invoice->total,
-                        'credit' => 0,
-                        'currency' => $invoice->currency,
-                        'exchange_rate' => $invoice->exchange_rate,
-                    ],
-                    [
-                        'account_id' => $settings->sales_account_id,
-                        'description' => 'إيراد فاتورة ' . $invoice->invoice_number,
-                        'debit' => 0,
-                        'credit' => $invoice->total,
-                        'currency' => $invoice->currency,
-                        'exchange_rate' => $invoice->exchange_rate,
-                    ],
-                ];
-                $journal = \App\Models\JournalEntry::create([
-                    'date' => $invoice->date,
-                    'description' => 'قيد استحقاق فاتورة ' . $invoice->invoice_number,
-                    'source_type' => 'invoice',
-                    'source_id' => $invoice->id,
-                    'created_by' => auth()->id(),
-                    'currency' => $invoice->currency,
-                    'exchange_rate' => $invoice->exchange_rate,
-                    'total_debit' => $invoice->total,
-                    'total_credit' => $invoice->total,
+            foreach ($mergedItems as $itm) {
+                $lineTotal = $itm['quantity'] * $itm['unit_price'];
+                $invoice->invoiceItems()->create([
+                    'item_id'    => $itm['item_id'],
+                    'quantity'   => $itm['quantity'],
+                    'unit_price' => $itm['unit_price'],
+                    'line_total' => $lineTotal,
                 ]);
-                foreach ($lines as $line) {
-                    $journal->lines()->create($line);
-                }
             }
+            // لا يتم إنشاء أي قيد محاسبي هنا
         });
-        return redirect()->route('invoices.index')->with('success', 'تم إنشاء الفاتورة بنجاح.');
+        return redirect()->route('invoices.index')->with('success', 'تم إنشاء الفاتورة كمسودة. يمكنك اعتمادها لاحقًا.');
     }
 
     /**
@@ -155,8 +140,107 @@ class InvoiceController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy($id)
     {
-        //
+        $invoice = Invoice::findOrFail($id);
+        if ($invoice->status !== 'draft') {
+            return back()->with('error', 'لا يمكن حذف إلا الفواتير في حالة المسودة فقط.');
+        }
+        DB::transaction(function() use ($invoice) {
+            $invoice->invoiceItems()->delete();
+            $invoice->delete();
+        });
+        return redirect()->route('invoices.index')->with('success', 'تم حذف الفاتورة بنجاح.');
+    }
+
+    /**
+     * اعتماد الفاتورة وتحويلها من مسودة إلى مستحقة الدفع
+     */
+    public function approve(Invoice $invoice)
+    {
+        if ($invoice->status !== 'draft') {
+            return back()->with('error', 'لا يمكن اعتماد فاتورة ليست في حالة مسودة.');
+        }
+        DB::transaction(function() use ($invoice) {
+            $invoice->status = 'unpaid';
+            $invoice->save();
+            // إنشاء قيد محاسبي آجل (مدين: حساب العملاء الافتراضي حسب العملة، دائن: حساب المبيعات الافتراضي حسب العملة)
+            $settings = \App\Models\AccountingSetting::where('currency', $invoice->currency)->first();
+            if ($settings && $settings->receivables_account_id && $settings->sales_account_id) {
+                $lines = [
+                    [
+                        'account_id' => $settings->receivables_account_id,
+                        'description' => 'استحقاق فاتورة ' . $invoice->invoice_number,
+                        'debit' => $invoice->total,
+                        'credit' => 0,
+                        'currency' => $invoice->currency,
+                        'exchange_rate' => $invoice->exchange_rate,
+                    ],
+                    [
+                        'account_id' => $settings->sales_account_id,
+                        'description' => 'إيراد فاتورة ' . $invoice->invoice_number,
+                        'debit' => 0,
+                        'credit' => $invoice->total,
+                        'currency' => $invoice->currency,
+                        'exchange_rate' => $invoice->exchange_rate,
+                    ],
+                ];
+                $journal = \App\Models\JournalEntry::create([
+                    'date' => $invoice->date,
+                    'description' => 'قيد استحقاق فاتورة ' . $invoice->invoice_number,
+                    'source_type' => 'invoice',
+                    'source_id' => $invoice->id,
+                    'created_by' => auth()->id(),
+                    'currency' => $invoice->currency,
+                    'exchange_rate' => $invoice->exchange_rate,
+                    'total_debit' => $invoice->total,
+                    'total_credit' => $invoice->total,
+                ]);
+                foreach ($lines as $line) {
+                    $journal->lines()->create($line);
+                }
+            }
+        });
+        return redirect()->route('invoices.show', $invoice)->with('success', 'تم اعتماد الفاتورة وأصبحت مستحقة الدفع.');
+    }
+
+    /**
+     * إلغاء الفاتورة إذا كانت غير مدفوعة
+     */
+    public function cancel(Invoice $invoice)
+    {
+        if (!in_array($invoice->status, ['unpaid'])) {
+            return back()->with('error', 'لا يمكن إلغاء الفاتورة إلا إذا كانت غير مدفوعة بالكامل.');
+        }
+        DB::transaction(function() use ($invoice) {
+            // تحديث الحالة
+            $invoice->status = 'canceled';
+            $invoice->save();
+            // إلغاء القيد المحاسبي المرتبط (soft delete أو توليد قيد عكسي)
+            $journal = \App\Models\JournalEntry::where('source_type', 'invoice')->where('source_id', $invoice->id)->first();
+            if ($journal && $journal->status !== 'canceled') {
+                $journal->update(['status' => 'canceled']);
+                // توليد قيد عكسي
+                $reverse = $journal->replicate();
+                $reverse->date = now();
+                $reverse->description = 'قيد عكسي لإلغاء فاتورة #' . $invoice->invoice_number;
+                $reverse->status = 'active';
+                $reverse->source_type = 'invoice';
+                $reverse->source_id = $invoice->id;
+                $reverse->created_by = auth()->id();
+                $reverse->save();
+                foreach ($journal->lines as $line) {
+                    $reverse->lines()->create([
+                        'account_id' => $line->account_id,
+                        'description' => 'عكس: ' . $line->description,
+                        'debit' => $line->credit,
+                        'credit' => $line->debit,
+                        'currency' => $line->currency,
+                        'exchange_rate' => $line->exchange_rate,
+                    ]);
+                }
+            }
+        });
+        return redirect()->route('invoices.show', $invoice)->with('success', 'تم إلغاء الفاتورة وتوليد قيد عكسي بنجاح.');
     }
 }

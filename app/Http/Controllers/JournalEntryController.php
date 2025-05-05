@@ -93,4 +93,45 @@ class JournalEntryController extends Controller
         });
         return redirect()->route('journal-entries.index')->with('success', 'تم إنشاء القيد بنجاح.');
     }
+
+    public function cancel(JournalEntry $journalEntry)
+    {
+        // فقط القيود اليدوية (بدون مصدر أو source_type = manual)
+        if ($journalEntry->status === 'canceled') {
+            return redirect()->back()->with('error', 'القيد ملغي بالفعل.');
+        }
+        if ($journalEntry->source_type && $journalEntry->source_type !== 'manual') {
+            return redirect()->back()->with('error', 'لا يمكن إلغاء هذا القيد لأنه مرتبط بعملية آلية.');
+        }
+        DB::transaction(function () use ($journalEntry) {
+            $journalEntry->update(['status' => 'canceled']);
+            // توليد قيد عكسي
+            $reverse = $journalEntry->replicate();
+            $reverse->date = now();
+            $reverse->description = 'قيد عكسي لإلغاء القيد اليدوي #' . $journalEntry->id;
+            $reverse->status = 'active';
+            $reverse->source_type = 'manual';
+            $reverse->source_id = $journalEntry->id;
+            $reverse->created_by = auth()->id();
+            $reverse->save();
+            foreach ($journalEntry->lines as $line) {
+                $reverse->lines()->create([
+                    'account_id' => $line->account_id,
+                    'description' => 'عكس: ' . $line->description,
+                    'debit' => $line->credit,
+                    'credit' => $line->debit,
+                    'currency' => $line->currency,
+                    'exchange_rate' => $line->exchange_rate,
+                ]);
+            }
+        });
+        return redirect()->route('journal-entries.show', $journalEntry)->with('success', 'تم إلغاء القيد وتوليد قيد عكسي بنجاح.');
+    }
+
+    // دالة تعرض تفاصيل القيد في نافذة منبثقة (AJAX)
+    public function modal($id)
+    {
+        $entry = JournalEntry::with(['lines.account', 'user'])->findOrFail($id);
+        return view('journal_entries.modal', compact('entry'));
+    }
 } 

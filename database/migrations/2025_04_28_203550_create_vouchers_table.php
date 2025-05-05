@@ -16,6 +16,7 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->unsignedBigInteger('created_by');
             $table->string('recipient_name')->nullable();
+            $table->enum('status', ['active', 'canceled'])->default('active');
             $table->timestamps();
 
             $table->foreign('created_by')->references('id')->on('users')->onDelete('cascade');

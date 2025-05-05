@@ -1,20 +1,95 @@
 @extends('layouts.app')
 
 @section('content')
-
-<body class="hold-transition login-page">
+<style>
+    body.login-bg {
+        background: linear-gradient(135deg, #e0e7ef 0%, #cfd9e6 100%) !important;
+        min-height: 100vh;
+        direction: rtl;
+    }
+    .login-box {
+        margin: 4% auto;
+        max-width: 410px;
+    }
+    .login-card-body {
+        border-radius: 18px;
+        box-shadow: 0 4px 24px rgba(0,123,255,0.08), 0 1.5px 8px rgba(0,0,0,0.04);
+        background: #fff;
+        padding: 2.2rem 2rem 1.5rem 2rem;
+    }
+    .login-logo {
+        margin-bottom: 1.2rem;
+    }
+    .login-logo img {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        box-shadow: 0 2px 8px rgba(0,123,255,0.10);
+        background: #fff;
+        padding: 8px;
+        margin-bottom: 0.5rem;
+    }
+    .login-box-msg {
+        font-size: 1.15rem;
+        color: #007bff;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        letter-spacing: 0.5px;
+    }
+    .form-control {
+        font-size: 1.08rem;
+        background: #f8fafc;
+        border: 1.5px solid #e0e7ef;
+        border-radius: 8px;
+        padding: 0.85rem 1.1rem;
+        direction: rtl;
+    }
+    .input-group-text {
+        background: #e3eafc;
+        border-radius: 0 8px 8px 0;
+        border: none;
+        color: #007bff;
+    }
+    .btn-primary {
+        background: linear-gradient(90deg, #007bff 0%, #0056b3 100%);
+        border: none;
+        border-radius: 8px;
+        font-size: 1.08rem;
+        font-weight: 700;
+        padding: 0.7rem 0;
+        box-shadow: 0 2px 8px rgba(0,123,255,0.08);
+        transition: background 0.2s;
+    }
+    .btn-primary:hover {
+        background: linear-gradient(90deg, #0056b3 0%, #007bff 100%);
+    }
+    .icheck-primary label {
+        font-size: 1rem;
+        color: #555;
+        font-weight: 500;
+    }
+    .login-footer {
+        text-align: center;
+        color: #888;
+        font-size: 0.98rem;
+        margin-top: 1.5rem;
+    }
+    @media (max-width: 500px) {
+        .login-box { max-width: 98vw; }
+        .login-card-body { padding: 1.2rem 0.5rem; }
+    }
+</style>
+<body class="login-bg">
 <div class="login-box">
   <div class="login-logo">
-    <a href="#"><b>نظام</b> الحسابات</a>
+    <img src="/assets/dist/img/logo.png" alt="شعار النظام" onerror="this.style.display='none'">
+    <div><b>نظام</b> الحسابات</div>
   </div>
-
   <div class="card">
     <div class="card-body login-card-body">
-      <p class="login-box-msg">قم بتسجيل الدخول لبدء جلستك</p>
-
+      <p class="login-box-msg">مرحباً بك! الرجاء تسجيل الدخول للمتابعة</p>
       <form method="POST" action="{{ route('login') }}">
         @csrf
-
         <div class="input-group mb-3">
           <input type="email" name="email" class="form-control" placeholder="البريد الإلكتروني" required autofocus>
           <div class="input-group-append">
@@ -23,7 +98,6 @@
             </div>
           </div>
         </div>
-
         <div class="input-group mb-3">
           <input type="password" name="password" class="form-control" placeholder="كلمة المرور" required>
           <div class="input-group-append">
@@ -32,30 +106,26 @@
             </div>
           </div>
         </div>
-
-        <div class="row">
-          <div class="col-8">
+        <div class="row align-items-center">
+          <div class="col-7">
             <div class="icheck-primary">
               <input type="checkbox" id="remember" name="remember">
-              <label for="remember">
-                تذكرني
-              </label>
+              <label for="remember">تذكرني</label>
             </div>
           </div>
-
-          <div class="col-4">
+          <div class="col-5 text-left">
             <button type="submit" class="btn btn-primary btn-block">دخول</button>
           </div>
         </div>
       </form>
-
-      <p class="mb-1 mt-2">
+      <p class="mb-1 mt-3 text-center">
         <a href="{{ route('password.request') }}">نسيت كلمة المرور؟</a>
       </p>
-
     </div>
+  </div>
+  <div class="login-footer mt-3">
+    نظام الحسابات &copy; 2025 | تصميم وبرمجة <a href="https://altatweertech.com" target="_blank" style="color:#007bff;font-weight:600;text-decoration:none;">التطوير للحلول البرمجية</a>
   </div>
 </div>
 </body>
-
 @endsection

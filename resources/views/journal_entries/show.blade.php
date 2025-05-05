@@ -18,7 +18,27 @@
                 <dd class="col-sm-4">{{ number_format($journalEntry->total_debit,2) }}</dd>
                 <dt class="col-sm-2">دائن</dt>
                 <dd class="col-sm-4">{{ number_format($journalEntry->total_credit,2) }}</dd>
+                <dt class="col-sm-2">الحالة</dt>
+                <dd class="col-sm-4">
+                    @if($journalEntry->status == 'active')
+                        <span class="badge badge-success">نشط</span>
+                    @else
+                        <span class="badge badge-danger">ملغي</span>
+                    @endif
+                </dd>
             </dl>
+            @if($journalEntry->status == 'canceled')
+                <div class="alert alert-danger font-weight-bold text-center">
+                    هذا القيد ملغي (تم توليد قيد عكسي تلقائيًا لإبطاله).<br>
+                    لا يمكن تعديله أو حذفه بعد ذلك.
+                </div>
+            @endif
+            @if((!$journalEntry->source_type || $journalEntry->source_type == 'manual') && $journalEntry->status == 'active')
+                <form action="{{ route('journal-entries.cancel', $journalEntry) }}" method="POST" style="display:inline-block;">
+                    @csrf
+                    <button type="submit" class="btn btn-danger" onclick="return confirm('هل أنت متأكد من إلغاء القيد؟ سيتم توليد قيد عكسي ولن يمكن التراجع.')">إلغاء القيد</button>
+                </form>
+            @endif
             @if($journalEntry->source_type && $journalEntry->source_id)
                 <hr>
                 <strong>المصدر:</strong>

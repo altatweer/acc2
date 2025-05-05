@@ -26,7 +26,7 @@
                         </tr>
                         <tr>
                             <th>التاريخ</th>
-                            <td>{{ $voucher->date }}</td>
+                            <td>{{ $voucher->date ? \Illuminate\Support\Carbon::parse($voucher->date)->format('Y-m-d H:i:s') : '-' }}</td>
                         </tr>
                         <tr>
                             <th>المحاسب</th>

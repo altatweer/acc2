@@ -13,7 +13,10 @@ class VoucherController extends Controller
 {
    public function __construct()
    {
-       $this->middleware('auth'); // ✅ حماية كل العمليات
+       $this->middleware('can:عرض السندات')->only(['index', 'show']);
+       $this->middleware('can:إضافة سند')->only(['create', 'store']);
+       $this->middleware('can:تعديل سند')->only(['edit', 'update']);
+       $this->middleware('can:حذف سند')->only(['destroy']);
    }
 
    public function index()
@@ -96,11 +99,34 @@ class VoucherController extends Controller
            }
        }
 
+       // تحقق إضافي لسندات التحويل: الحسابات يجب أن تكون صناديق كاش ومختلفة
+       if ($validated['type'] === 'transfer') {
+           foreach ($validated['transactions'] as $index => $tx) {
+               $acc = Account::find($tx['account_id']);
+               $tgt = Account::find($tx['target_account_id']);
+               if (!$acc || !$acc->is_cash_box) {
+                   throw \Illuminate\Validation\ValidationException::withMessages([
+                       "transactions.$index.account_id" => ["يجب أن يكون الحساب المحول منه صندوق كاش."]
+                   ]);
+               }
+               if (!$tgt || !$tgt->is_cash_box) {
+                   throw \Illuminate\Validation\ValidationException::withMessages([
+                       "transactions.$index.target_account_id" => ["يجب أن يكون الحساب المحول إليه صندوق كاش."]
+                   ]);
+               }
+               if ($acc->id == $tgt->id) {
+                   throw \Illuminate\Validation\ValidationException::withMessages([
+                       "transactions.$index.target_account_id" => ["لا يمكن التحويل إلى نفس الصندوق."]
+                   ]);
+               }
+           }
+       }
+
        DB::transaction(function () use ($validated, $request, $exchangeRate) {
            $voucher = Voucher::create([
                'voucher_number' => $this->generateVoucherNumber(),
                'type' => $validated['type'],
-               'date' => $validated['date'],
+               'date' => $request->filled('date') ? date('Y-m-d H:i:s', strtotime($validated['date'])) : now(),
                'currency' => $validated['currency'],
                'description' => $validated['description'],
                'recipient_name' => $validated['recipient_name'],
@@ -193,9 +219,353 @@ class VoucherController extends Controller
        return view('vouchers.show', compact('voucher'));
    }
 
+   public function edit(Voucher $voucher)
+   {
+       $voucher->load('transactions', 'journalEntry.lines');
+       $currencies = \App\Models\Currency::all();
+       $accounts = \App\Models\Account::all();
+       return view('vouchers.edit', compact('voucher', 'currencies', 'accounts'));
+   }
+
+   public function update(Request $request, Voucher $voucher)
+   {
+       $validated = $request->validate([
+           'type' => 'required|in:receipt,payment,transfer,deposit,withdraw',
+           'date' => 'required|date',
+           'currency' => 'required|string|max:3|exists:currencies,code',
+           'recipient_name' => 'nullable|string|max:255',
+           'description' => 'nullable|string|max:1000',
+           'transactions' => 'required|array',
+           'transactions.*.account_id' => 'required|exists:accounts,id',
+           'transactions.*.target_account_id' => 'required|exists:accounts,id',
+           'transactions.*.amount' => 'required|numeric|min:0.01',
+       ]);
+       // تحقق من مطابقة العملات كما في store
+       foreach ($validated['transactions'] as $index => $tx) {
+           $acc = \App\Models\Account::find($tx['account_id']);
+           if (!$acc || $acc->currency !== $validated['currency']) {
+               throw \Illuminate\Validation\ValidationException::withMessages([
+                   "transactions.$index.account_id" => ["يجب أن تكون عملة حساب الصندوق مطابقة لعملة السند"]
+               ]);
+           }
+           $tgt = \App\Models\Account::find($tx['target_account_id']);
+           if (!$tgt || $tgt->currency !== $validated['currency']) {
+               throw \Illuminate\Validation\ValidationException::withMessages([
+                   "transactions.$index.target_account_id" => ["يجب أن تكون عملة الحساب المستهدف مطابقة لعملة السند"]
+               ]);
+           }
+       }
+       $exchangeRate = \App\Models\Currency::where('code', $validated['currency'])->value('exchange_rate');
+       \DB::transaction(function () use ($voucher, $validated, $exchangeRate) {
+           // تحديث بيانات السند
+           $voucher->update([
+               'type' => $validated['type'],
+               'date' => $validated['date'],
+               'currency' => $validated['currency'],
+               'description' => $validated['description'],
+               'recipient_name' => $validated['recipient_name'],
+           ]);
+           // حذف القيود والمعاملات القديمة
+           if ($voucher->journalEntry) {
+               $voucher->journalEntry->lines()->delete();
+               $voucher->journalEntry->delete();
+           }
+           $voucher->transactions()->delete();
+           // إعادة بناء القيود والمعاملات كما في store
+           $lines = [];
+           foreach ($validated['transactions'] as $tx) {
+               if (in_array($validated['type'], ['receipt', 'deposit'])) {
+                   $lines[] = [
+                       'account_id' => $tx['account_id'],
+                       'description' => $tx['description'] ?? null,
+                       'debit' => $tx['amount'],
+                       'credit' => 0,
+                       'currency' => $validated['currency'],
+                       'exchange_rate' => $exchangeRate,
+                   ];
+                   $lines[] = [
+                       'account_id' => $tx['target_account_id'],
+                       'description' => $tx['description'] ?? null,
+                       'debit' => 0,
+                       'credit' => $tx['amount'],
+                       'currency' => $validated['currency'],
+                       'exchange_rate' => $exchangeRate,
+                   ];
+               } elseif (in_array($validated['type'], ['payment', 'withdraw'])) {
+                   $lines[] = [
+                       'account_id' => $tx['account_id'],
+                       'description' => $tx['description'] ?? null,
+                       'debit' => 0,
+                       'credit' => $tx['amount'],
+                       'currency' => $validated['currency'],
+                       'exchange_rate' => $exchangeRate,
+                   ];
+                   $lines[] = [
+                       'account_id' => $tx['target_account_id'],
+                       'description' => $tx['description'] ?? null,
+                       'debit' => $tx['amount'],
+                       'credit' => 0,
+                       'currency' => $validated['currency'],
+                       'exchange_rate' => $exchangeRate,
+                   ];
+               } elseif ($validated['type'] === 'transfer') {
+                   $lines[] = [
+                       'account_id' => $tx['account_id'],
+                       'description' => $tx['description'] ?? null,
+                       'debit' => 0,
+                       'credit' => $tx['amount'],
+                       'currency' => $validated['currency'],
+                       'exchange_rate' => $exchangeRate,
+                   ];
+                   $lines[] = [
+                       'account_id' => $tx['target_account_id'],
+                       'description' => $tx['description'] ?? null,
+                       'debit' => $tx['amount'],
+                       'credit' => 0,
+                       'currency' => $validated['currency'],
+                       'exchange_rate' => $exchangeRate,
+                   ];
+               }
+               // إنشاء معاملة مالية جديدة
+               $voucher->transactions()->create([
+                   'account_id' => $tx['account_id'],
+                   'target_account_id' => $tx['target_account_id'],
+                   'amount' => $tx['amount'],
+                   'currency' => $validated['currency'],
+                   'exchange_rate' => $exchangeRate,
+                   'date' => $validated['date'],
+                   'type' => $validated['type'],
+                   'description' => $tx['description'] ?? null,
+                   'created_by' => auth()->id(),
+               ]);
+           }
+           $totalDebit = collect($lines)->sum('debit');
+           $totalCredit = collect($lines)->sum('credit');
+           $journal = \App\Models\JournalEntry::create([
+               'date' => $validated['date'],
+               'description' => 'قيد سند مالي #' . $voucher->voucher_number,
+               'source_type' => \App\Models\Voucher::class,
+               'source_id' => $voucher->id,
+               'created_by' => auth()->id(),
+               'currency' => $validated['currency'],
+               'exchange_rate' => $exchangeRate,
+               'total_debit' => $totalDebit,
+               'total_credit' => $totalCredit,
+           ]);
+           foreach ($lines as $line) {
+               $journal->lines()->create($line);
+           }
+       });
+       return redirect()->route('vouchers.index')->with('success', 'تم تحديث السند بنجاح.');
+   }
+
+   public function cancel(Voucher $voucher)
+   {
+       if ($voucher->status === 'canceled') {
+           return redirect()->back()->with('error', 'السند ملغي بالفعل.');
+       }
+       \DB::transaction(function () use ($voucher) {
+           $voucher->update(['status' => 'canceled']);
+           // حذف جميع المعاملات المرتبطة بالسند
+           $voucher->transactions()->delete();
+           // إذا كان السند مرتبطًا بدفعة راتب، أعدها إلى معلقة
+           $salaryPayment = \App\Models\SalaryPayment::where('voucher_id', $voucher->id)->first();
+           if ($salaryPayment) {
+               $salaryPayment->status = 'pending';
+               $salaryPayment->payment_date = null;
+               $salaryPayment->voucher_id = null;
+               $salaryPayment->journal_entry_id = null;
+               $salaryPayment->save();
+           }
+           // توليد قيد عكسي
+           if ($voucher->journalEntry) {
+               $reverse = $voucher->journalEntry->replicate();
+               $reverse->date = now();
+               $reverse->description = 'قيد عكسي لإلغاء السند #' . $voucher->voucher_number;
+               $reverse->source_type = \App\Models\Voucher::class;
+               $reverse->source_id = $voucher->id;
+               $reverse->save();
+               foreach ($voucher->journalEntry->lines as $line) {
+                   $reverse->lines()->create([
+                       'account_id' => $line->account_id,
+                       'description' => 'عكس: ' . $line->description,
+                       'debit' => $line->credit,
+                       'credit' => $line->debit,
+                       'currency' => $line->currency,
+                       'exchange_rate' => $line->exchange_rate,
+                   ]);
+               }
+           }
+           // تحديث حالة الفاتورة إذا كان السند مرتبطًا بفاتورة
+           if ($voucher->invoice_id) {
+               $invoice = \App\Models\Invoice::find($voucher->invoice_id);
+               if ($invoice) {
+                   $paid = \App\Models\Transaction::where('invoice_id', $invoice->id)
+                       ->where('type', 'receipt')
+                       ->sum('amount');
+                   if ($paid >= $invoice->total) {
+                       $invoice->status = 'paid';
+                   } elseif ($paid > 0) {
+                       $invoice->status = 'partial';
+                   } else {
+                       $invoice->status = 'unpaid';
+                   }
+                   $invoice->save();
+               }
+           }
+       });
+       return redirect()->route('vouchers.show', $voucher)->with('success', 'تم إلغاء السند وتوليد قيد عكسي بنجاح.');
+   }
+
    private function generateVoucherNumber()
    {
        $lastId = Voucher::max('id') ?? 0;
        return 'VCH-' . str_pad($lastId + 1, 5, '0', STR_PAD_LEFT);
+   }
+
+   /**
+    * عرض صفحة إضافة سند تحويل بين الصناديق فقط
+    */
+   public function transferCreate()
+   {
+       $cashAccounts = \App\Models\Account::where('is_cash_box', 1)->get();
+       return view('vouchers.transfer_create', compact('cashAccounts'));
+   }
+
+   /**
+    * تخزين سند تحويل بين الصناديق فقط مع توليد القيود والحركات المالية الصحيحة
+    */
+   public function transferStore(Request $request)
+   {
+       $validated = $request->validate([
+           'account_id' => 'required|exists:accounts,id',
+           'target_account_id' => 'required|exists:accounts,id|different:account_id',
+           'amount' => 'required|numeric|min:0.01',
+           'date' => 'required|date',
+           'description' => 'nullable|string',
+           'exchange_rate' => 'nullable|numeric|min:0.0001',
+       ]);
+
+       $from = \App\Models\Account::find($validated['account_id']);
+       $to = \App\Models\Account::find($validated['target_account_id']);
+       if (!$from->is_cash_box || !$to->is_cash_box) {
+           return back()->withErrors(['account_id' => 'يجب أن يكون الحسابان صناديق كاش.']);
+       }
+       if ($from->id == $to->id) {
+           return back()->withErrors(['target_account_id' => 'لا يمكن التحويل إلى نفس الصندوق.']);
+       }
+
+       $fromCurrency = $from->currency;
+       $toCurrency = $to->currency;
+       $amountFrom = $validated['amount'];
+       $exchangeRate = $validated['exchange_rate'] ?? 1;
+       $amountTo = $amountFrom;
+       if ($fromCurrency !== $toCurrency) {
+           // تحويل عملة: احسب المبلغ المستلم بناءً على سعر الصرف
+           $amountTo = $exchangeRate ? $amountFrom / $exchangeRate : $amountFrom;
+       }
+
+       \DB::transaction(function () use ($validated, $from, $to, $fromCurrency, $toCurrency, $amountFrom, $amountTo, $exchangeRate) {
+           $voucher = new \App\Models\Voucher();
+           $voucher->voucher_number = $this->generateVoucherNumber();
+           $voucher->type = 'transfer';
+           $voucher->date = $validated['date'];
+           $voucher->amount = $amountFrom;
+           $voucher->description = $validated['description'] ?? null;
+           $voucher->account_id = $from->id;
+           $voucher->target_account_id = $to->id;
+           $voucher->currency = $fromCurrency;
+           $voucher->created_by = auth()->id();
+           $voucher->status = 'active';
+           $voucher->save();
+
+           // توليد قيد محاسبي
+           $journal = new \App\Models\JournalEntry();
+           $journal->date = $voucher->date;
+           $journal->description = 'قيد تحويل بين الصناديق للسند #' . $voucher->voucher_number;
+           $journal->source_type = \App\Models\Voucher::class;
+           $journal->source_id = $voucher->id;
+           $journal->created_by = auth()->id();
+           $journal->save();
+           $voucher->journal_entry_id = $journal->id;
+           $voucher->save();
+
+           if ($fromCurrency === $toCurrency) {
+               // تحويل بنفس العملة
+               $journal->lines()->create([
+                   'account_id' => $from->id,
+                   'debit' => 0,
+                   'credit' => $amountFrom,
+                   'currency' => $fromCurrency,
+               ]);
+               $journal->lines()->create([
+                   'account_id' => $to->id,
+                   'debit' => $amountFrom,
+                   'credit' => 0,
+                   'currency' => $toCurrency,
+               ]);
+               // الحركات المالية
+               $voucher->transactions()->create([
+                   'account_id' => $from->id,
+                   'amount' => -$amountFrom,
+                   'currency' => $fromCurrency,
+                   'date' => $voucher->date,
+                   'description' => 'تحويل من الصندوق (سند تحويل #' . $voucher->voucher_number . ')',
+                   'type' => 'transfer',
+                   'user_id' => auth()->id(),
+               ]);
+               $voucher->transactions()->create([
+                   'account_id' => $to->id,
+                   'amount' => $amountFrom,
+                   'currency' => $toCurrency,
+                   'date' => $voucher->date,
+                   'description' => 'تحويل إلى الصندوق (سند تحويل #' . $voucher->voucher_number . ')',
+                   'type' => 'transfer',
+                   'user_id' => auth()->id(),
+               ]);
+               // بعد إنشاء السطور
+               $journal->total_debit = $amountFrom;
+               $journal->total_credit = $amountFrom;
+           } else {
+               // تحويل عملة
+               $journal->lines()->create([
+                   'account_id' => $from->id,
+                   'debit' => 0,
+                   'credit' => $amountFrom,
+                   'currency' => $fromCurrency,
+               ]);
+               $journal->lines()->create([
+                   'account_id' => $to->id,
+                   'debit' => $amountTo,
+                   'credit' => 0,
+                   'currency' => $toCurrency,
+               ]);
+               // الحركات المالية
+               $voucher->transactions()->create([
+                   'account_id' => $from->id,
+                   'amount' => -$amountFrom,
+                   'currency' => $fromCurrency,
+                   'date' => $voucher->date,
+                   'description' => 'تحويل من الصندوق (سند تحويل #' . $voucher->voucher_number . ')',
+                   'type' => 'transfer',
+                   'user_id' => auth()->id(),
+               ]);
+               $voucher->transactions()->create([
+                   'account_id' => $to->id,
+                   'amount' => $amountTo,
+                   'currency' => $toCurrency,
+                   'date' => $voucher->date,
+                   'description' => 'تحويل إلى الصندوق (سند تحويل #' . $voucher->voucher_number . ')',
+                   'type' => 'transfer',
+                   'user_id' => auth()->id(),
+               ]);
+               // بعد إنشاء السطور
+               $journal->total_debit = $amountTo;
+               $journal->total_credit = $amountFrom;
+           }
+           $journal->save();
+       });
+
+       return redirect()->route('vouchers.index', ['type' => 'transfer'])->with('success', 'تم إضافة سند التحويل بنجاح.');
    }
 }

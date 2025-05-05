@@ -7,6 +7,14 @@ use Illuminate\Http\Request;
 
 class CurrencyController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('can:عرض العملات')->only(['index', 'show']);
+        $this->middleware('can:إضافة عملة')->only(['create', 'store']);
+        $this->middleware('can:تعديل عملة')->only(['edit', 'update']);
+        $this->middleware('can:حذف عملة')->only(['destroy']);
+    }
+
     /**
      * Display a listing of the resource.
      */

@@ -7,6 +7,14 @@ use Illuminate\Http\Request;
 
 class SalaryController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('can:عرض الرواتب')->only(['index', 'show']);
+        $this->middleware('can:إضافة راتب')->only(['create', 'store']);
+        $this->middleware('can:تعديل راتب')->only(['edit', 'update']);
+        $this->middleware('can:حذف راتب')->only(['destroy']);
+    }
+
     public function index(Request $request)
     {
         $employeeId = $request->get('employee_id');

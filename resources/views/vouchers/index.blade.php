@@ -9,9 +9,12 @@
                 <h1>السندات المالية</h1>
             </div>
             <div class="col-sm-6 text-left">
+                @php $isSuperAdmin = auth()->check() && auth()->user()->isSuperAdmin(); @endphp
+                @if($isSuperAdmin || auth()->user()->can('إضافة سند'))
                 <a href="{{ route('vouchers.create') }}" class="btn btn-sm btn-success">
                     <i class="fas fa-plus-circle"></i> إنشاء سند جديد
                 </a>
+                @endif
             </div>
         </div>
     </div>
@@ -24,6 +27,12 @@
             <div class="card-header">
                 <h3 class="card-title">قائمة السندات</h3>
                 <div class="card-tools">
+                    @if($isSuperAdmin || auth()->user()->can('إضافة سند'))
+                    <a href="{{ route('vouchers.create') }}" class="btn btn-sm btn-success">سند جديد</a>
+                    @endif
+                    @if(request('type') == 'transfer')
+                    <a href="{{ route('vouchers.transfer.create') }}" class="btn btn-success mb-3">إضافة سند تحويل بين الصناديق</a>
+                    @endif
                     <button type="button" class="btn btn-tool" data-card-widget="collapse">
                         <i class="fas fa-minus"></i>
                     </button>
@@ -77,20 +86,16 @@
                                         @endphp
                                         <span class="badge badge-info">{{ $labels[$voucher->type] ?? $voucher->type }}</span>
                                     </td>
-                                    <td>{{ \Illuminate\Support\Carbon::parse($voucher->date)->format('Y-m-d') }}</td>
+                                    <td>{{ \Illuminate\Support\Carbon::parse($voucher->date)->format('Y-m-d H:i:s') }}</td>
                                     <td>{{ $voucher->user->name ?? '-' }}</td>
                                     <td>{{ $voucher->recipient_name ?? '-' }}</td>
                                     <td>
                                         <div class="btn-group btn-group-sm" role="group">
+                                            @if($isSuperAdmin || auth()->user()->can('عرض السندات'))
                                             <a href="{{ route('vouchers.show', $voucher) }}" class="btn btn-outline-info" title="عرض">
                                                 <i class="fas fa-eye"></i>
                                             </a>
-                                            <a href="{{ route('vouchers.edit', $voucher) }}" class="btn btn-outline-primary" title="تعديل">
-                                                <i class="fas fa-edit"></i>
-                                            </a>
-                                            <a href="{{ route('vouchers.print', $voucher) }}" class="btn btn-outline-success" target="_blank" title="طباعة">
-                                                <i class="fas fa-print"></i>
-                                            </a>
+                                            @endif
                                         </div>
                                     </td>
                                 </tr>

@@ -8,6 +8,14 @@ use Illuminate\Http\Request;
 
 class CustomerController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('can:عرض العملاء')->only(['index', 'show']);
+        $this->middleware('can:إضافة عميل')->only(['create', 'store']);
+        $this->middleware('can:تعديل عميل')->only(['edit', 'update']);
+        $this->middleware('can:حذف عميل')->only(['destroy']);
+    }
+
     /**
      * Display a listing of the resource.
      */

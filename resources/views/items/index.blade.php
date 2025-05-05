@@ -7,7 +7,10 @@
             <div class="card-header">
                 <h3 class="card-title">قائمة العناصر</h3>
                 <div class="card-tools">
+                    @php $isSuperAdmin = auth()->check() && auth()->user()->isSuperAdmin(); @endphp
+                    @if($isSuperAdmin || auth()->user()->can('إضافة عنصر'))
                     <a href="{{ route('items.create') }}" class="btn btn-sm btn-success">عنصر جديد</a>
+                    @endif
                     <button type="button" class="btn btn-tool" data-card-widget="collapse"><i class="fas fa-minus"></i></button>
                     <button type="button" class="btn btn-tool" data-card-widget="remove"><i class="fas fa-times"></i></button>
                 </div>
@@ -41,13 +44,19 @@
                                 <td>{{ $item->description }}</td>
                                 <td>
                                     <div class="btn-group btn-group-sm" role="group">
+                                        @if($isSuperAdmin || auth()->user()->can('عرض العناصر'))
                                         <a href="{{ route('items.show', $item) }}" class="btn btn-outline-info" title="عرض"><i class="fas fa-eye"></i></a>
+                                        @endif
+                                        @if($isSuperAdmin || auth()->user()->can('تعديل عنصر'))
                                         <a href="{{ route('items.edit', $item) }}" class="btn btn-outline-primary" title="تعديل"><i class="fas fa-edit"></i></a>
+                                        @endif
+                                        @if($isSuperAdmin || auth()->user()->can('حذف عنصر'))
                                         <form action="{{ route('items.destroy', $item) }}" method="POST" onsubmit="return confirm('هل أنت متأكد؟');">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="btn btn-outline-danger" title="حذف"><i class="fas fa-trash"></i></button>
                                         </form>
+                                        @endif
                                     </div>
                                 </td>
                             </tr>

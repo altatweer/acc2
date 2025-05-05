@@ -42,6 +42,7 @@
                         <th>العملة</th>
                         <th>مدين</th>
                         <th>دائن</th>
+                        <th>الحالة</th>
                         <th>الإجراءات</th>
                     </tr>
                 </thead>
@@ -55,7 +56,22 @@
                         <td>{{ $entry->currency }}</td>
                         <td>{{ number_format($entry->total_debit,2) }}</td>
                         <td>{{ number_format($entry->total_credit,2) }}</td>
-                        <td><a href="{{ route('journal-entries.show', $entry) }}" class="btn btn-sm btn-info">عرض</a></td>
+                        <td>
+                            @if($entry->status == 'active')
+                                <span class="badge badge-success">نشط</span>
+                            @else
+                                <span class="badge badge-danger">ملغي</span>
+                            @endif
+                        </td>
+                        <td>
+                            <a href="{{ route('journal-entries.show', $entry) }}" class="btn btn-sm btn-info">عرض</a>
+                            @if((!$entry->source_type || $entry->source_type == 'manual') && $entry->status == 'active')
+                                <form action="{{ route('journal-entries.cancel', $entry) }}" method="POST" style="display:inline-block;">
+                                    @csrf
+                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('هل أنت متأكد من إلغاء القيد؟ سيتم توليد قيد عكسي ولن يمكن التراجع.')">إلغاء</button>
+                                </form>
+                            @endif
+                        </td>
                     </tr>
                     @endforeach
                 </tbody>

@@ -7,6 +7,14 @@ use Illuminate\Http\Request;
 
 class ItemController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('can:عرض العناصر')->only(['index', 'show']);
+        $this->middleware('can:إضافة عنصر')->only(['create', 'store']);
+        $this->middleware('can:تعديل عنصر')->only(['edit', 'update']);
+        $this->middleware('can:حذف عنصر')->only(['destroy']);
+    }
+
     /**
      * Display a listing of the resource.
      */

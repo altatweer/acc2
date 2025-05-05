@@ -65,6 +65,9 @@ Route::resource('transactions', TransactionController::class)->middleware('auth'
 // السندات
 Route::resource('vouchers', VoucherController::class)->middleware('auth');
 Route::get('vouchers/{voucher}/print', [VoucherController::class, 'print'])->name('vouchers.print')->middleware('auth');
+Route::post('vouchers/{voucher}/cancel', [\App\Http\Controllers\VoucherController::class, 'cancel'])->name('vouchers.cancel')->middleware('auth');
+Route::get('vouchers/transfer/create', [App\Http\Controllers\VoucherController::class, 'transferCreate'])->name('vouchers.transfer.create');
+Route::post('vouchers/transfer/store', [App\Http\Controllers\VoucherController::class, 'transferStore'])->name('vouchers.transfer.store');
 
 // إدارة العملات
 Route::resource('currencies', CurrencyController::class)->middleware('auth');
@@ -85,6 +88,8 @@ Route::post('invoice-payments', [InvoicePaymentController::class, 'store'])
 
 // إدارة الفواتير (CRUD)
 Route::resource('invoices', InvoiceController::class)->middleware('auth');
+Route::post('invoices/{invoice}/approve', [InvoiceController::class, 'approve'])->name('invoices.approve')->middleware('auth');
+Route::post('invoices/{invoice}/cancel', [InvoiceController::class, 'cancel'])->name('invoices.cancel')->middleware('auth');
 
 // After accounts CRUD routes
 Route::get('accounts/next-code', [AccountController::class, 'nextCode'])
@@ -93,6 +98,7 @@ Route::get('accounts/next-code', [AccountController::class, 'nextCode'])
 
 // القيود المحاسبية
 Route::resource('journal-entries', JournalEntryController::class)->only(['index','show','create','store']);
+Route::get('journal-entries/{id}/modal', [JournalEntryController::class, 'modal'])->middleware('auth');
 
 Route::get('accounts/by-currency/{currency}', [\App\Http\Controllers\AccountController::class, 'byCurrency'])->middleware('auth');
 
@@ -113,3 +119,11 @@ Route::post('salary-batches/{salaryBatch}/approve', [\App\Http\Controllers\Salar
 // إعدادات الحسابات الافتراضية
 Route::get('settings/accounting', [AccountingSettingController::class, 'edit'])->name('accounting-settings.edit')->middleware('auth');
 Route::put('settings/accounting', [AccountingSettingController::class, 'update'])->name('accounting-settings.update')->middleware('auth');
+
+// إدارة الأدوار والصلاحيات (لوحة التحكم)
+Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
+    Route::resource('roles', \App\Http\Controllers\Admin\RoleController::class);
+    Route::resource('permissions', \App\Http\Controllers\Admin\PermissionController::class);
+    Route::resource('user-roles', \App\Http\Controllers\Admin\UserRoleController::class);
+    Route::resource('users', \App\Http\Controllers\Admin\UserController::class);
+});

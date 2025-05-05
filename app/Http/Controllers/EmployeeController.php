@@ -7,6 +7,14 @@ use Illuminate\Http\Request;
 
 class EmployeeController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('can:عرض الموظفين')->only(['index', 'show']);
+        $this->middleware('can:إضافة موظف')->only(['create', 'store']);
+        $this->middleware('can:تعديل موظف')->only(['edit', 'update']);
+        $this->middleware('can:حذف موظف')->only(['destroy']);
+    }
+
     public function index()
     {
         $employees = Employee::latest()->paginate(20);

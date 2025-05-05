@@ -49,14 +49,13 @@
                                 <option value="" disabled {{ old('type')? '':'selected' }}>-- اختر النوع --</option>
                                 <option value="receipt" {{ old('type')=='receipt'?'selected':'' }}>سند قبض</option>
                                 <option value="payment" {{ old('type')=='payment'?'selected':'' }}>سند صرف</option>
-                                <option value="transfer" {{ old('type')=='transfer'?'selected':'' }}>سند تحويل</option>
                                 <option value="deposit" {{ old('type')=='deposit'?'selected':'' }}>إيداع نقدي</option>
                                 <option value="withdraw" {{ old('type')=='withdraw'?'selected':'' }}>سحب نقدي</option>
                             </select>
                         </div>
                         <div class="form-group col-md-4">
                             <label for="voucher_date">التاريخ</label>
-                            <input type="date" name="date" id="voucher_date" class="form-control" value="{{ old('date', date('Y-m-d')) }}" required>
+                            <input type="datetime-local" name="date" id="voucher_date" class="form-control" value="{{ old('date', now()->format('Y-m-d\TH:i')) }}" required>
                         </div>
                         <div class="form-group col-md-4">
                             <label for="recipient_name">مستلم/دافع</label>

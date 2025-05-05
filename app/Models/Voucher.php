@@ -20,6 +20,7 @@ class Voucher extends Model
         'currency',
         'exchange_rate',
         'invoice_id',
+        'status',
     ];
 
     protected $casts = [
@@ -44,5 +45,10 @@ class Voucher extends Model
     public function journalEntry()
     {
         return $this->morphOne(\App\Models\JournalEntry::class, 'source');
+    }
+
+    public function scopeActive($query)
+    {
+        return $query->where('status', 'active');
     }
 }

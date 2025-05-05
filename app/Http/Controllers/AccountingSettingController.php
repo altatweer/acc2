@@ -10,6 +10,9 @@ class AccountingSettingController extends Controller
 {
     public function edit()
     {
+        if (!auth()->user()->can('إدارة إعدادات النظام')) {
+            abort(403);
+        }
         $currencies = \App\Models\Currency::all();
         $settings = \App\Models\AccountingSetting::all()->keyBy('currency');
         $accounts = \App\Models\Account::where('is_group', 0)->get();
@@ -18,6 +21,9 @@ class AccountingSettingController extends Controller
 
     public function update(Request $request)
     {
+        if (!auth()->user()->can('إدارة إعدادات النظام')) {
+            abort(403);
+        }
         $currencies = \App\Models\Currency::all();
         foreach ($currencies as $currency) {
             $validated = $request->validate([

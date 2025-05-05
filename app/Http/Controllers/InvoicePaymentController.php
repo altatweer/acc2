@@ -39,6 +39,22 @@ class InvoicePaymentController extends Controller
             ]);
         }
 
+        // منع السداد إذا كانت الفاتورة ملغية أو مسودة أو مدفوعة بالكامل
+        if (!in_array($invoice->status, ['unpaid', 'partial'])) {
+            return back()->with('error', 'لا يمكن سداد فاتورة ملغية أو مسودة أو مدفوعة بالكامل.');
+        }
+
+        // تحقق من عدم تجاوز السداد لإجمالي الفاتورة
+        $paidSoFar = \App\Models\Transaction::where('invoice_id', $invoice->id)
+            ->where('type', 'receipt')
+            ->sum('amount');
+        $remaining = $invoice->total - $paidSoFar;
+        if ($validated['payment_amount'] > $remaining) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'payment_amount' => ['المبلغ المدفوع يتجاوز المتبقي على الفاتورة.']
+            ]);
+        }
+
         DB::transaction(function () use ($validated) {
             $invoice = Invoice::findOrFail($validated['invoice_id']);
             $cashAccount = Account::findOrFail($validated['cash_account_id']);
@@ -90,8 +106,30 @@ class InvoicePaymentController extends Controller
             foreach ($lines as $line) {
                 $journal->lines()->create($line);
             }
-            // mark invoice paid
-            $invoice->status = 'paid';
+            // إنشاء معاملة مالية (Transaction) تمثل السداد
+            \App\Models\Transaction::create([
+                'voucher_id' => $voucher->id,
+                'invoice_id' => $invoice->id,
+                'date' => $validated['date'],
+                'type' => 'receipt',
+                'account_id' => $cashAccount->id,
+                'amount' => $amount,
+                'currency' => $invoice->currency,
+                'exchange_rate' => $validated['exchange_rate'],
+                'description' => 'سداد فاتورة ' . $invoice->invoice_number,
+                'user_id' => auth()->id(),
+            ]);
+            // حساب مجموع المدفوعات للفاتورة
+            $paidAmount = \App\Models\Transaction::where('invoice_id', $invoice->id)
+                ->where('type', 'receipt')
+                ->sum('amount');
+            if ($paidAmount >= $invoice->total) {
+                $invoice->status = 'paid';
+            } elseif ($paidAmount > 0) {
+                $invoice->status = 'partial';
+            } else {
+                $invoice->status = 'unpaid';
+            }
             $invoice->save();
         });
         return redirect()->route('invoice-payments.create')
