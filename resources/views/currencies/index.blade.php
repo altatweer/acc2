@@ -23,6 +23,10 @@
       @if(session('success'))
         <div class="alert alert-success">{{ session('success') }}</div>
       @endif
+      
+      @if(session('error'))
+        <div class="alert alert-danger">{{ session('error') }}</div>
+      @endif
 
       <div class="card">
         <div class="card-header">
@@ -63,13 +67,17 @@
                   <td>
                     <div class="btn-group btn-group-sm" role="group">
                       @if($isSuperAdmin || auth()->user()->can('عرض العملات'))
-                      <a href="{{ route('currencies.show'currency$currency) }}" class="btn btn-outline-info" title="@lang('messages.view')"><i class="fas fa-eye"></i></a>
+                      <a href="{{ route('currencies.show', $currency) }}" class="btn btn-outline-info" title="@lang('messages.view')"><i class="fas fa-eye"></i></a>
                       @endif
                       @if($isSuperAdmin || auth()->user()->can('تعديل عملة'))
-                      <a href="{{ route('currencies.edit'currency$currency) }}" class="btn btn-outline-primary" title="@lang('messages.edit')"><i class="fas fa-edit"></i></a>
+                      <a href="{{ route('currencies.edit', $currency) }}" class="btn btn-outline-primary" title="@lang('messages.edit')"><i class="fas fa-edit"></i></a>
                       @endif
                       @if($isSuperAdmin || auth()->user()->can('حذف عملة'))
-                      <form action="{{ route('currencies.destroy'currency$currency) }}" method="POST" onsubmit="return confirm('@lang('messages.delete_currency_confirm')');">@csrf @method('DELETE')<button type="submit" class="btn btn-outline-danger" title="@lang('messages.delete')"><i class="fas fa-trash"></i></button></form>
+                      <form action="{{ route('currencies.destroy', $currency) }}" method="POST" class="d-inline" onsubmit="return confirm('@lang('messages.delete_currency_confirm')');">
+                        @csrf 
+                        @method('DELETE')
+                        <button type="submit" class="btn btn-outline-danger" title="@lang('messages.delete')"><i class="fas fa-trash"></i></button>
+                      </form>
                       @endif
                     </div>
                   </td>

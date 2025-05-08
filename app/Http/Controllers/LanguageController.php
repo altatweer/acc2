@@ -7,77 +7,79 @@ use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Config;
+use App\Services\LanguageService;
 
 class LanguageController extends Controller
 {
     /**
-     * Switch language method
+     * تبديل لغة النظام
      *
-     * @param Request $request
+     * @param string $lang
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function switchLang(Request $request)
+    public function switchLang($lang)
     {
-        $lang = $request->input('lang');
-        
-        Log::debug("Language switch REQUEST", [
+        // تسجيل بداية العملية
+        Log::debug("LanguageController::switchLang called", [
             'requested_lang' => $lang,
             'current_lang' => App::getLocale(),
-            'session_locale' => Session::get('locale'),
-            'url' => $request->url(),
-            'referer' => $request->headers->get('referer')
+            'session_locale' => Session::get('locale')
         ]);
         
-        // تأكد من أن اللغة صالحة
-        if (!in_array($lang, ['en', 'ar'])) {
-            $lang = 'en';
-        }
+        // تعيين اللغة باستخدام خدمة اللغة
+        LanguageService::setLanguage($lang);
         
-        // حالة خاصة إذا كان المطلوب هو الإنجليزية
-        if ($lang === 'en') {
-            Log::debug("ENGLISH language requested specifically");
-        }
+        // إنشاء معلمة URL لإجبار المتصفح على تحديث الصفحة
+        $timestamp = time();
+        $previousUrl = url()->previous();
+        $redirectUrl = $previousUrl . (parse_url($previousUrl, PHP_URL_QUERY) ? '&' : '?') . "lang_refresh={$lang}_{$timestamp}";
         
-        // مسح قيم اللغة السابقة وتعيين القيم الجديدة
-        Session::forget('locale');
-        Config::set('app.locale', $lang);
-        App::setLocale($lang);
-        Session::put('locale', $lang);
-        
-        // تعيين الكوكيز
-        Cookie::queue('locale', $lang, 60*24*30);
-        
-        // لضمان حفظ التغييرات
-        Session::save();
-        
-        // تسجيل النتيجة
-        Log::debug("Language switch RESULT", [
-            'new_locale' => App::getLocale(), 
-            'session_locale' => Session::get('locale'),
-            'config_locale' => Config::get('app.locale')
+        // تسجيل معلومات إعادة التوجيه
+        Log::debug("LanguageController redirecting", [
+            'from' => $previousUrl,
+            'to' => $redirectUrl,
+            'new_locale' => App::getLocale()
         ]);
         
-        // الحصول على عنوان URL للإعادة إليه
-        $redirectUrl = $request->headers->get('referer');
-        if (!$redirectUrl) {
-            $redirectUrl = url('/dashboard');
-        }
-        
-        // تنظيف العنوان من البارامترات القديمة
-        $baseUrl = strtok($redirectUrl, '?');
-        $redirectUrl = $baseUrl . '?lang=' . $lang . '&t=' . time();
-        
-        Log::debug("Language switch REDIRECT", [
-            'redirect_to' => $redirectUrl
-        ]);
-        
-        // إعادة التوجيه مع ترويسات منع التخزين المؤقت
-        return Redirect::to($redirectUrl)
+        // إعادة توجيه المستخدم مع إضافة كوكي اللغة وتعطيل التخزين المؤقت
+        return redirect($redirectUrl)
+            ->withCookie(cookie('locale', $lang, 60*24*30)) // 30 days
             ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
             ->header('Pragma', 'no-cache')
-            ->header('Expires', 'Wed, 11 Jan 1984 05:00:00 GMT')
-            ->withCookie('locale', $lang, 60*24*30);
+            ->header('Expires', 'Thu, 01 Jan 1970 00:00:00 GMT')
+            ->header('Content-Language', $lang);
+    }
+    
+    /**
+     * طريقة بديلة للتبديل المباشر للغة - تعمل بشكل موثوق
+     * 
+     * @param string $lang
+     * @return \Illuminate\Http\Response
+     */
+    public function forceLang($lang)
+    {
+        // تعيين اللغة
+        LanguageService::setLanguage($lang);
+        
+        // إظهار صفحة تأكيد باللغة المختارة
+        $content = $lang == 'ar'
+            ? '<div dir="rtl" style="font-family: Tahoma, Arial; text-align: right; padding: 20px;">'
+                . '<h1>تم تعيين اللغة إلى العربية</h1>'
+                . '<p>تم تغيير لغة النظام إلى اللغة العربية بنجاح.</p>'
+                . '<p><a href="/">العودة للصفحة الرئيسية</a></p>'
+              . '</div>'
+            : '<div dir="ltr" style="font-family: Arial; text-align: left; padding: 20px;">'
+                . '<h1>Language set to English</h1>'
+                . '<p>The system language has been successfully changed to English.</p>'
+                . '<p><a href="/">Return to home page</a></p>'
+              . '</div>';
+              
+        return response($content)
+            ->header('Content-Type', 'text/html; charset=UTF-8')
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+            ->header('Pragma', 'no-cache')
+            ->header('Expires', 'Thu, 01 Jan 1970 00:00:00 GMT')
+            ->header('Content-Language', $lang);
     }
 }

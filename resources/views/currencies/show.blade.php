@@ -46,7 +46,7 @@
           </table>
         </div>
         <div class="card-footer text-right">
-          <a href="{{ Route::localizedRoute('currencies.edit', ['currency' => $currency, ]) }}" class="btn btn-warning">@lang('messages.edit')</a>
+          <a href="{{ route('currencies.edit', $currency) }}" class="btn btn-warning">@lang('messages.edit')</a>
           <a href="{{ route('currencies.index') }}" class="btn btn-secondary">@lang('messages.back')</a>
         </div>
       </div>

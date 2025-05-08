@@ -39,18 +39,19 @@ class SettingController extends Controller
             Setting::set('company_logo', $logo);
         }
         
-        // Apply the language change if needed
-        $newLang = $request->default_language;
-        $currentLang = App::getLocale();
+        // امسح اللغة من الجلسة ليتم تطبيق اللغة الافتراضية فورًا
+        Session::forget('locale');
         
         // Save settings message to show in the next request
         $message = app()->getLocale() == 'ar' ? 'تم تحديث إعدادات النظام بنجاح' : 'System settings updated successfully';
         
-        // If language changed, redirect to the same page with new language
+        // Apply the language change if needed
+        $newLang = $request->default_language;
+        $currentLang = App::getLocale();
+        
+        // If language changed, redirect إلى نفس الصفحة بدون Prefix لغة
         if ($newLang != $currentLang) {
-            // Create a redirect to the settings page with the new language
-            $url = '/' . $newLang . '/settings/system';
-            return Redirect::to($url)->with('success', $message);
+            return redirect('/settings/system')->with('success', $message);
         }
         
         return redirect()->back()->with('success', $message);

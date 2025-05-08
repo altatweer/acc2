@@ -49,7 +49,7 @@ class VoucherController extends Controller
    public function store(Request $request)
    {
        if (!auth()->check()) {
-           return redirect()->localizedRoute('login')->with('error', 'يجب تسجيل الدخول لإنشاء السند.');
+           return redirect()->route('login')->with('error', 'يجب تسجيل الدخول لإنشاء السند.');
        }
 
        $validated = $request->validate([
@@ -247,16 +247,11 @@ class VoucherController extends Controller
            }
        });
 
-       return redirect()->localizedRoute('vouchers.index')->with('success', 'تم إنشاء السند بنجاح.');
+       return redirect()->route('vouchers.index')->with('success', 'تم إنشاء السند بنجاح.');
    }
 
-   public function show($voucher)
+   public function show(Voucher $voucher)
    {
-       // Si $voucher es un string (ID), buscamos el modelo
-       if (!$voucher instanceof Voucher) {
-           $voucher = Voucher::findOrFail($voucher);
-       }
-       
        $voucher->load('journalEntry.lines.account', 'user');
        return view('vouchers.show', compact('voucher'));
    }
@@ -398,7 +393,7 @@ class VoucherController extends Controller
                $journal->lines()->create($line);
            }
        });
-       return redirect()->localizedRoute('vouchers.index')->with('success', 'تم تحديث السند بنجاح.');
+       return redirect()->route('vouchers.index')->with('success', 'تم تحديث السند بنجاح.');
    }
 
    public function cancel(Voucher $voucher)
@@ -456,7 +451,7 @@ class VoucherController extends Controller
                }
            }
        });
-       return redirect()->localizedRoute('vouchers.show', ['voucher' => $voucher->id])->with('success', 'تم إلغاء السند وتوليد قيد عكسي بنجاح.');
+       return redirect()->route('vouchers.show', ['voucher' => $voucher->id])->with('success', 'تم إلغاء السند وتوليد قيد عكسي بنجاح.');
    }
 
    private function generateVoucherNumber()
@@ -619,7 +614,7 @@ class VoucherController extends Controller
            $journal->save();
        });
 
-       return redirect()->localizedRoute('vouchers.index', ['type' => 'transfer'])->with('success', 'تم إضافة سند التحويل بنجاح.');
+       return redirect()->route('vouchers.index', ['type' => 'transfer'])->with('success', 'تم إضافة سند التحويل بنجاح.');
    }
 
    /**

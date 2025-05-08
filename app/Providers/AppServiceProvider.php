@@ -10,6 +10,10 @@ use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\App;
 use Illuminate\Routing\Redirector;
+use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Config;
+use App\Services\LanguageService;
+use App\Models\Setting;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -83,5 +87,28 @@ class AppServiceProvider extends ServiceProvider
             
             return $redirector;
         });
+        
+        // تهيئة اللغة باستخدام خدمة اللغة المركزية
+        LanguageService::initializeLanguage();
+        
+        // إضافة توجيهية blade جديدة لاختبار اللغة الحالية
+        Blade::if('arabic', function () {
+            return LanguageService::isArabic();
+        });
+        
+        Blade::if('english', function () {
+            return !LanguageService::isArabic();
+        });
+        
+        // تفعيل اللغة من الجلسة أو من الإعدادات الافتراضية
+        $defaultLang = null;
+        try {
+            $defaultLang = Setting::get('default_language', config('app.locale'));
+        } catch (\Throwable $e) {
+            $defaultLang = config('app.locale');
+        }
+        App::setLocale(
+            Session::get('locale', $defaultLang)
+        );
     }
 }

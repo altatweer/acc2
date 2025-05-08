@@ -15,7 +15,7 @@
           <h3 class="card-title">@lang('messages.currency_data')</h3>
         </div>
 
-        <form action="{{ Route::localizedRoute('currencies.update', ['currency' => $currency, ]) }}" method="POST">
+        <form action="{{ route('currencies.update', $currency) }}" method="POST">
           @csrf
           @method('PUT')
           <div class="card-body">
@@ -44,7 +44,7 @@
               <input type="checkbox" name="is_default" value="1" class="form-check-input" id="defaultCheck" {{ old('is_default', $currency->is_default) ? 'checked' : '' }}>
               <label class="form-check-label" for="defaultCheck">@lang('messages.is_default_currency')</label>
             </div>
-
+            
             @if($errors->any())
               <div class="alert alert-danger mt-2">
                 <ul class="mb-0">
@@ -56,12 +56,11 @@
             @endif
           </div>
 
-          <div class="card-footer text-right">
+          <div class="card-footer">
             <button type="submit" class="btn btn-warning">@lang('messages.update')</button>
-            <a href="{{ route('currencies.index') }}" class="btn btn-secondary">@lang('messages.cancel')</a>
+            <a href="{{ route('currencies.index') }}" class="btn btn-default">@lang('messages.cancel')</a>
           </div>
         </form>
-
       </div>
     </div>
   </section>

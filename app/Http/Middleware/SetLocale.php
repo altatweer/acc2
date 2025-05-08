@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Config;
-use App\Models\Setting;
+use App\Services\LanguageService;
 
 class SetLocale
 {
@@ -22,29 +22,49 @@ class SetLocale
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // الإنجليزية هي اللغة الافتراضية للنظام
-        $locale = 'en';
+        Log::debug("SetLocale middleware started", [
+            'session_locale' => session('locale'),
+            'cookie_locale' => $request->cookie('locale'),
+            'current_locale' => App::getLocale(),
+            'lang_refresh' => $request->query('lang_refresh')
+        ]);
         
-        // تحقق من وجود معلمة اللغة في المسار (في حالة استخدام prefix)
-        if ($request->route('locale') && in_array($request->route('locale'), ['en', 'ar'])) {
-            $locale = $request->route('locale');
+        // التحقق من وجود معلمة تحديث اللغة (أعلى أولوية)
+        if ($request->has('lang_refresh')) {
+            $langParam = $request->query('lang_refresh');
+            if (preg_match('/^(ar|en)_/', $langParam, $matches)) {
+                $lang = $matches[1];
+                LanguageService::setLanguage($lang);
+            }
         }
-        // التحقق من وجود اللغة في الجلسة إذا لم تكن موجودة في المسار
-        elseif (session('locale') && in_array(session('locale'), ['en', 'ar'])) {
-            $locale = session('locale');
+        // في حالة عدم وجود معلمة، تهيئة اللغة من الجلسة/الكوكي
+        else {
+            LanguageService::initializeLanguage();
         }
         
-        // حفظ اللغة في الجلسة
-        session(['locale' => $locale]);
+        // تحديد متغيرات العرض المشتركة لجميع القوالب
+        view()->share('current_locale', App::getLocale());
+        view()->share('dir', App::getLocale() == 'ar' ? 'rtl' : 'ltr');
         
-        // تعيين لغة التطبيق
-        App::setLocale($locale);
-        Config::set('app.locale', $locale);
+        Log::debug("SetLocale middleware completed", [
+            'final_locale' => App::getLocale(),
+            'session_locale' => session('locale')
+        ]);
         
-        // Set view variables
-        view()->share('current_locale', $locale);
-        view()->share('dir', $locale == 'ar' ? 'rtl' : 'ltr');
+        $response = $next($request);
         
-        return $next($request);
+        // لطلبات غير API، منع تخزين الاستجابة مؤقتًا
+        if (!$request->expectsJson()) {
+            $response->headers->set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+            $response->headers->set('Pragma', 'no-cache');
+            $response->headers->set('Expires', 'Thu, 01 Jan 1970 00:00:00 GMT');
+            
+            // إضافة معلومات اللغة للعنوان
+            if (method_exists($response, 'header')) {
+                $response->header('Content-Language', App::getLocale());
+            }
+        }
+        
+        return $response;
     }
 } 

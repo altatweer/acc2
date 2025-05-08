@@ -23,6 +23,8 @@ use App\Http\Controllers\LedgerController;
 use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\LanguageController;
 use App\Http\Controllers\TestLanguageController;
+use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\Session;
 
 // Default root route redirects to login or dashboard
 Route::get('/', function () {
@@ -32,13 +34,29 @@ Route::get('/', function () {
 // Auth routes outside language prefix
 Auth::routes();
 
-// تحديد اللغة
-Route::get('/language/{lang}', function ($lang) {
-    if (in_array($lang, ['ar', 'en'])) {
-        session(['locale' => $lang]);
-    }
-    return redirect()->back();
-})->name('change.language');
+// تحديد اللغة - طريقة جديدة مُحسنة
+Route::get('/language/{lang}', [LanguageController::class, 'switchLang'])->name('change.language');
+
+// طريقة مباشرة لتبديل اللغة (أكثر موثوقية)
+Route::get('/set-language/{lang}', [LanguageController::class, 'forceLang'])->name('force.language');
+
+// إضافة الراوت الجديد:
+Route::get('/test-language/{locale}', function ($locale) {
+   if (!in_array($locale, ['en', 'ar'])) {
+       abort(400);
+   }
+   Session::put('locale', $locale);
+   App::setLocale($locale);
+   $previous = url()->previous();
+   // إذا لم يكن هناك صفحة سابقة أو كان هو نفس رابط التبديل، أعد التوجيه للوحة التحكم
+   if ($previous == request()->fullUrl() || $previous == '') {
+       return redirect('/dashboard');
+   }
+   return redirect()->back();
+})->name('lang.switch');
+
+// Extended language testing routes
+Route::get('/test-language/force/{lang}', [TestLanguageController::class, 'forceLanguage'])->name('force.language');
 
 // Test routes 
 Route::prefix('test-language')->group(function () {
@@ -202,7 +220,31 @@ Route::middleware(['auth'])->group(function () {
         Route::get('expenses-revenues/pdf', [ReportsController::class, 'exportExpensesRevenuesPdf'])->name('expenses-revenues.pdf');
         Route::get('payroll/pdf', [ReportsController::class, 'exportPayrollPdf'])->name('payroll.pdf');
     });
+
+    // Test route for currency functions
+    Route::get('/test-currency', function () {
+        return view('currencies.test');
+    })->name('currencies.test');
 });
 
 // Special debug route
 Route::get('/test-arabic-mpdf', [ReportsController::class, 'testArabicMpdf']);
+
+// راوت اختبار locale بدون أي Middleware
+Route::get('/test-currency/{locale}', function ($locale) {
+    if (!in_array($locale, ['ar', 'en'])) {
+        abort(400);
+    }
+    Session::put('locale', $locale);
+    App::setLocale($locale);
+    return redirect('/dashboard');
+});
+
+Route::get('/lang/{locale}', function ($locale) {
+   if (!in_array($locale, ['en', 'ar'])) {
+       abort(400);
+   }
+   Session::put('locale', $locale);
+   App::setLocale($locale);
+   return redirect()->back();
+})->name('lang.switch');

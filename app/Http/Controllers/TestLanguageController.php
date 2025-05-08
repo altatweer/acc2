@@ -6,91 +6,103 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Cookie;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Config;
 
 class TestLanguageController extends Controller
 {
-    public function setEnglish()
-    {
-        // فرض اللغة الإنجليزية بطرق متعددة
-        config(['app.locale' => 'en']);
-        App::setLocale('en');
-        Session::put('locale', 'en');
-        Session::save();
-        
-        // حذف الكوكي القديم وإضافة كوكي جديد
-        Cookie::queue(Cookie::forget('locale'));
-        $cookie = cookie()->forever('locale', 'en');
-        
-        // طباعة معلومات تصحيح الأخطاء
-        echo '<pre>';
-        echo "Current app locale: " . App::getLocale() . "\n";
-        echo "Current config locale: " . config('app.locale') . "\n";
-        echo "Current session locale: " . Session::get('locale') . "\n";
-        echo "Locale cookie set to: en\n";
-        echo '</pre>';
-        
-        echo '<a href="/test-language/test">Go to test page</a><br>';
-        echo '<a href="/dashboard">Go to dashboard</a>';
-        exit;
-    }
-    
-    public function setArabic()
-    {
-        // إعداد اللغة العربية
-        App::setLocale('ar');
-        Session::put('locale', 'ar');
-        
-        // حفظ الجلسة
-        Session::save();
-        
-        // إعداد الكوكي
-        $cookie = cookie('locale', 'ar', 60*24*30);
-        
-        // العودة للصفحة السابقة
-        return back()->withCookie($cookie);
-    }
-    
+    /**
+     * Test page for language switching diagnostics
+     */
     public function test()
     {
-        // صفحة اختبار بسيطة
-        $lang = App::getLocale();
-        $sessionLang = Session::get('locale');
+        $data = [
+            'app_locale' => App::getLocale(),
+            'session_locale' => Session::get('locale'),
+            'cookie_locale' => Cookie::get('locale'),
+            'session_id' => Session::getId(),
+            'time' => now()->format('Y-m-d H:i:s.u'),
+            'cookies' => $_COOKIE,
+        ];
         
-        // إنشاء HTML بسيط للاختبار
-        $html = '
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>اختبار اللغة</title>
-            <meta charset="UTF-8">
-            <style>
-                body { font-family: Arial, sans-serif; margin: 20px; }
-                .box { border: 1px solid #ccc; padding: 20px; margin-bottom: 20px; }
-                .btn { display: inline-block; padding: 10px 20px; background: #007bff; color: white; text-decoration: none; margin-right: 10px; }
-            </style>
-        </head>
-        <body>
-            <div class="box">
-                <h2>معلومات اللغة الحالية</h2>
-                <p>اللغة الحالية (App::getLocale): <strong>' . $lang . '</strong></p>
-                <p>لغة الجلسة (Session): <strong>' . $sessionLang . '</strong></p>
-                <p>كوكي اللغة: <strong>' . (isset($_COOKIE["locale"]) ? $_COOKIE["locale"] : "غير موجود") . '</strong></p>
-            </div>
-            
-            <div class="box">
-                <h2>تغيير اللغة</h2>
-                <a href="/test-language/set-english" class="btn">English</a>
-                <a href="/test-language/set-arabic" class="btn">العربية</a>
-            </div>
-            
-            <div class="box">
-                <h2>روابط إضافية</h2>
-                <a href="/dashboard" class="btn">لوحة التحكم</a>
-                <a href="/test-language/test" class="btn">تحديث هذه الصفحة</a>
-            </div>
-        </body>
-        </html>';
+        Log::debug('Test language page loaded', $data);
         
-        return response($html);
+        return view('test-language', $data);
+    }
+    
+    /**
+     * Set language to English for testing
+     */
+    public function setEnglish(Request $request)
+    {
+        $locale = 'en';
+        
+        App::setLocale($locale);
+        Session::put('locale', $locale);
+        Config::set('app.locale', $locale);
+        
+        Log::debug('Test set English called', [
+            'app_locale' => App::getLocale(),
+            'session_locale' => Session::get('locale')
+        ]);
+        
+        $cookie = cookie('locale', $locale, 60 * 24 * 30);
+        
+        return redirect()->route('test.language')
+            ->withCookie($cookie)
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+            ->header('Pragma', 'no-cache')
+            ->header('Expires', 'Thu, 01 Jan 1970 00:00:00 GMT');
+    }
+    
+    /**
+     * Set language to Arabic for testing
+     */
+    public function setArabic(Request $request)
+    {
+        $locale = 'ar';
+        
+        App::setLocale($locale);
+        Session::put('locale', $locale);
+        Config::set('app.locale', $locale);
+        
+        Log::debug('Test set Arabic called', [
+            'app_locale' => App::getLocale(),
+            'session_locale' => Session::get('locale')
+        ]);
+        
+        $cookie = cookie('locale', $locale, 60 * 24 * 30);
+        
+        return redirect()->route('test.language')
+            ->withCookie($cookie)
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+            ->header('Pragma', 'no-cache')
+            ->header('Expires', 'Thu, 01 Jan 1970 00:00:00 GMT');
+    }
+    
+    /**
+     * Direct force test - returns in chosen language
+     */
+    public function forceLanguage($lang)
+    {
+        if (!in_array($lang, ['ar', 'en'])) {
+            $lang = 'en';
+        }
+        
+        App::setLocale($lang);
+        Session::put('locale', $lang);
+        Config::set('app.locale', $lang);
+        Session::save();
+        
+        $content = $lang == 'ar' 
+            ? '<div dir="rtl" style="text-align: right">تم تعيين اللغة إلى <strong>العربية</strong></div>' 
+            : '<div dir="ltr" style="text-align: left">Language set to <strong>English</strong></div>';
+            
+        return response($content)
+            ->withCookie(cookie('locale', $lang, 60 * 24 * 30))
+            ->header('Content-Type', 'text/html; charset=UTF-8')
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+            ->header('Pragma', 'no-cache')
+            ->header('Expires', 'Thu, 01 Jan 1970 00:00:00 GMT');
     }
 }
