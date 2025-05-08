@@ -89,7 +89,7 @@ class AppServiceProvider extends ServiceProvider
         });
         
         // تهيئة اللغة باستخدام خدمة اللغة المركزية
-        LanguageService::initializeLanguage();
+        // LanguageService::initializeLanguage(); // تم التعطيل حتى لا تتعارض مع الجلسة
         
         // إضافة توجيهية blade جديدة لاختبار اللغة الحالية
         Blade::if('arabic', function () {

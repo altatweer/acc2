@@ -230,21 +230,12 @@ Route::middleware(['auth'])->group(function () {
 // Special debug route
 Route::get('/test-arabic-mpdf', [ReportsController::class, 'testArabicMpdf']);
 
-// راوت اختبار locale بدون أي Middleware
-Route::get('/test-currency/{locale}', function ($locale) {
-    if (!in_array($locale, ['ar', 'en'])) {
+// راوت تبديل اللغة الوحيد
+Route::get('/lang/{locale}', function ($locale) {
+    if (!in_array($locale, ['en', 'ar'])) {
         abort(400);
     }
     Session::put('locale', $locale);
     App::setLocale($locale);
     return redirect('/dashboard');
-});
-
-Route::get('/lang/{locale}', function ($locale) {
-   if (!in_array($locale, ['en', 'ar'])) {
-       abort(400);
-   }
-   Session::put('locale', $locale);
-   App::setLocale($locale);
-   return redirect()->back();
 })->name('lang.switch');

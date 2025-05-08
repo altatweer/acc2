@@ -149,30 +149,7 @@
         @csrf
     </form>
     <ul class="navbar-nav ml-auto">
-        <!-- Language Switcher -->
-        <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" id="languageDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                @if(App::getLocale() == 'ar')
-                <i class="fas fa-language mr-1"></i> العربية
-                @else
-                <i class="fas fa-language mr-1"></i> English
-                @endif
-            </a>
-            <div class="dropdown-menu dropdown-menu-right" aria-labelledby="languageDropdown">
-                <a class="dropdown-item d-flex align-items-center" href="{{ route('lang.switch', 'ar') }}">
-                    <img src="{{ asset('assets/img/flags/sa.png') }}" alt="Arabic" class="mr-2" style="width: 20px; height: auto;">
-                    <span>العربية</span>
-                </a>
-                <a class="dropdown-item d-flex align-items-center" href="{{ route('lang.switch', 'en') }}">
-                    <img src="{{ asset('assets/img/flags/gb.png') }}" alt="English" class="mr-2" style="width: 20px; height: auto;">
-                    <span>English</span>
-                </a>
-                <div class="dropdown-divider"></div>
-                <a class="dropdown-item small" href="{{ route('lang.switch', app()->getLocale() == 'ar' ? 'en' : 'ar') }}">
-                    <i class="fas fa-cog mr-1"></i> {{ App::getLocale() == 'ar' ? 'اختبار اللغة' : 'Test Language' }}
-                </a>
-            </div>
-        </li>
+        {{-- حذف زر تبديل اللغة بالكامل --}}
         <li class="nav-item">
             <a href="#" class="nav-link text-danger" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
                 <i class="fas fa-sign-out-alt"></i> @lang('sidebar.logout')
