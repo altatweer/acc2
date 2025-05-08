@@ -77,4 +77,21 @@
         </div>
     </section>
 </div>
-@endsection 
+@endsection
+
+@push('scripts')
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/i18n/ar.js"></script>
+<script>
+$(function(){
+    $('#salary_batch_id, #employee_id').select2({
+        width: '100%',
+        dir: 'rtl',
+        language: 'ar',
+        placeholder: 'اختر',
+        allowClear: true
+    });
+});
+</script>
+@endpush 

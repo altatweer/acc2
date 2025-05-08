@@ -88,7 +88,7 @@ class AccountController extends Controller
 
         Account::create($validated);
 
-        return redirect()->route('accounts.index')->with('success', 'تمت إضافة الفئة بنجاح.');
+        return redirect()->localizedRoute('accounts.index')->with('success', 'تمت إضافة الفئة بنجاح.');
     }
 
     public function createAccount()
@@ -135,7 +135,7 @@ class AccountController extends Controller
 
         Account::create($validated);
 
-        return redirect()->route('accounts.real')->with('success', 'تمت إضافة الحساب بنجاح.');
+        return redirect()->localizedRoute('accounts.real')->with('success', 'تمت إضافة الحساب بنجاح.');
     }
 
     public function edit(Account $account)
@@ -178,7 +178,7 @@ class AccountController extends Controller
                 'is_group' => 1,
             ]);
 
-            return redirect()->route('accounts.index')->with('success', 'تم تحديث الفئة بنجاح.');
+            return redirect()->localizedRoute('accounts.index')->with('success', 'تم تحديث الفئة بنجاح.');
         }
 
         $account->update([
@@ -192,11 +192,20 @@ class AccountController extends Controller
             'is_group'    => 0,
         ]);
 
-        return redirect()->route('accounts.real')->with('success', 'تم تحديث الحساب بنجاح.');
+        return redirect()->localizedRoute('accounts.real')->with('success', 'تم تحديث الحساب بنجاح.');
     }
 
     public function destroy(Account $account)
     {
+        // منع الحذف إذا كان هناك حسابات أبناء للفئة
+        if ($account->is_group && $account->children()->exists()) {
+            return back()->with('error', 'لا يمكن حذف الفئة لوجود حسابات أو فئات تابعة لها.');
+        }
+        // منع الحذف إذا كان هناك حركات مالية
+        $hasTransactions = $account->journalEntryLines()->exists() || $account->transactions()->exists();
+        if ($hasTransactions) {
+            return back()->with('error', 'لا يمكن حذف الحساب لوجود حركات مالية مرتبطة به.');
+        }
         $account->delete();
         return back()->with('success', 'تم الحذف بنجاح.');
     }

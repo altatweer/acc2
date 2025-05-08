@@ -13,4 +13,9 @@ class Customer extends Model
     {
         return $this->belongsTo(Account::class);
     }
+
+    public function invoices()
+    {
+        return $this->hasMany(\App\Models\Invoice::class, 'customer_id');
+    }
 }

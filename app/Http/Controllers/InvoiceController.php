@@ -243,4 +243,14 @@ class InvoiceController extends Controller
         });
         return redirect()->route('invoices.show', $invoice)->with('success', 'تم إلغاء الفاتورة وتوليد قيد عكسي بنجاح.');
     }
+
+    /**
+     * طباعة الفاتورة
+     */
+    public function print(Invoice $invoice)
+    {
+        $invoice->load('customer', 'invoiceItems.item');
+        $payments = $invoice->vouchers()->with('transactions')->get();
+        return view('invoices.print', compact('invoice', 'payments'));
+    }
 }

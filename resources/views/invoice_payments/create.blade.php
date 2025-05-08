@@ -6,7 +6,7 @@
     <div class="container-fluid">
       <div class="row mb-2">
         <div class="col-sm-6">
-          <h1 class="m-0">سداد فاتورة</h1>
+          <h1 class="m-0">@lang('messages.pay_invoice')</h1>
         </div>
       </div>
     </div>
@@ -15,7 +15,7 @@
   <section class="content">
     <div class="container-fluid">
       <div class="card card-info">
-        <div class="card-header"><h3 class="card-title">بيانات السداد</h3></div>
+        <div class="card-header"><h3 class="card-title">@lang('messages.payment_information')</h3></div>
         <form action="{{ route('invoice-payments.store') }}" method="POST">
           @csrf
 
@@ -28,9 +28,9 @@
             @endif
 
             <div class="form-group">
-              <label>اختر الفاتورة</label>
+              <label>@lang('messages.select_invoice')</label>
               <select name="invoice_id" id="invoice_id" class="form-control select2" required>
-                <option value="" disabled selected>-- اختر فاتورة --</option>
+                <option value="" disabled selected>-- @lang('messages.choose_invoice') --</option>
                 @foreach($invoices as $inv)
                   <option value="{{ $inv->id }}" data-total="{{ $inv->total }}" data-currency="{{ $inv->currency }}" data-exchange_rate="{{ $inv->exchange_rate }}">
                     {{ $inv->invoice_number }} | {{ $inv->customer->name }} | {{ $inv->total }} {{ $inv->currency }}
@@ -41,33 +41,33 @@
 
             <div class="form-row">
               <div class="form-group col-md-6">
-                <label>صندوق الدفع</label>
+                <label>@lang('messages.payment_cashbox')</label>
                 <select name="cash_account_id" id="cash_account_id" class="form-control select2" required>
-                  <option value="" disabled selected>-- اختر صندوق --</option>
+                  <option value="" disabled selected>-- @lang('messages.choose_cashbox') --</option>
                   @foreach($cashAccounts as $acc)
                     <option value="{{ $acc->id }}" data-currency="{{ $acc->currency }}">{{ $acc->name }} ({{ $acc->currency }})</option>
                   @endforeach
                 </select>
               </div>
               <div class="form-group col-md-6">
-                <label>المبلغ المدفوع</label>
+                <label>@lang('messages.payment_amount')</label>
                 <input type="number" name="payment_amount" id="payment_amount" class="form-control" step="0.01" required>
               </div>
             </div>
             <div class="form-row">
               <div class="form-group col-md-6">
-                <label>سعر الصرف</label>
+                <label>@lang('messages.exchange_rate')</label>
                 <input type="number" name="exchange_rate" id="exchange_rate" class="form-control" step="0.000001" readonly>
               </div>
               <div class="form-group col-md-6">
-                <label>تاريخ السداد</label>
+                <label>@lang('messages.payment_date')</label>
                 <input type="date" name="date" class="form-control" value="{{ date('Y-m-d') }}" required>
               </div>
             </div>
           </div>
 
           <div class="card-footer text-right">
-            <button type="submit" class="btn btn-success">سداد</button>
+            <button type="submit" class="btn btn-success">@lang('messages.pay_button')</button>
           </div>
         </form>
       </div>

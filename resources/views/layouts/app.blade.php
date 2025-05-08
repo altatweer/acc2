@@ -1,27 +1,36 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" dir="{{ app()->getLocale() == 'ar' ? 'rtl' : 'ltr' }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>نظام الحسابات</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>@lang('messages.accounting_system')</title>
     <link rel="icon" href="{{ asset('assets/logo.png') }}" type="image/png">
     <!-- Google Fonts -->
+    @if(app()->getLocale() == 'ar')
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
+    @else
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    @endif
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css">
     <!-- AdminLTE -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
-    <!-- Bootstrap RTL -->
+    <!-- RTL support (only for Arabic) -->
+    @if(app()->getLocale() == 'ar')
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-rtl@4.6.0-1/dist/css/bootstrap-rtl.min.css">
+    @endif
 
     <!-- ملف التنسيق الموحد المخصص -->
     <link rel="stylesheet" href="{{ asset('resources/css/custom.css') }}">
 
     <style>
         body {
-            font-family: 'Tajawal', sans-serif;
-            direction: rtl;
-            text-align: right;
+            font-family: {{ app()->getLocale() == 'ar' ? "'Tajawal'" : "'Roboto'" }}, sans-serif;
+            direction: {{ app()->getLocale() == 'ar' ? 'rtl' : 'ltr' }};
+            text-align: {{ app()->getLocale() == 'ar' ? 'right' : 'left' }};
             background: linear-gradient(135deg, #f8fafc 0%, #e0e7ef 100%);
             min-height: 100vh;
         }
@@ -95,12 +104,24 @@
             background: linear-gradient(90deg, #17a2b8 0%, #117a8b 100%);
             border: none;
         }
+        
+        @if(app()->getLocale() == 'ar')
+        /* RTL specific styles */
         .sidebar { right: 0; left: auto; }
         .main-sidebar { right: 0; left: auto; }
         .content-wrapper, .main-footer, .main-header {
             margin-right: 250px;
             margin-left: 0;
         }
+        @else
+        /* LTR specific styles */
+        .sidebar { left: 0; right: auto; }
+        .main-sidebar { left: 0; right: auto; }
+        .content-wrapper, .main-footer, .main-header {
+            margin-left: 250px;
+            margin-right: 0;
+        }
+        @endif
     </style>
 </head>
 
@@ -109,6 +130,10 @@
 
 @php
     $isSuperAdmin = auth()->check() && auth()->user()->isSuperAdmin();
+    use App\Models\Setting;
+    $systemName = Setting::get('system_name', 'نظام الحسابات');
+    $companyLogo = Setting::get('company_logo');
+    $companyName = Setting::get('company_name', '');
 @endphp
 
 @auth
@@ -124,9 +149,19 @@
         @csrf
     </form>
     <ul class="navbar-nav ml-auto">
+        <!-- Language Switcher -->
+        <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="languageDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                {{ App::getLocale() == 'ar' ? 'العربية' : 'English' }}
+            </a>
+            <div class="dropdown-menu" aria-labelledby="languageDropdown">
+                <a class="dropdown-item" href="{{ url('/language/ar') }}">العربية</a>
+                <a class="dropdown-item" href="{{ url('/language/en') }}">English</a>
+            </div>
+        </li>
         <li class="nav-item">
             <a href="#" class="nav-link text-danger" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-                <i class="fas fa-sign-out-alt"></i> تسجيل خروج
+                <i class="fas fa-sign-out-alt"></i> @lang('sidebar.logout')
             </a>
         </li>
     </ul>
@@ -135,31 +170,35 @@
 <!-- Sidebar -->
 <aside class="main-sidebar sidebar-dark-primary elevation-4">
     <a href="{{ route('dashboard') }}" class="brand-link text-center">
-        <img src="{{ asset('assets/logo.png') }}" alt="Logo" class="mb-2">
-        <span class="brand-text font-weight-light">نظام الحسابات</span>
+        @if($companyLogo)
+            <img src="{{ asset('storage/'.$companyLogo) }}" alt="Logo" class="mb-2">
+        @else
+            <img src="{{ asset('assets/logo.png') }}" alt="Logo" class="mb-2">
+        @endif
+        <span class="brand-text font-weight-light">{{ $systemName }}</span>
     </a>
 
     <div class="sidebar">
         <nav class="mt-2">
             <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
 
-                <li class="nav-header">لوحة التحكم</li>
+                <li class="nav-header">@lang('sidebar.dashboard')</li>
                 @if($isSuperAdmin || auth()->user()->can('عرض لوحة التحكم'))
                 <li class="nav-item">
                     <a href="{{ route('dashboard') }}" class="nav-link {{ Request::routeIs('dashboard') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-home"></i>
-                        <p>الرئيسية</p>
+                        <p>@lang('sidebar.home')</p>
                     </a>
                 </li>
                 @endif
 
                 @if($isSuperAdmin || auth()->user()->can('عرض الحسابات'))
-                <li class="nav-header">الحسابات</li>
+                <li class="nav-header">@lang('sidebar.accounts')</li>
                 <li class="nav-item has-treeview {{ Request::routeIs('accounts.*') ? 'menu-open' : '' }}">
                     <a href="#" class="nav-link {{ Request::routeIs('accounts.*') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-folder-open"></i>
                         <p>
-                            إدارة الحسابات
+                            @lang('sidebar.accounts_management')
                             <i class="right fas fa-angle-left"></i>
                         </p>
                     </a>
@@ -167,31 +206,31 @@
                         <li class="nav-item">
                             <a href="{{ route('accounts.index') }}" class="nav-link">
                                 <i class="far fa-circle nav-icon"></i>
-                                <p>عرض الفئات</p>
+                                <p>@lang('sidebar.categories_list')</p>
                             </a>
                         </li>
                         <li class="nav-item">
                             <a href="{{ route('accounts.real') }}" class="nav-link">
                                 <i class="far fa-circle nav-icon"></i>
-                                <p>عرض الحسابات</p>
+                                <p>@lang('sidebar.accounts_list')</p>
                             </a>
                         </li>
                         <li class="nav-item">
                             <a href="{{ route('accounts.createGroup') }}" class="nav-link">
                                 <i class="far fa-circle nav-icon"></i>
-                                <p>إضافة فئة جديدة</p>
+                                <p>@lang('sidebar.add_category')</p>
                             </a>
                         </li>
                         <li class="nav-item">
                             <a href="{{ route('accounts.createAccount') }}" class="nav-link">
                                 <i class="far fa-circle nav-icon"></i>
-                                <p>إضافة حساب جديد</p>
+                                <p>@lang('sidebar.add_account')</p>
                             </a>
                         </li>
                         <li class="nav-item">
                             <a href="{{ route('accounts.chart') }}" class="nav-link {{ Request::routeIs('accounts.chart') ? 'active' : '' }}">
-                                <i class="fas fa-sitemap nav-icon"></i>
-                                <p>شجرة الحسابات</p>
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>@lang('sidebar.chart_of_accounts')</p>
                             </a>
                         </li>
                     </ul>
@@ -199,32 +238,32 @@
                 @endif
 
                 @if($isSuperAdmin || auth()->user()->can('عرض السندات'))
-                <li class="nav-header">السندات المالية</li>
+                <li class="nav-header">@lang('sidebar.vouchers')</li>
                 <li class="nav-item has-treeview {{ Request::routeIs('vouchers.*') ? 'menu-open' : '' }}">
                     <a href="#" class="nav-link {{ Request::routeIs('vouchers.*') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-file-invoice"></i>
                         <p>
-                            إدارة السندات
+                            @lang('sidebar.vouchers_management')
                             <i class="right fas fa-angle-left"></i>
                         </p>
                     </a>
                     <ul class="nav nav-treeview">
                         <li class="nav-item">
-                            <a href="{{ route('vouchers.index', ['type' => 'receipt']) }}" class="nav-link">
+                            <a href="{{ Route::localizedRoute('vouchers.index', ['type' => 'receipt']) }}" class="nav-link">
                                 <i class="far fa-circle nav-icon"></i>
-                                <p>سندات القبض</p>
+                                <p>@lang('sidebar.receipt_vouchers')</p>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a href="{{ route('vouchers.index', ['type' => 'payment']) }}" class="nav-link">
+                            <a href="{{ Route::localizedRoute('vouchers.index', ['type' => 'payment']) }}" class="nav-link">
                                 <i class="far fa-circle nav-icon"></i>
-                                <p>سندات الصرف</p>
+                                <p>@lang('sidebar.payment_vouchers')</p>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a href="{{ route('vouchers.index', ['type' => 'transfer']) }}" class="nav-link">
+                            <a href="{{ Route::localizedRoute('vouchers.index', ['type' => 'transfer']) }}" class="nav-link">
                                 <i class="far fa-circle nav-icon"></i>
-                                <p>سندات التحويل</p>
+                                <p>@lang('sidebar.transfer_vouchers')</p>
                             </a>
                         </li>
                     </ul>
@@ -232,32 +271,32 @@
                 @endif
 
                 @if($isSuperAdmin || auth()->user()->can('عرض الحركات المالية'))
-                <li class="nav-header">الحركات المالية</li>
+                <li class="nav-header">@lang('sidebar.transactions')</li>
                 <li class="nav-item">
                     <a href="{{ route('transactions.index') }}" class="nav-link {{ Request::routeIs('transactions.*') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-exchange-alt"></i>
-                        <p>إدارة الحركات</p>
+                        <p>@lang('sidebar.transactions_management')</p>
                     </a>
                 </li>
                 @endif
 
                 @if($isSuperAdmin || auth()->user()->can('عرض العملات'))
-                <li class="nav-header">العملات</li>
+                <li class="nav-header">@lang('sidebar.currencies')</li>
                 <li class="nav-item">
                     <a href="{{ route('currencies.index') }}" class="nav-link {{ Request::routeIs('currencies.*') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-coins"></i>
-                        <p>إدارة العملات</p>
+                        <p>@lang('sidebar.currencies_management')</p>
                     </a>
                 </li>
                 @endif
 
                 @if($isSuperAdmin || auth()->user()->can('عرض الفواتير'))
-                <li class="nav-header">الفواتير</li>
+                <li class="nav-header">@lang('sidebar.invoices')</li>
                 <li class="nav-item has-treeview {{ Request::routeIs('invoices.*') || Request::routeIs('invoice-payments.*') ? 'menu-open' : '' }}">
                     <a href="#" class="nav-link {{ Request::routeIs('invoices.*') || Request::routeIs('invoice-payments.*') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-receipt"></i>
                         <p>
-                            إدارة الفواتير
+                            @lang('sidebar.invoices_management')
                             <i class="right fas fa-angle-left"></i>
                         </p>
                     </a>
@@ -265,19 +304,19 @@
                         <li class="nav-item">
                             <a href="{{ route('invoices.index') }}" class="nav-link">
                                 <i class="far fa-circle nav-icon"></i>
-                                <p>قائمة الفواتير</p>
+                                <p>@lang('sidebar.invoices_list')</p>
                             </a>
                         </li>
                         <li class="nav-item">
                             <a href="{{ route('invoices.create') }}" class="nav-link">
                                 <i class="far fa-circle nav-icon"></i>
-                                <p>فاتورة جديدة</p>
+                                <p>@lang('sidebar.new_invoice')</p>
                             </a>
                         </li>
                         <li class="nav-item">
                             <a href="{{ route('invoice-payments.create') }}" class="nav-link">
                                 <i class="far fa-circle nav-icon"></i>
-                                <p>سداد فاتورة</p>
+                                <p>@lang('sidebar.pay_invoice')</p>
                             </a>
                         </li>
                     </ul>
@@ -285,23 +324,23 @@
                 @endif
 
                 @if($isSuperAdmin || auth()->user()->can('عرض العملاء'))
-                <li class="nav-header">العملاء</li>
+                <li class="nav-header">@lang('sidebar.customers')</li>
                 <li class="nav-item has-treeview {{ Request::routeIs('customers.*') ? 'menu-open' : '' }}">
                     <a href="#" class="nav-link {{ Request::routeIs('customers.*') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-users"></i>
-                        <p>إدارة العملاء<i class="right fas fa-angle-left"></i></p>
+                        <p>@lang('sidebar.customers_management')<i class="right fas fa-angle-left"></i></p>
                     </a>
                     <ul class="nav nav-treeview">
                         <li class="nav-item">
                             <a href="{{ route('customers.index') }}" class="nav-link {{ Request::routeIs('customers.index') ? 'active' : '' }}">
                                 <i class="far fa-circle nav-icon"></i>
-                                <p>قائمة العملاء</p>
+                                <p>@lang('sidebar.customers_list')</p>
                             </a>
                         </li>
                         <li class="nav-item">
                             <a href="{{ route('customers.create') }}" class="nav-link {{ Request::routeIs('customers.create') ? 'active' : '' }}">
                                 <i class="far fa-circle nav-icon"></i>
-                                <p>عميل جديد</p>
+                                <p>@lang('sidebar.new_customer')</p>
                             </a>
                         </li>
                     </ul>
@@ -309,23 +348,23 @@
                 @endif
 
                 @if($isSuperAdmin || auth()->user()->can('عرض العناصر'))
-                <li class="nav-header">المنتجات/الخدمات</li>
+                <li class="nav-header">@lang('sidebar.items')</li>
                 <li class="nav-item has-treeview {{ Request::routeIs('items.*') ? 'menu-open' : '' }}">
                     <a href="#" class="nav-link {{ Request::routeIs('items.*') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-box-open"></i>
-                        <p>إدارة العناصر<i class="right fas fa-angle-left"></i></p>
+                        <p>@lang('sidebar.items_management')<i class="right fas fa-angle-left"></i></p>
                     </a>
                     <ul class="nav nav-treeview">
                         <li class="nav-item">
                             <a href="{{ route('items.index') }}" class="nav-link {{ Request::routeIs('items.index') ? 'active' : '' }}">
                                 <i class="far fa-circle nav-icon"></i>
-                                <p>قائمة العناصر</p>
+                                <p>@lang('sidebar.items_list')</p>
                             </a>
                         </li>
                         <li class="nav-item">
                             <a href="{{ route('items.create') }}" class="nav-link {{ Request::routeIs('items.create') ? 'active' : '' }}">
                                 <i class="far fa-circle nav-icon"></i>
-                                <p>عنصر جديد</p>
+                                <p>@lang('sidebar.new_item')</p>
                             </a>
                         </li>
                     </ul>
@@ -336,7 +375,13 @@
                 <li class="nav-item">
                     <a class="nav-link" href="{{ route('journal-entries.index') }}">
                         <i class="fas fa-book"></i>
-                        <span>القيود المحاسبية</span>
+                        <span>@lang('sidebar.accounting_entries')</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ route('ledger.index') }}">
+                        <i class="fas fa-book-open"></i>
+                        <span>@lang('sidebar.ledger')</span>
                     </a>
                 </li>
                 @endif
@@ -345,17 +390,17 @@
                 <li class="nav-item">
                     <a href="{{ route('salary-payments.index') }}" class="nav-link">
                         <i class="nav-icon fas fa-money-check-alt"></i>
-                        <p>دفعات الرواتب</p>
+                        <p>@lang('sidebar.salary_payments')</p>
                     </a>
                 </li>
                 @endif
 
                 @if($isSuperAdmin || auth()->user()->can('عرض الموظفين'))
-                <li class="nav-header">الموارد البشرية</li>
+                <li class="nav-header">@lang('sidebar.hr')</li>
                 <li class="nav-item">
                     <a href="{{ route('employees.index') }}" class="nav-link">
                         <i class="nav-icon fas fa-user-tie"></i>
-                        <p>الموظفون</p>
+                        <p>@lang('sidebar.employees')</p>
                     </a>
                 </li>
                 @endif
@@ -363,7 +408,7 @@
                 <li class="nav-item">
                     <a href="{{ route('salaries.index') }}" class="nav-link">
                         <i class="nav-icon fas fa-money-bill-wave"></i>
-                        <p>الرواتب</p>
+                        <p>@lang('sidebar.salaries')</p>
                     </a>
                 </li>
                 @endif
@@ -371,7 +416,7 @@
                 <li class="nav-item">
                     <a href="{{ route('salary-payments.index') }}" class="nav-link">
                         <i class="nav-icon fas fa-money-check-alt"></i>
-                        <p>دفعات الرواتب</p>
+                        <p>@lang('sidebar.salary_payments')</p>
                     </a>
                 </li>
                 @endif
@@ -379,17 +424,17 @@
                 <li class="nav-item">
                     <a href="{{ route('salary-batches.index') }}" class="nav-link">
                         <i class="nav-icon fas fa-file-invoice-dollar"></i>
-                        <p>كشوف الرواتب</p>
+                        <p>@lang('sidebar.salary_sheets')</p>
                     </a>
                 </li>
                 @endif
 
                 @if($isSuperAdmin || auth()->user()->can('عرض الأدوار'))
-                <li class="nav-header">إعدادات النظام</li>
+                <li class="nav-header">@lang('sidebar.system_settings')</li>
                 <li class="nav-item">
                     <a href="{{ route('admin.roles.index') }}" class="nav-link {{ Request::routeIs('admin.roles.*') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-user-shield"></i>
-                        <p>إدارة الأدوار</p>
+                        <p>@lang('sidebar.roles')</p>
                     </a>
                 </li>
                 @endif
@@ -397,7 +442,7 @@
                 <li class="nav-item">
                     <a href="{{ route('admin.permissions.index') }}" class="nav-link {{ Request::routeIs('admin.permissions.*') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-key"></i>
-                        <p>إدارة الصلاحيات</p>
+                        <p>@lang('sidebar.permissions')</p>
                     </a>
                 </li>
                 @endif
@@ -405,7 +450,7 @@
                 <li class="nav-item">
                     <a href="{{ route('admin.user-roles.index') }}" class="nav-link {{ Request::routeIs('admin.user-roles.*') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-users-cog"></i>
-                        <p>أدوار المستخدمين</p>
+                        <p>@lang('sidebar.user_roles')</p>
                     </a>
                 </li>
                 @endif
@@ -413,7 +458,7 @@
                 <li class="nav-item">
                     <a href="{{ route('admin.users.index') }}" class="nav-link {{ Request::routeIs('admin.users.*') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-users"></i>
-                        <p>إدارة المستخدمين</p>
+                        <p>@lang('sidebar.users')</p>
                     </a>
                 </li>
                 @endif
@@ -421,7 +466,49 @@
                 <li class="nav-item">
                     <a href="{{ route('accounting-settings.edit') }}" class="nav-link {{ Request::routeIs('accounting-settings.edit') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-cogs"></i>
-                        <p>إعدادات الحسابات</p>
+                        <p>@lang('sidebar.accounting_settings')</p>
+                    </a>
+                </li>
+                @endif
+                @if($isSuperAdmin || auth()->user()->can('إدارة إعدادات النظام'))
+                <li class="nav-item">
+                    <a href="{{ route('settings.system.edit') }}" class="nav-link {{ Request::routeIs('settings.system.edit') ? 'active' : '' }}">
+                        <i class="nav-icon fas fa-cog"></i>
+                        <p>@lang('sidebar.system_settings_page')</p>
+                    </a>
+                </li>
+                @endif
+
+                @if($isSuperAdmin || auth()->user()->can('عرض التقارير'))
+                <li class="nav-header">@lang('sidebar.reports')</li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ route('reports.trial-balance') }}">
+                        <i class="fas fa-balance-scale"></i>
+                        <span>@lang('sidebar.trial_balance')</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ route('reports.balance-sheet') }}">
+                        <i class="fas fa-file-invoice-dollar"></i>
+                        <span>@lang('sidebar.balance_sheet')</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ route('reports.income-statement') }}">
+                        <i class="fas fa-chart-line"></i>
+                        <span>@lang('sidebar.income_statement')</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ route('reports.payroll') }}">
+                        <i class="fas fa-money-check-alt"></i>
+                        <span>@lang('sidebar.payroll_report')</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ route('reports.expenses-revenues') }}">
+                        <i class="fas fa-receipt"></i>
+                        <span>@lang('sidebar.expenses_revenues')</span>
                     </a>
                 </li>
                 @endif
@@ -443,7 +530,7 @@
 
 <!-- Footer -->
 <footer class="main-footer text-center">
-    <strong>نظام الحسابات © {{ date('Y') }}</strong> | تصميم وبرمجة <a href="https://yourcompany.com" target="_blank">YourCompany</a>
+    <strong>{{ $systemName }} © {{ date('Y') }}</strong> | <span>{{ $companyName }}</span>
 </footer>
 
 </div>

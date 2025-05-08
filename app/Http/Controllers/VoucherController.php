@@ -19,9 +19,21 @@ class VoucherController extends Controller
        $this->middleware('can:حذف سند')->only(['destroy']);
    }
 
-   public function index()
+   public function index(Request $request)
    {
-       $vouchers = Voucher::latest()->paginate(20);
+       $query = Voucher::query();
+
+       if ($request->filled('type')) {
+           $query->where('type', $request->type);
+       }
+       if ($request->filled('date')) {
+           $query->whereDate('date', $request->date);
+       }
+       if ($request->filled('recipient_name')) {
+           $query->where('recipient_name', 'like', '%' . $request->recipient_name . '%');
+       }
+
+       $vouchers = $query->latest()->paginate(20);
        return view('vouchers.index', compact('vouchers'));
    }
 
@@ -37,7 +49,7 @@ class VoucherController extends Controller
    public function store(Request $request)
    {
        if (!auth()->check()) {
-           return redirect()->route('login')->with('error', 'يجب تسجيل الدخول لإنشاء السند.');
+           return redirect()->localizedRoute('login')->with('error', 'يجب تسجيل الدخول لإنشاء السند.');
        }
 
        $validated = $request->validate([
@@ -154,6 +166,18 @@ class VoucherController extends Controller
                        'currency' => $validated['currency'],
                        'exchange_rate' => $exchangeRate,
                    ];
+                   // إنشاء الحركات المالية
+                   $voucher->transactions()->create([
+                       'account_id' => $tx['account_id'],
+                       'target_account_id' => $tx['target_account_id'],
+                       'amount' => $tx['amount'],
+                       'currency' => $validated['currency'],
+                       'exchange_rate' => $exchangeRate,
+                       'date' => $voucher->date,
+                       'description' => $tx['description'] ?? null,
+                       'type' => 'receipt',
+                       'user_id' => auth()->id(),
+                   ]);
                } elseif (in_array($validated['type'], ['payment', 'withdraw'])) {
                    // صرف: الصندوق/البنك دائن، الحساب المستفيد مدين
                    $lines[] = [
@@ -172,6 +196,18 @@ class VoucherController extends Controller
                        'currency' => $validated['currency'],
                        'exchange_rate' => $exchangeRate,
                    ];
+                   // إنشاء الحركات المالية
+                   $voucher->transactions()->create([
+                       'account_id' => $tx['account_id'],
+                       'target_account_id' => $tx['target_account_id'],
+                       'amount' => -$tx['amount'],
+                       'currency' => $validated['currency'],
+                       'exchange_rate' => $exchangeRate,
+                       'date' => $voucher->date,
+                       'description' => $tx['description'] ?? null,
+                       'type' => 'payment',
+                       'user_id' => auth()->id(),
+                   ]);
                } elseif ($validated['type'] === 'transfer') {
                    // تحويل: الصندوق الأول دائن، الصندوق الثاني مدين
                    $lines[] = [
@@ -190,6 +226,7 @@ class VoucherController extends Controller
                        'currency' => $validated['currency'],
                        'exchange_rate' => $exchangeRate,
                    ];
+                   // إنشاء الحركات المالية (موجودة مسبقًا في transferStore)
                }
            }
            $totalDebit = collect($lines)->sum('debit');
@@ -210,11 +247,16 @@ class VoucherController extends Controller
            }
        });
 
-       return redirect()->route('vouchers.index')->with('success', 'تم إنشاء السند بنجاح.');
+       return redirect()->localizedRoute('vouchers.index')->with('success', 'تم إنشاء السند بنجاح.');
    }
 
-   public function show(Voucher $voucher)
+   public function show($voucher)
    {
+       // Si $voucher es un string (ID), buscamos el modelo
+       if (!$voucher instanceof Voucher) {
+           $voucher = Voucher::findOrFail($voucher);
+       }
+       
        $voucher->load('journalEntry.lines.account', 'user');
        return view('vouchers.show', compact('voucher'));
    }
@@ -356,7 +398,7 @@ class VoucherController extends Controller
                $journal->lines()->create($line);
            }
        });
-       return redirect()->route('vouchers.index')->with('success', 'تم تحديث السند بنجاح.');
+       return redirect()->localizedRoute('vouchers.index')->with('success', 'تم تحديث السند بنجاح.');
    }
 
    public function cancel(Voucher $voucher)
@@ -414,7 +456,7 @@ class VoucherController extends Controller
                }
            }
        });
-       return redirect()->route('vouchers.show', $voucher)->with('success', 'تم إلغاء السند وتوليد قيد عكسي بنجاح.');
+       return redirect()->localizedRoute('vouchers.show', ['voucher' => $voucher->id])->with('success', 'تم إلغاء السند وتوليد قيد عكسي بنجاح.');
    }
 
    private function generateVoucherNumber()
@@ -429,7 +471,18 @@ class VoucherController extends Controller
    public function transferCreate()
    {
        $cashAccounts = \App\Models\Account::where('is_cash_box', 1)->get();
-       return view('vouchers.transfer_create', compact('cashAccounts'));
+       // بناء exchangeRates ديناميكي من جدول العملات
+       $currencies = \App\Models\Currency::all();
+       $exchangeRates = [];
+       foreach ($currencies as $from) {
+           foreach ($currencies as $to) {
+               if ($from->code !== $to->code) {
+                   // سعر الصرف من عملة إلى أخرى = سعر عملة الهدف ÷ سعر عملة المصدر
+                   $exchangeRates[$from->code . '_' . $to->code] = $to->exchange_rate / $from->exchange_rate;
+               }
+           }
+       }
+       return view('vouchers.transfer_create', compact('cashAccounts', 'exchangeRates'));
    }
 
    /**
@@ -566,6 +619,26 @@ class VoucherController extends Controller
            $journal->save();
        });
 
-       return redirect()->route('vouchers.index', ['type' => 'transfer'])->with('success', 'تم إضافة سند التحويل بنجاح.');
+       return redirect()->localizedRoute('vouchers.index', ['type' => 'transfer'])->with('success', 'تم إضافة سند التحويل بنجاح.');
+   }
+
+   /**
+    * طباعة السند
+    */
+   public function print(Voucher $voucher)
+   {
+       $voucher = Voucher::with([
+           'user',
+           'journalEntry.lines.account'
+       ])->findOrFail($voucher->id);
+
+       $transactions = \App\Models\Transaction::where('voucher_id', $voucher->id)
+           ->with(['account', 'targetAccount'])
+           ->orderByDesc('id')
+           ->get();
+
+       // Debug: سجل النتائج في اللوج
+       \Log::info('Voucher ID: ' . $voucher->id);
+       return view('vouchers.print', compact('voucher', 'transactions'));
    }
 }

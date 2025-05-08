@@ -43,9 +43,9 @@
                 <td>{{ $branch->address }}</td>
                 <td>{{ $branch->phone }}</td>
                 <td>
-                  <a href="{{ route('branches.edit', $branch->id) }}" class="btn btn-sm btn-info">تعديل</a>
+                  <a href="{{ route('branches.edit'branch$branch->id) }}" class="btn btn-sm btn-info">تعديل</a>
 
-                  <form action="{{ route('branches.destroy', $branch->id) }}" method="POST" style="display:inline-block;">
+                  <form action="{{ route('branches.destroy'branch$branch->id) }}" method="POST" style="display:inline-block;">
                     @csrf
                     @method('DELETE')
                     <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('هل أنت متأكد من الحذف؟')">حذف</button>

@@ -4,7 +4,7 @@
 <div class="content-wrapper">
     <div class="content-header">
         <div class="container-fluid">
-            <h3 class="m-0">إضافة حساب فعلي جديد</h3>
+            <h3 class="m-0">@lang('messages.add_new_real_account')</h3>
         </div>
     </div>
 
@@ -12,18 +12,18 @@
         <div class="container-fluid">
             <div class="card card-info">
                 <div class="card-header">
-                    <h5 class="card-title">بيانات الحساب</h5>
+                    <h5 class="card-title">@lang('messages.real_account_data')</h5>
                 </div>
                 <form action="{{ route('accounts.storeAccount') }}" method="POST">
                     @csrf
                     <div class="card-body">
                         <div class="form-row">
                             <div class="form-group col-md-6">
-                                <label for="name">اسم الحساب</label>
+                                <label for="name">@lang('messages.account_name')</label>
                                 <input type="text" id="name" name="name" value="{{ old('name') }}" class="form-control" required>
                             </div>
                             <div class="form-group col-md-6">
-                                <label>رمز الحساب</label>
+                                <label>@lang('messages.account_code')</label>
                                 <input type="text" id="code" class="form-control" value="{{ $nextCode }}" disabled>
                                 <input type="hidden" id="codeInput" name="code" value="{{ $nextCode }}">
                             </div>
@@ -31,20 +31,20 @@
 
                         <div class="form-row">
                             <div class="form-group col-md-6">
-                                <label for="parent_id">اختر الفئة الرئيسية</label>
+                                <label for="parent_id">@lang('messages.select_parent_category')</label>
                                 <select id="parent_id" name="parent_id" class="form-control" required>
-                                    <option value="">-- اختر الفئة --</option>
+                                    <option value="">-- @lang('messages.select_category') --</option>
                                     @foreach ($categories as $cat)
                                         <option value="{{ $cat->id }}" {{ old('parent_id') == $cat->id ? 'selected' : '' }}>{{ $cat->name }}</option>
                                     @endforeach
                                 </select>
                             </div>
                             <div class="form-group col-md-6">
-                                <label for="nature">طبيعة الحساب</label>
+                                <label for="nature">@lang('messages.account_nature')</label>
                                 <select id="nature" name="nature" class="form-control" required>
-                                    <option value="">-- اختر نوع --</option>
-                                    <option value="debit" {{ old('nature')=='debit' ? 'selected' : '' }}>مدين</option>
-                                    <option value="credit" {{ old('nature')=='credit' ? 'selected' : '' }}>دائن</option>
+                                    <option value="">-- @lang('messages.select_account_nature') --</option>
+                                    <option value="debit" {{ old('nature')=='debit' ? 'selected' : '' }}>@lang('messages.debit_nature')</option>
+                                    <option value="credit" {{ old('nature')=='credit' ? 'selected' : '' }}>@lang('messages.credit_nature')</option>
                                 </select>
                             </div>
                         </div>
@@ -54,13 +54,13 @@
                             <input type="hidden" name="is_cash_box" value="0">
                             <input type="checkbox" name="is_cash_box" value="1" class="form-check-input" id="cashBoxCheck"
                                 {{ old('is_cash_box') ? 'checked' : '' }}>
-                            <label class="form-check-label" for="cashBoxCheck">هل هو صندوق نقدي؟</label>
+                            <label class="form-check-label" for="cashBoxCheck">@lang('messages.is_cash_box')</label>
                         </div>
 
                         <div class="form-group">
-                            <label for="currency">عملة الحساب</label>
+                            <label for="currency">@lang('messages.account_currency')</label>
                             <select name="currency" id="currency" class="form-control select2" required>
-                                <option value="" disabled {{ old('currency') ? '' : 'selected' }}>-- اختر العملة --</option>
+                                <option value="" disabled {{ old('currency') ? '' : 'selected' }}>-- @lang('messages.select_currency') --</option>
                                 @foreach($currencies as $cur)
                                     <option value="{{ $cur->code }}" {{ old('currency') == $cur->code ? 'selected' : '' }}>{{ $cur->code }} - {{ $cur->name }}</option>
                                 @endforeach
@@ -79,8 +79,8 @@
 
                     </div>
                     <div class="card-footer text-right">
-                        <button type="submit" class="btn btn-success">حفظ</button>
-                        <a href="{{ route('accounts.real') }}" class="btn btn-secondary">إلغاء</a>
+                        <button type="submit" class="btn btn-success">@lang('messages.save')</button>
+                        <a href="{{ route('accounts.real') }}" class="btn btn-secondary">@lang('messages.cancel')</a>
                     </div>
                 </form>
             </div>

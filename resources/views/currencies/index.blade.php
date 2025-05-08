@@ -6,12 +6,12 @@
     <div class="container-fluid">
       <div class="row mb-2">
         <div class="col-sm-6">
-          <h1 class="m-0">إدارة العملات</h1>
+          <h1 class="m-0">@lang('messages.currencies_management')</h1>
         </div>
         <div class="col-sm-6 text-left">
           @php $isSuperAdmin = auth()->check() && auth()->user()->isSuperAdmin(); @endphp
           @if($isSuperAdmin || auth()->user()->can('إضافة عملة'))
-          <a href="{{ route('currencies.create') }}" class="btn btn-primary">إضافة عملة جديدة</a>
+          <a href="{{ route('currencies.create') }}" class="btn btn-primary">@lang('messages.add_new_currency')</a>
           @endif
         </div>
       </div>
@@ -26,7 +26,7 @@
 
       <div class="card">
         <div class="card-header">
-          <h3 class="card-title">قائمة العملات</h3>
+          <h3 class="card-title">@lang('messages.currencies_list')</h3>
           <div class="card-tools">
             <button type="button" class="btn btn-tool" data-card-widget="collapse"><i class="fas fa-minus"></i></button>
             <button type="button" class="btn btn-tool" data-card-widget="remove"><i class="fas fa-times"></i></button>
@@ -37,12 +37,12 @@
             <thead>
               <tr>
                 <th>#</th>
-                <th>الاسم</th>
-                <th>الرمز</th>
-                <th>الرمز النصي</th>
-                <th>سعر الصرف</th>
-                <th>الافتراضية</th>
-                <th>الإجراءات</th>
+                <th>@lang('messages.currency_name')</th>
+                <th>@lang('messages.currency_code')</th>
+                <th>@lang('messages.currency_symbol')</th>
+                <th>@lang('messages.exchange_rate')</th>
+                <th>@lang('messages.is_default_currency')</th>
+                <th>@lang('messages.actions')</th>
               </tr>
             </thead>
             <tbody>
@@ -55,21 +55,21 @@
                   <td>{{ $currency->exchange_rate }}</td>
                   <td>
                     @if($currency->is_default)
-                      <span class="badge badge-success">نعم</span>
+                      <span class="badge badge-success">@lang('messages.default_yes')</span>
                     @else
-                      <span class="badge badge-secondary">لا</span>
+                      <span class="badge badge-secondary">@lang('messages.default_no')</span>
                     @endif
                   </td>
                   <td>
                     <div class="btn-group btn-group-sm" role="group">
                       @if($isSuperAdmin || auth()->user()->can('عرض العملات'))
-                      <a href="{{ route('currencies.show', $currency) }}" class="btn btn-outline-info" title="عرض"><i class="fas fa-eye"></i></a>
+                      <a href="{{ route('currencies.show'currency$currency) }}" class="btn btn-outline-info" title="@lang('messages.view')"><i class="fas fa-eye"></i></a>
                       @endif
                       @if($isSuperAdmin || auth()->user()->can('تعديل عملة'))
-                      <a href="{{ route('currencies.edit', $currency) }}" class="btn btn-outline-primary" title="تعديل"><i class="fas fa-edit"></i></a>
+                      <a href="{{ route('currencies.edit'currency$currency) }}" class="btn btn-outline-primary" title="@lang('messages.edit')"><i class="fas fa-edit"></i></a>
                       @endif
                       @if($isSuperAdmin || auth()->user()->can('حذف عملة'))
-                      <form action="{{ route('currencies.destroy', $currency) }}" method="POST" onsubmit="return confirm('هل أنت متأكد من الحذف؟');">@csrf @method('DELETE')<button type="submit" class="btn btn-outline-danger" title="حذف"><i class="fas fa-trash"></i></button></form>
+                      <form action="{{ route('currencies.destroy'currency$currency) }}" method="POST" onsubmit="return confirm('@lang('messages.delete_currency_confirm')');">@csrf @method('DELETE')<button type="submit" class="btn btn-outline-danger" title="@lang('messages.delete')"><i class="fas fa-trash"></i></button></form>
                       @endif
                     </div>
                   </td>

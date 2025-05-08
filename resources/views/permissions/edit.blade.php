@@ -19,7 +19,7 @@
       <div class="card-header">
         <h3 class="card-title">تعديل بيانات الصلاحية</h3>
       </div>
-      <form action="{{ route('admin.permissions.update', $permission) }}" method="POST">
+      <form action="{{ route('admin.permissions.update'permission$permission) }}" method="POST">
         @csrf
         @method('PUT')
         <div class="card-body">

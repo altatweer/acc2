@@ -4,7 +4,7 @@
 <div class="content-wrapper">
     <div class="content-header">
         <div class="container-fluid">
-            <h3>إضافة فئة رئيسية أو فرعية</h3>
+            <h3>@lang('messages.add_main_sub_category')</h3>
         </div>
     </div>
 
@@ -13,6 +13,7 @@
 
             @if ($errors->any())
                 <div class="alert alert-danger">
+                    <strong>@lang('messages.validation_errors')</strong>
                     <ul>
                         @foreach ($errors->all() as $error)
                             <li>{{ $error }}</li>
@@ -25,40 +26,40 @@
                 @csrf
 
                 <div class="form-group">
-                    <label>اسم الفئة</label>
+                    <label>@lang('messages.category_name')</label>
                     <input type="text" name="name" class="form-control" required>
                 </div>
 
                 <div class="form-group">
-                    <label>رمز الفئة</label>
+                    <label>@lang('messages.category_code')</label>
                     <input type="text" id="groupCode" class="form-control" value="{{ $nextCode }}" disabled>
                     <input type="hidden" id="groupCodeInput" name="code" value="{{ $nextCode }}">
                 </div>
 
                 <div class="form-group">
-                    <label>نوع الحساب</label>
+                    <label>@lang('messages.account_type')</label>
                     <select name="type" id="type" class="form-control" required>
-                        <option value="">-- اختر --</option>
-                        <option value="asset">أصول</option>
-                        <option value="liability">خصوم</option>
-                        <option value="revenue">إيرادات</option>
-                        <option value="expense">مصروفات</option>
-                        <option value="equity">حقوق ملكية</option>
+                        <option value="">@lang('messages.select_option')</option>
+                        <option value="asset">@lang('messages.type_asset')</option>
+                        <option value="liability">@lang('messages.type_liability')</option>
+                        <option value="revenue">@lang('messages.type_revenue')</option>
+                        <option value="expense">@lang('messages.type_expense')</option>
+                        <option value="equity">@lang('messages.type_equity')</option>
                     </select>
                 </div>
 
                 <div class="form-group">
-                    <label>الفئة الرئيسية (اختياري)</label>
+                    <label>@lang('messages.parent_category_optional')</label>
                     <select name="parent_id" id="parent_id" class="form-control">
-                        <option value="">-- لا شيء --</option>
+                        <option value="">@lang('messages.none_option')</option>
                         @foreach ($categories as $cat)
                             <option value="{{ $cat->id }}">{{ $cat->name }}</option>
                         @endforeach
                     </select>
                 </div>
 
-                <button type="submit" class="btn btn-success">حفظ</button>
-                <a href="{{ route('accounts.index') }}" class="btn btn-secondary">إلغاء</a>
+                <button type="submit" class="btn btn-success">@lang('messages.save')</button>
+                <a href="{{ route('accounts.index') }}" class="btn btn-secondary">@lang('messages.cancel')</a>
             </form>
         </div>
     </section>

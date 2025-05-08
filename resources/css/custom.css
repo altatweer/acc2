@@ -183,6 +183,7 @@ h1, h2, h3, h4, h5, h6 {
 .nav-sidebar .nav-link {
     color: #c2c7d0;
     transition: background 0.2s, color 0.2s;
+    font-size: 0.93em;
 }
 .nav-sidebar .nav-link:hover {
     background: #007bff22;

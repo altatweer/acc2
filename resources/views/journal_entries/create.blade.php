@@ -2,35 +2,35 @@
 
 @section('content')
 <div class="container-fluid">
-    <h1 class="mb-4">إضافة قيد محاسبي يدوي</h1>
+    <h1 class="mb-4">@lang('messages.add_manual_entry')</h1>
     <form action="{{ route('journal-entries.store') }}" method="POST" id="journalForm">
         @csrf
         <div class="card mb-3">
             <div class="card-body">
                 <div class="form-row">
                     <div class="form-group col-md-3">
-                        <label>التاريخ</label>
+                        <label>@lang('messages.date')</label>
                         <input type="date" name="date" class="form-control" value="{{ old('date', date('Y-m-d')) }}" required>
                     </div>
                     <div class="form-group col-md-9">
-                        <label>الوصف العام</label>
+                        <label>@lang('messages.description')</label>
                         <input type="text" name="description" class="form-control" value="{{ old('description') }}">
                     </div>
                 </div>
             </div>
         </div>
         <div class="card">
-            <div class="card-header"><strong>تفاصيل السطور</strong></div>
+            <div class="card-header"><strong>@lang('messages.lines')</strong></div>
             <div class="card-body p-0">
                 <table class="table table-bordered mb-0" id="linesTable">
                     <thead>
                         <tr>
-                            <th>الحساب</th>
-                            <th>الوصف</th>
-                            <th>مدين</th>
-                            <th>دائن</th>
-                            <th>العملة</th>
-                            <th>سعر الصرف</th>
+                            <th>@lang('messages.account')</th>
+                            <th>@lang('messages.description')</th>
+                            <th>@lang('messages.debit')</th>
+                            <th>@lang('messages.credit')</th>
+                            <th>@lang('messages.currency')</th>
+                            <th>@lang('messages.exchange_rate')</th>
                             <th></th>
                         </tr>
                     </thead>
@@ -71,8 +71,8 @@
                 </table>
             </div>
             <div class="card-footer text-right">
-                <button type="button" class="btn btn-primary" id="addLine">إضافة سطر</button>
-                <button type="submit" class="btn btn-success">حفظ القيد</button>
+                <button type="button" class="btn btn-primary" id="addLine">@lang('messages.add_line')</button>
+                <button type="submit" class="btn btn-success">@lang('messages.save_entry')</button>
             </div>
         </div>
     </form>
@@ -105,7 +105,7 @@ $(function(){
         $('.debit').each(function(){ debit += parseFloat($(this).val())||0; });
         $('.credit').each(function(){ credit += parseFloat($(this).val())||0; });
         if (debit.toFixed(2) !== credit.toFixed(2)) {
-            alert('يجب أن يتساوى مجموع المدين مع مجموع الدائن!');
+            alert("{{ __('messages.debit_credit_must_equal') }}");
             return false;
         }
     });

@@ -4,7 +4,7 @@
 <div class="content-wrapper">
   <div class="content-header">
     <div class="container-fluid">
-      <h1 class="m-0">عنصر جديد</h1>
+      <h1 class="m-0">@lang('messages.new_item')</h1>
     </div>
   </div>
 
@@ -12,7 +12,7 @@
     <div class="container-fluid">
       <div class="card card-primary">
         <div class="card-header">
-          <h3 class="card-title">إضافة عنصر جديد</h3>
+          <h3 class="card-title">@lang('messages.add_new_item')</h3>
         </div>
         <form action="{{ route('items.store') }}" method="POST">
           @csrf
@@ -27,29 +27,29 @@
               </div>
             @endif
             <div class="form-group">
-              <label>الاسم</label>
+              <label>@lang('messages.item_name')</label>
               <input type="text" name="name" value="{{ old('name') }}" class="form-control" required>
             </div>
             <div class="form-group">
-              <label>النوع</label>
+              <label>@lang('messages.item_type')</label>
               <select name="type" class="form-control" required>
-                <option value="" disabled selected>-- اختر النوع --</option>
-                <option value="product" {{ old('type')=='product'?'selected':'' }}>منتج</option>
-                <option value="service" {{ old('type')=='service'?'selected':'' }}>خدمة</option>
+                <option value="" disabled selected>-- @lang('messages.select_item_type') --</option>
+                <option value="product" {{ old('type')=='product'?'selected':'' }}>@lang('messages.product')</option>
+                <option value="service" {{ old('type')=='service'?'selected':'' }}>@lang('messages.service')</option>
               </select>
             </div>
             <div class="form-group">
-              <label>سعر الوحدة</label>
+              <label>@lang('messages.unit_price')</label>
               <input type="number" name="unit_price" value="{{ old('unit_price') }}" step="0.01" class="form-control" required>
             </div>
             <div class="form-group">
-              <label>الوصف</label>
+              <label>@lang('messages.item_description')</label>
               <textarea name="description" class="form-control">{{ old('description') }}</textarea>
             </div>
           </div>
           <div class="card-footer text-right">
-            <button type="submit" class="btn btn-success">حفظ</button>
-            <a href="{{ route('items.index') }}" class="btn btn-secondary">إلغاء</a>
+            <button type="submit" class="btn btn-success">@lang('messages.save')</button>
+            <a href="{{ route('items.index') }}" class="btn btn-secondary">@lang('messages.cancel')</a>
           </div>
         </form>
       </div>

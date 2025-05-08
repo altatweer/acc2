@@ -83,6 +83,9 @@ class ItemController extends Controller
      */
     public function destroy(Item $item)
     {
+        if ($item->invoiceItems()->exists()) {
+            return redirect()->route('items.index')->with('error', 'لا يمكن حذف الصنف لوجود فواتير مرتبطة به.');
+        }
         $item->delete();
         return redirect()->route('items.index')->with('success', 'تم حذف العنصر بنجاح.');
     }

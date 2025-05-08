@@ -3,7 +3,7 @@
 @section('content')
 <div class="content-header">
    <div class="container-fluid">
-       <h1 class="m-0">الحركات المالية (من القيود المحاسبية)</h1>
+       <h1 class="m-0">@lang('messages.transactions_from_journal')</h1>
    </div>
 </div>
 <section class="content">
@@ -22,14 +22,14 @@
                    <thead>
                        <tr>
                            <th>#</th>
-                           <th>تاريخ القيد</th>
-                           <th>رقم القيد</th>
-                           <th>الحساب</th>
-                           <th>مدين</th>
-                           <th>دائن</th>
-                           <th>العملة</th>
-                           <th>الوصف</th>
-                           <th>الإجراءات</th>
+                           <th>@lang('messages.entry_date')</th>
+                           <th>@lang('messages.entry_number')</th>
+                           <th>@lang('messages.account')</th>
+                           <th>@lang('messages.debit')</th>
+                           <th>@lang('messages.credit')</th>
+                           <th>@lang('messages.currency')</th>
+                           <th>@lang('messages.description')</th>
+                           <th>@lang('messages.actions')</th>
                        </tr>
                    </thead>
                    <tbody>
@@ -51,7 +51,7 @@
                    </tbody>
                </table>
 
-               {{ $lines->links() }}
+               {{ $lines->appends(['lang' => app()->getLocale()])->links() }}
 
            </div>
        </div>

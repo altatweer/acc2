@@ -70,6 +70,11 @@ class EmployeeController extends Controller
 
     public function destroy(Employee $employee)
     {
+        $hasSalaries = $employee->salaries()->exists();
+        $hasSalaryPayments = $employee->salaryPayments()->exists();
+        if ($hasSalaries || $hasSalaryPayments) {
+            return redirect()->route('employees.index')->with('error', 'لا يمكن حذف الموظف لوجود رواتب أو دفعات رواتب مرتبطة به.');
+        }
         $employee->delete();
         return redirect()->route('employees.index')->with('success', 'تم حذف الموظف بنجاح.');
     }

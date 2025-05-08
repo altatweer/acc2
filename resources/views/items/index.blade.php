@@ -5,11 +5,11 @@
     <div class="col-12">
         <div class="card card-primary card-outline shadow-sm">
             <div class="card-header">
-                <h3 class="card-title">قائمة العناصر</h3>
+                <h3 class="card-title">@lang('messages.items_list')</h3>
                 <div class="card-tools">
                     @php $isSuperAdmin = auth()->check() && auth()->user()->isSuperAdmin(); @endphp
                     @if($isSuperAdmin || auth()->user()->can('إضافة عنصر'))
-                    <a href="{{ route('items.create') }}" class="btn btn-sm btn-success">عنصر جديد</a>
+                    <a href="{{ route('items.create') }}" class="btn btn-sm btn-success">@lang('messages.new_item')</a>
                     @endif
                     <button type="button" class="btn btn-tool" data-card-widget="collapse"><i class="fas fa-minus"></i></button>
                     <button type="button" class="btn btn-tool" data-card-widget="remove"><i class="fas fa-times"></i></button>
@@ -19,7 +19,7 @@
                 @if(session('success'))
                     <div class="alert alert-success alert-dismissible fade show" role="alert">
                         {{ session('success') }}
-                        <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <button type="button" class="close" data-dismiss="alert" aria-label="@lang('messages.close')"><span aria-hidden="true">&times;</span></button>
                     </div>
                 @endif
                 <div class="table-responsive">
@@ -27,11 +27,11 @@
                         <thead>
                             <tr>
                                 <th>#</th>
-                                <th>الاسم</th>
-                                <th>النوع</th>
-                                <th>سعر الوحدة</th>
-                                <th>الوصف</th>
-                                <th>الإجراءات</th>
+                                <th>@lang('messages.item_name')</th>
+                                <th>@lang('messages.item_type')</th>
+                                <th>@lang('messages.unit_price')</th>
+                                <th>@lang('messages.item_description')</th>
+                                <th>@lang('messages.actions')</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -39,22 +39,22 @@
                             <tr>
                                 <td>{{ $items->firstItem() + $loop->index }}</td>
                                 <td>{{ $item->name }}</td>
-                                <td>{{ $item->type == 'product' ? 'منتج' : 'خدمة' }}</td>
+                                <td>{{ $item->type == 'product' ? __('messages.product') : __('messages.service') }}</td>
                                 <td>{{ number_format($item->unit_price,2) }}</td>
                                 <td>{{ $item->description }}</td>
                                 <td>
                                     <div class="btn-group btn-group-sm" role="group">
                                         @if($isSuperAdmin || auth()->user()->can('عرض العناصر'))
-                                        <a href="{{ route('items.show', $item) }}" class="btn btn-outline-info" title="عرض"><i class="fas fa-eye"></i></a>
+                                        <a href="{{ Route::localizedRoute('items.show', ['item' => $item, ]) }}" class="btn btn-outline-info" title="@lang('messages.view')"><i class="fas fa-eye"></i></a>
                                         @endif
                                         @if($isSuperAdmin || auth()->user()->can('تعديل عنصر'))
-                                        <a href="{{ route('items.edit', $item) }}" class="btn btn-outline-primary" title="تعديل"><i class="fas fa-edit"></i></a>
+                                        <a href="{{ Route::localizedRoute('items.edit', ['item' => $item, ]) }}" class="btn btn-outline-primary" title="@lang('messages.edit')"><i class="fas fa-edit"></i></a>
                                         @endif
                                         @if($isSuperAdmin || auth()->user()->can('حذف عنصر'))
-                                        <form action="{{ route('items.destroy', $item) }}" method="POST" onsubmit="return confirm('هل أنت متأكد؟');">
+                                        <form action="{{ Route::localizedRoute('items.destroy', ['item' => $item, ]) }}" method="POST" onsubmit="return confirm('@lang('messages.delete_item_confirm')');">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="btn btn-outline-danger" title="حذف"><i class="fas fa-trash"></i></button>
+                                            <button type="submit" class="btn btn-outline-danger" title="@lang('messages.delete')"><i class="fas fa-trash"></i></button>
                                         </form>
                                         @endif
                                     </div>
@@ -66,8 +66,8 @@
                 </div>
             </div>
             <div class="card-footer clearfix d-flex justify-content-between align-items-center">
-                <div>إجمالي العناصر: <strong>{{ $items->total() }}</strong></div>
-                <div>{{ $items->links() }}</div>
+                <div>@lang('messages.total_items') <strong>{{ $items->total() }}</strong></div>
+                <div>{{ $items->appends(['lang' => app()->getLocale()])->links() }}</div>
             </div>
         </div>
     </div>

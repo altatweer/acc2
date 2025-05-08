@@ -1,10 +1,19 @@
 @extends('layouts.app')
 
 @section('content')
+@php
+    use App\Models\Setting;
+    $companyLogo = Setting::get('company_logo');
+    $companyName = Setting::get('company_name', '');
+@endphp
 <div class="container print-container">
     <div class="print-header text-center mb-4">
-        <img src="{{ asset('assets/logo.png') }}" alt="Logo" style="height:60px;">
-        <h2 class="mt-2">{{ config('app.name', 'نظام المحاسبة') }}</h2>
+        @if($companyLogo)
+            <img src="{{ asset('storage/'.$companyLogo) }}" alt="Logo" style="height:60px;">
+        @else
+            <img src="{{ asset('assets/logo.png') }}" alt="Logo" style="height:60px;">
+        @endif
+        <h2 class="mt-2">{{ $companyName }}</h2>
         <div class="text-muted">تاريخ الطباعة: {{ now()->format('Y-m-d H:i') }}</div>
         <hr>
     </div>
@@ -21,9 +30,34 @@
 @push('styles')
 <style>
 @media print {
-    body * { visibility: hidden; }
-    .print-container, .print-container * { visibility: visible; }
-    .print-container { position: absolute; left: 0; top: 0; width: 100%; background: #fff; }
+    html, body {
+        width: 100vw !important;
+        min-width: 100vw !important;
+        max-width: 100vw !important;
+        height: 100vh !important;
+        min-height: 100vh !important;
+        max-height: 100vh !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #fff !important;
+        box-sizing: border-box !important;
+    }
+    .print-container, .print-container * {
+        visibility: visible;
+    }
+    .print-container,
+    .print-body,
+    .container,
+    .row,
+    [class^="col-"],
+    .card {
+        width: 100vw !important;
+        max-width: 100vw !important;
+        min-width: 100vw !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        box-sizing: border-box !important;
+    }
     .print-header, .print-footer { page-break-inside: avoid; }
     .no-print { display: none !important; }
 }

@@ -5,10 +5,10 @@
   <div class="container-fluid">
     <div class="row mb-2">
       <div class="col-sm-6">
-        <h1 class="m-0">إنشاء فاتورة جديدة</h1>
+        <h1 class="m-0">@lang('messages.create_invoice')</h1>
       </div>
       <div class="col-sm-6 text-left">
-        <a href="{{ route('invoices.index') }}" class="btn btn-secondary">العودة إلى الفواتير</a>
+        <a href="{{ route('invoices.index') }}" class="btn btn-secondary">@lang('messages.back_to_invoices')</a>
       </div>
     </div>
   </div>
@@ -19,7 +19,7 @@
       <div class="col-lg-10 offset-lg-1 col-md-12">
         <div class="card card-primary">
           <div class="card-header">
-            <h3 class="card-title">بيانات الفاتورة</h3>
+            <h3 class="card-title">@lang('messages.invoice_data')</h3>
           </div>
           <form action="{{ route('invoices.store') }}" method="POST">
             @csrf
@@ -36,13 +36,13 @@
 
               <div class="form-row">
                 <div class="form-group col-md-6">
-                  <label>رقم الفاتورة (اختياري)</label>
+                  <label>@lang('messages.invoice_number_optional')</label>
                   <input type="text" name="invoice_number" value="{{ old('invoice_number') }}" class="form-control">
                 </div>
                 <div class="form-group col-md-6">
-                  <label>العميل</label>
+                  <label>@lang('messages.customer')</label>
                   <select name="customer_id" class="form-control select2" required>
-                    <option value="" disabled selected>-- اختر العميل --</option>
+                    <option value="" disabled selected>-- @lang('messages.select_customer') --</option>
                     @foreach($customers as $cust)
                       <option value="{{ $cust->id }}" {{ old('customer_id') == $cust->id ? 'selected' : '' }}>{{ $cust->name }}</option>
                     @endforeach
@@ -52,20 +52,20 @@
 
               <div class="form-row">
                 <div class="form-group col-md-4">
-                  <label>تاريخ الفاتورة</label>
+                  <label>@lang('messages.invoice_date')</label>
                   <input type="date" name="date" class="form-control" value="{{ old('date', date('Y-m-d')) }}" required>
                 </div>
                 <div class="form-group col-md-4">
-                  <label>العملة</label>
+                  <label>@lang('messages.currency')</label>
                   <select name="currency" id="currency" class="form-control select2" required>
-                    <option value="" disabled {{ old('currency') ? '' : 'selected' }}>-- اختر العملة --</option>
+                    <option value="" disabled {{ old('currency') ? '' : 'selected' }}>-- @lang('messages.select_currency') --</option>
                     @foreach($currencies as $cur)
                       <option value="{{ $cur->code }}" {{ old('currency') == $cur->code ? 'selected' : '' }}>{{ $cur->code }} - {{ $cur->name }}</option>
                     @endforeach
                   </select>
                 </div>
                 <div class="form-group col-md-4">
-                  <label>سعر الصرف</label>
+                  <label>@lang('messages.exchange_rate')</label>
                   <input type="text" id="exchange_rate_display" class="form-control" disabled>
                   <input type="hidden" name="exchange_rate" id="exchange_rate">
                 </div>
@@ -74,27 +74,27 @@
               <!-- Invoice Total Summary -->
               <div class="row mb-3">
                 <div class="col text-right">
-                  <h4>إجمالي الفاتورة: <span id="invoice_total_display" class="badge badge-primary p-2" style="font-size:1.2rem;">0.00</span></h4>
+                  <h4>@lang('messages.invoice_total'): <span id="invoice_total_display" class="badge badge-primary p-2" style="font-size:1.2rem;">0.00</span></h4>
                 </div>
               </div>
               <input type="hidden" name="total" id="invoice_total" value="0.00">
-              <h5 class="mb-3">بنود الفاتورة</h5>
+              <h5 class="mb-3">@lang('messages.invoice_items')</h5>
               <div class="table-responsive">
                 <table class="table table-bordered" id="invoice_items_table">
                   <thead>
                     <tr>
-                      <th>الصنف</th>
-                      <th>الكمية</th>
-                      <th>السعر الفردي</th>
-                      <th>الإجمالي</th>
-                      <th width="100">إجراء</th>
+                      <th>@lang('messages.item')</th>
+                      <th>@lang('messages.quantity')</th>
+                      <th>@lang('messages.unit_price')</th>
+                      <th>@lang('messages.line_total')</th>
+                      <th width="100">@lang('messages.action')</th>
                     </tr>
                   </thead>
                   <tbody id="invoice_items_body">
                     <tr>
                       <td>
                         <select name="items[0][item_id]" class="form-control select2 items-select" required>
-                          <option value="" disabled selected>-- اختر الصنف --</option>
+                          <option value="" disabled selected>-- @lang('messages.select_item') --</option>
                           @foreach($items as $itm)
                             <option value="{{ $itm->id }}" data-price="{{ $itm->unit_price }}">{{ $itm->name }} ({{ $itm->type }})</option>
                           @endforeach
@@ -108,11 +108,11 @@
                   </tbody>
                 </table>
               </div>
-              <button type="button" id="add_item" class="btn btn-secondary btn-sm mb-3"><i class="fas fa-plus"></i> إضافة بند</button>
+              <button type="button" id="add_item" class="btn btn-secondary btn-sm mb-3"><i class="fas fa-plus"></i> @lang('messages.add_item')</button>
             </div>
 
             <div class="card-footer text-right">
-              <button type="submit" class="btn btn-primary">حفظ الفاتورة</button>
+              <button type="submit" class="btn btn-primary">@lang('messages.save_invoice')</button>
             </div>
           </form>
         </div>

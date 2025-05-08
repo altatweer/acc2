@@ -58,7 +58,9 @@ class CustomerController extends Controller
      */
     public function show(Customer $customer)
     {
-        return view('customers.show', compact('customer'));
+        $balance = $customer->account ? $customer->account->balance() : 0;
+        $invoices = $customer->invoices()->orderByDesc('date')->get();
+        return view('customers.show', compact('customer', 'balance', 'invoices'));
     }
 
     /**
@@ -91,6 +93,12 @@ class CustomerController extends Controller
      */
     public function destroy(Customer $customer)
     {
+        // منع الحذف إذا كان هناك فواتير أو حركات مالية
+        $hasInvoices = $customer->invoices()->exists();
+        $hasAccountTransactions = $customer->account && ($customer->account->journalEntryLines()->exists() || $customer->account->transactions()->exists());
+        if ($hasInvoices || $hasAccountTransactions) {
+            return redirect()->route('customers.index')->with('error', 'لا يمكن حذف العميل لوجود حركات أو فواتير مرتبطة به.');
+        }
         $customer->delete();
         return redirect()->route('customers.index')->with('success', 'تم حذف العميل بنجاح.');
     }

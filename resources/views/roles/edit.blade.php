@@ -5,10 +5,10 @@
   <div class="container-fluid">
     <div class="row mb-2">
       <div class="col-sm-6">
-        <h1 class="m-0">تعديل الدور: {{ $role->name }}</h1>
+        <h1 class="m-0">@lang('messages.edit_role'): {{ $role->name }}</h1>
       </div>
       <div class="col-sm-6 text-left">
-        <a href="{{ route('admin.roles.index') }}" class="btn btn-secondary">رجوع</a>
+        <a href="{{ route('admin.roles.index') }}" class="btn btn-secondary">@lang('messages.back')</a>
       </div>
     </div>
   </div>
@@ -17,18 +17,18 @@
   <div class="container-fluid">
     <div class="card card-warning">
       <div class="card-header">
-        <h3 class="card-title">تعديل بيانات الدور</h3>
+        <h3 class="card-title">@lang('messages.role_data')</h3>
       </div>
-      <form action="{{ route('admin.roles.update', $role->id) }}" method="POST">
+      <form action="{{ Route::localizedRoute('admin.roles.update', ['role' => $role->id, ]) }}" method="POST">
         @csrf
         @method('PUT')
         <div class="card-body">
           <div class="form-group">
-            <label>اسم الدور</label>
+            <label>@lang('messages.role_name')</label>
             <input type="text" name="name" class="form-control" required value="{{ old('name', $role->name) }}">
           </div>
           <div class="form-group">
-            <label>الصلاحيات</label>
+            <label>@lang('messages.permissions')</label>
             @php
               $permissionsBySection = [
                 'المستخدمين' => ['عرض المستخدمين', 'إضافة مستخدم', 'تعديل مستخدم', 'حذف مستخدم'],
@@ -69,7 +69,7 @@
         </div>
         <div class="card-footer text-right">
           @can('edit roles')
-          <button type="submit" class="btn btn-warning">حفظ التعديلات</button>
+          <button type="submit" class="btn btn-warning">@lang('messages.save_changes')</button>
           @endcan
         </div>
       </form>

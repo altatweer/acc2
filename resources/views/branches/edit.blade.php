@@ -21,7 +21,7 @@
           <h3 class="card-title">بيانات الفرع</h3>
         </div>
 
-        <form action="{{ route('branches.update', $branch->id) }}" method="POST">
+        <form action="{{ route('branches.update'branch$branch->id) }}" method="POST">
           @csrf
           @method('PUT')
           <div class="card-body">

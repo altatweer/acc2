@@ -4,7 +4,7 @@
 <div class="content-wrapper">
     <div class="content-header">
         <div class="container-fluid">
-            <h1 class="m-0">إضافة حساب / فئة جديدة</h1>
+            <h1 class="m-0">@lang('messages.add_new_account_category')</h1>
         </div>
     </div>
 
@@ -16,40 +16,40 @@
                         @csrf
 
                         <div class="form-group">
-                            <label>اسم الحساب / الفئة</label>
+                            <label>@lang('messages.account_category_name')</label>
                             <input type="text" name="name" class="form-control" required>
                         </div>
-<div class="form-group">
-    <label>رقم الحساب / الفئة (Code)</label>
-    <input type="text" name="code" class="form-control" required>
-</div>
                         <div class="form-group">
-                            <label>نوع السجل</label>
+                            <label>@lang('messages.account_category_code')</label>
+                            <input type="text" name="code" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label>@lang('messages.record_type')</label>
                             <select name="is_group" id="is_group" class="form-control" onchange="toggleFields()" required>
-                                <option value="1">فئة (Group)</option>
-                                <option value="0">حساب فعلي (Account)</option>
+                                <option value="1">@lang('messages.group_option')</option>
+                                <option value="0">@lang('messages.account_option')</option>
                             </select>
                         </div>
 
                         <div id="group_fields">
                             <div class="form-group">
-                                <label>نوع الحساب الرئيسي (للفئة)</label>
+                                <label>@lang('messages.main_account_type')</label>
                                 <select name="type" class="form-control">
-                                    <option value="">-- اختر --</option>
-                                    <option value="asset">أصول</option>
-                                    <option value="liability">التزامات</option>
-                                    <option value="revenue">إيرادات</option>
-                                    <option value="expense">مصاريف</option>
-                                    <option value="equity">رأس مال</option>
+                                    <option value="">@lang('messages.select_option')</option>
+                                    <option value="asset">@lang('messages.account_type_asset')</option>
+                                    <option value="liability">@lang('messages.account_type_liability')</option>
+                                    <option value="revenue">@lang('messages.account_type_revenue')</option>
+                                    <option value="expense">@lang('messages.account_type_expense')</option>
+                                    <option value="equity">@lang('messages.account_type_equity')</option>
                                 </select>
                             </div>
                         </div>
 
                         <div id="account_fields" style="display:none;">
                             <div class="form-group">
-                                <label>اختر الفئة الرئيسية</label>
+                                <label>@lang('messages.select_parent_category')</label>
                                 <select name="parent_id" class="form-control">
-                                    <option value="">-- اختر فئة --</option>
+                                    <option value="">@lang('messages.select_category')</option>
                                     @foreach($categories as $category)
                                         <option value="{{ $category->id }}">{{ $category->name }}</option>
                                     @endforeach
@@ -57,17 +57,17 @@
                             </div>
 
                             <div class="form-group">
-                                <label>طبيعة الحساب</label>
+                                <label>@lang('messages.account_nature')</label>
                                 <select name="nature" class="form-control" required>
-                                    <option value="debit">مدين</option>
-                                    <option value="credit">دائن</option>
+                                    <option value="debit">@lang('messages.debit_nature')</option>
+                                    <option value="credit">@lang('messages.credit_nature')</option>
                                 </select>
                             </div>
                         </div>
 
                         <div class="form-group mt-3">
-                            <button type="submit" class="btn btn-primary">حفظ</button>
-                            <a href="{{ route('accounts.index') }}" class="btn btn-secondary">رجوع</a>
+                            <button type="submit" class="btn btn-primary">@lang('messages.save')</button>
+                            <a href="{{ route('accounts.index') }}" class="btn btn-secondary">@lang('messages.back')</a>
                         </div>
 
                     </form>

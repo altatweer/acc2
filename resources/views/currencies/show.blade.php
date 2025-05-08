@@ -4,7 +4,7 @@
 <div class="content-wrapper">
   <div class="content-header">
     <div class="container-fluid">
-      <h1 class="m-0">عرض تفاصيل العملة</h1>
+      <h1 class="m-0">@lang('messages.view_currency')</h1>
     </div>
   </div>
 
@@ -18,36 +18,36 @@
               <td>{{ $currency->id }}</td>
             </tr>
             <tr>
-              <th>الاسم</th>
+              <th>@lang('messages.currency_name')</th>
               <td>{{ $currency->name }}</td>
             </tr>
             <tr>
-              <th>رمز العملة</th>
+              <th>@lang('messages.currency_code')</th>
               <td>{{ $currency->code }}</td>
             </tr>
             <tr>
-              <th>الرمز النصي</th>
+              <th>@lang('messages.currency_symbol')</th>
               <td>{{ $currency->symbol }}</td>
             </tr>
             <tr>
-              <th>سعر الصرف</th>
+              <th>@lang('messages.exchange_rate')</th>
               <td>{{ $currency->exchange_rate }}</td>
             </tr>
             <tr>
-              <th>الافتراضية</th>
+              <th>@lang('messages.is_default_currency')</th>
               <td>
                 @if($currency->is_default)
-                  نعم
+                  @lang('messages.default_yes')
                 @else
-                  لا
+                  @lang('messages.default_no')
                 @endif
               </td>
             </tr>
           </table>
         </div>
         <div class="card-footer text-right">
-          <a href="{{ route('currencies.edit', $currency->id) }}" class="btn btn-warning">تعديل</a>
-          <a href="{{ route('currencies.index') }}" class="btn btn-secondary">رجوع</a>
+          <a href="{{ Route::localizedRoute('currencies.edit', ['currency' => $currency, ]) }}" class="btn btn-warning">@lang('messages.edit')</a>
+          <a href="{{ route('currencies.index') }}" class="btn btn-secondary">@lang('messages.back')</a>
         </div>
       </div>
     </div>

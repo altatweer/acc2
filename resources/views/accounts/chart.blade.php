@@ -5,7 +5,7 @@
 <div class="content-wrapper">
     <div class="content-header">
         <div class="container-fluid">
-            <h1 class="m-0">دليل الحسابات (شجرة تفاعلية)</h1>
+            <h1 class="m-0">@lang('messages.account_chart_title')</h1>
         </div>
     </div>
 
@@ -30,7 +30,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/jstree.min.js"></script>
 
 <script>
-    // تحويل بيانات الحسابات إلى صيغة jsTree
+    // Convert account data to jsTree format
     const accounts = @json($accounts);
 
     function buildTree(nodes) {
@@ -47,7 +47,7 @@
     }
 
     $(function() {
-        // بناء الشجرة
+        // Building the tree
         $('#accountTree').jstree({
             'core' : {
                 'data' : buildTree(accounts),
@@ -64,7 +64,7 @@
 
 <style>
 #accountTree {
-    direction: rtl;
+    direction: {{ app()->getLocale() == 'ar' ? 'rtl' : 'ltr' }};
     font-size: 16px;
 }
 .jstree-default .jstree-anchor {

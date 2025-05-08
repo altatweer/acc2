@@ -69,8 +69,11 @@ class BranchController extends Controller
      */
     public function destroy(Branch $branch)
     {
+        // إذا كان هناك موظفين مرتبطين بالفرع امنع الحذف
+        if (method_exists($branch, 'employees') && $branch->employees()->exists()) {
+            return redirect()->route('branches.index')->with('error', 'لا يمكن حذف الفرع لوجود موظفين مرتبطين به.');
+        }
         $branch->delete();
-
         return redirect()->route('branches.index')->with('success', 'تم حذف الفرع بنجاح.');
     }
 }

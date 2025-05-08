@@ -27,7 +27,7 @@ class JournalEntryController extends Controller
         if ($request->filled('user_id')) {
             $query->where('created_by', $request->user_id);
         }
-        $entries = $query->latest()->paginate(20);
+        $entries = $query->latest()->paginate(20)->appends($request->all());
         $accounts = Account::all();
         return view('journal_entries.index', compact('entries', 'accounts'));
     }
@@ -133,5 +133,14 @@ class JournalEntryController extends Controller
     {
         $entry = JournalEntry::with(['lines.account', 'user'])->findOrFail($id);
         return view('journal_entries.modal', compact('entry'));
+    }
+
+    /**
+     * طباعة القيد المحاسبي
+     */
+    public function print($id)
+    {
+        $journalEntry = \App\Models\JournalEntry::with('lines.account', 'user')->findOrFail($id);
+        return view('journal_entries.print', compact('journalEntry'));
     }
 } 

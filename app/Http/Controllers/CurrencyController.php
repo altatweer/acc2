@@ -93,6 +93,13 @@ class CurrencyController extends Controller
      */
     public function destroy(Currency $currency)
     {
+        $usedInAccounts = \App\Models\Account::where('currency', $currency->code)->exists();
+        $usedInInvoices = \App\Models\Invoice::where('currency', $currency->code)->exists();
+        $usedInVouchers = \App\Models\Voucher::where('currency', $currency->code)->exists();
+        $usedInSettings = \App\Models\AccountingSetting::where('currency', $currency->code)->exists();
+        if ($usedInAccounts || $usedInInvoices || $usedInVouchers || $usedInSettings) {
+            return redirect()->route('currencies.index')->with('error', 'لا يمكن حذف العملة لأنها مستخدمة في الحسابات أو الفواتير أو السندات أو الإعدادات.');
+        }
         $currency->delete();
         return redirect()->route('currencies.index')->with('success', 'تم حذف العملة بنجاح.');
     }

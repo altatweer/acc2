@@ -3,42 +3,47 @@
 @section('content')
 <div class="content-header">
   <div class="container-fluid">
-    <h1 class="m-0">تفاصيل الفاتورة {{ $invoice->invoice_number }}</h1>
+    <h1 class="m-0">@lang('messages.invoice_details', ['number' => $invoice->invoice_number])</h1>
   </div>
 </div>
 <section class="content">
   <div class="container-fluid">
     <div class="card">
       <div class="card-body">
-        <h5>بيانات الفاتورة:</h5>
+        <h5>@lang('messages.invoice_info')</h5>
         <table class="table table-bordered">
-          <tr><th>رقم الفاتورة</th><td>{{ $invoice->invoice_number }}</td></tr>
-          <tr><th>العميل</th><td>{{ $invoice->customer->name }}</td></tr>
-          <tr><th>التاريخ</th><td>{{ $invoice->date->format('Y-m-d') }}</td></tr>
-          <tr><th>الإجمالي</th><td>{{ number_format($invoice->total,2) }} {{ $invoice->currency }}</td></tr>
-          <tr><th>الحالة</th><td>
+          <tr><th>@lang('messages.invoice_id')</th><td>{{ $invoice->invoice_number }}</td></tr>
+          <tr><th>@lang('messages.customer')</th><td>{{ $invoice->customer->name }}</td></tr>
+          <tr><th>@lang('messages.date')</th><td>{{ $invoice->date->format('Y-m-d') }}</td></tr>
+          <tr><th>@lang('messages.total')</th><td>{{ number_format($invoice->total,2) }} {{ $invoice->currency }}</td></tr>
+          <tr><th>@lang('messages.status')</th><td>
             @php
-              $statusLabels = ['draft'=>'مسودة','unpaid'=>'غير مدفوعة','partial'=>'مدفوعة جزئي','paid'=>'مدفوعة'];
+              $statusLabels = [
+                'draft'=>__('messages.status_draft'),
+                'unpaid'=>__('messages.status_unpaid'),
+                'partial'=>__('messages.status_partial'),
+                'paid'=>__('messages.status_paid')
+              ];
             @endphp
             <span class="badge badge-{{ $invoice->status=='draft'?'secondary':($invoice->status=='unpaid'?'warning':($invoice->status=='partial'?'info':'success')) }}">
               {{ $statusLabels[$invoice->status] ?? $invoice->status }}
             </span>
           </td></tr>
-          <tr><th>المبلغ المدفوع</th><td>{{ number_format($invoice->transactions()->where('type','receipt')->sum('amount'),2) }} {{ $invoice->currency }}</td></tr>
-          <tr><th>المتبقي</th><td>{{ number_format($invoice->total - $invoice->transactions()->where('type','receipt')->sum('amount'),2) }} {{ $invoice->currency }}</td></tr>
+          <tr><th>@lang('messages.paid_amount')</th><td>{{ number_format($invoice->transactions()->where('type','receipt')->sum('amount'),2) }} {{ $invoice->currency }}</td></tr>
+          <tr><th>@lang('messages.remaining_amount')</th><td>{{ number_format($invoice->total - $invoice->transactions()->where('type','receipt')->sum('amount'),2) }} {{ $invoice->currency }}</td></tr>
         </table>
 
         <hr>
-        <h5>بنود الفاتورة:</h5>
+        <h5>@lang('messages.invoice_line_items')</h5>
         <div class="table-responsive">
           <table class="table table-bordered table-striped">
             <thead>
               <tr>
-                <th>#</th>
-                <th>الصنف</th>
-                <th>الكمية</th>
-                <th>سعر الوحدة</th>
-                <th>الإجمالي</th>
+                <th>@lang('messages.item_hash')</th>
+                <th>@lang('messages.item')</th>
+                <th>@lang('messages.quantity')</th>
+                <th>@lang('messages.unit_price_short')</th>
+                <th>@lang('messages.line_total')</th>
               </tr>
             </thead>
             <tbody>
@@ -52,16 +57,16 @@
               </tr>
               @endforeach
               @if($invoice->invoiceItems->isEmpty())
-              <tr><td colspan="5" class="text-center">لا توجد بنود في هذه الفاتورة.</td></tr>
+              <tr><td colspan="5" class="text-center">@lang('messages.no_items_in_invoice')</td></tr>
               @endif
             </tbody>
           </table>
         </div>
 
         <hr>
-        <h5>دفعات سابقة:</h5>
+        <h5>@lang('messages.previous_payments')</h5>
         <table class="table table-bordered table-striped">
-          <thead><tr><th>#</th><th>رقم السند</th><th>التاريخ</th><th>المبلغ</th><th>الإجراءات</th></tr></thead>
+          <thead><tr><th>@lang('messages.item_hash')</th><th>@lang('messages.voucher_id')</th><th>@lang('messages.date')</th><th>@lang('messages.amount')</th><th>@lang('messages.actions')</th></tr></thead>
           <tbody>
             @foreach($payments as $i=>$vch)
             <tr>
@@ -69,11 +74,11 @@
               <td>{{ $vch->voucher_number }}</td>
               <td>{{ $vch->date }}</td>
               <td>{{ number_format($vch->transactions->sum('amount'),2) }} {{ $vch->currency }}</td>
-              <td><a href="{{ route('vouchers.show',$vch) }}" class="btn btn-sm btn-info">عرض السند</a></td>
+              <td><a href="{{ Route::localizedRoute('vouchers.show', ['voucher' => $vch->id]) }}" class="btn btn-sm btn-info">@lang('messages.view_voucher')</a></td>
             </tr>
             @endforeach
             @if(count($payments)==0)
-              <tr><td colspan="5" class="text-center">لم يتم سداد أي دفعات بعد.</td></tr>
+              <tr><td colspan="5" class="text-center">@lang('messages.no_payments_yet')</td></tr>
             @endif
           </tbody>
         </table>
@@ -82,18 +87,18 @@
         <div class="alert alert-success">{{ session('success') }}</div>
         @endif
         @if($invoice->status=='paid')
-        <div class="alert alert-success">تم سداد الفاتورة بالكامل. لا يمكن إضافة دفعات جديدة.</div>
+        <div class="alert alert-success">@lang('messages.invoice_paid_fully_no_new_payments')</div>
         @endif
 
         @if(in_array($invoice->status, ['unpaid','partial']))
         <hr>
-        <h5>سداد جديد:</h5>
-        <form action="{{ route('invoice-payments.store') }}" method="POST" class="mt-3" id="paymentForm">
+        <h5>@lang('messages.new_payment')</h5>
+        <form action="{{ Route::localizedRoute('invoice-payments.store') }}" method="POST" class="mt-3" id="paymentForm">
           @csrf
           <input type="hidden" name="invoice_id" value="{{ $invoice->id }}">
           <div class="form-row">
             <div class="form-group col-md-6">
-              <label for="cash_account_id">صندوق الدفع</label>
+              <label for="cash_account_id">@lang('messages.payment_cash_account')</label>
               <select name="cash_account_id" id="cash_account_id" class="form-control select2" required>
                 @foreach($cashAccounts as $acc)
                   <option value="{{ $acc->id }}" data-currency="{{ $acc->currency }}">{{ $acc->name }} ({{ $acc->currency }})</option>
@@ -101,22 +106,22 @@
               </select>
             </div>
             <div class="form-group col-md-6">
-              <label for="payment_amount">المبلغ المدفوع ({{ $invoice->currency }})</label>
+              <label for="payment_amount">@lang('messages.payment_amount_currency', ['currency' => $invoice->currency])</label>
               <input type="number" name="payment_amount" id="payment_amount" value="{{ old('payment_amount', $invoice->total) }}" class="form-control" step="0.01" required>
-              <small id="amountWarning" class="text-danger d-none">المبلغ المدفوع أكبر من المتبقي على الفاتورة!</small>
+              <small id="amountWarning" class="text-danger d-none">@lang('messages.payment_amount_exceeds_remaining')</small>
             </div>
           </div>
           <div class="form-row">
             <div class="form-group col-md-6">
-              <label for="exchange_rate">سعر الصرف</label>
+              <label for="exchange_rate">@lang('messages.exchange_rate')</label>
               <input type="number" name="exchange_rate" id="exchange_rate" class="form-control" step="0.000001" value="{{ $invoice->exchange_rate }}" readonly>
             </div>
             <div class="form-group col-md-6">
-              <label for="date">تاريخ السداد</label>
+              <label for="date">@lang('messages.payment_date')</label>
               <input type="date" name="date" id="date" class="form-control" value="{{ date('Y-m-d') }}" required>
             </div>
           </div>
-          <button type="submit" class="btn btn-success">سداد</button>
+          <button type="submit" class="btn btn-success">@lang('messages.pay_button')</button>
         </form>
         <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -144,26 +149,30 @@
 
         <div class="mt-4 mb-2">
           @if($invoice->status=='draft')
-            <form action="{{ route('invoices.approve', $invoice) }}" method="POST" style="display:inline-block;">
+            <form action="{{ Route::localizedRoute('invoices.approve', ['invoice' => $invoice, ]) }}" method="POST" style="display:inline-block;">
               @csrf
-              <button type="submit" class="btn btn-success">اعتماد الفاتورة</button>
+              <button type="submit" class="btn btn-success">@lang('messages.approve_invoice')</button>
             </form>
-            <a href="{{ route('invoices.edit', $invoice) }}" class="btn btn-primary">تعديل</a>
-            <form action="{{ route('invoices.destroy', $invoice) }}" method="POST" style="display:inline-block;">
+            <a href="{{ Route::localizedRoute('invoices.edit', ['invoice' => $invoice, ]) }}" class="btn btn-primary">@lang('messages.edit')</a>
+            <form action="{{ Route::localizedRoute('invoices.destroy', ['invoice' => $invoice, ]) }}" method="POST" style="display:inline-block;">
               @csrf
               @method('DELETE')
-              <button type="submit" class="btn btn-danger" onclick="return confirm('هل أنت متأكد من حذف الفاتورة؟')">حذف</button>
+              <button type="submit" class="btn btn-danger" onclick="return confirm('@lang('messages.delete_invoice_confirm')')">@lang('messages.delete')</button>
             </form>
           @elseif($invoice->status=='unpaid')
-            <form action="{{ route('invoices.cancel', $invoice) }}" method="POST" style="display:inline-block;">
+            <form action="{{ Route::localizedRoute('invoices.cancel', ['invoice' => $invoice, ]) }}" method="POST" style="display:inline-block;">
               @csrf
-              <button type="submit" class="btn btn-danger" onclick="return confirm('هل أنت متأكد من إلغاء الفاتورة؟ سيتم إبطال أثرها المحاسبي.')">إلغاء الفاتورة</button>
+              <button type="submit" class="btn btn-danger" onclick="return confirm('@lang('messages.cancel_invoice_confirm')')">@lang('messages.cancel_invoice')</button>
             </form>
           @elseif($invoice->status=='partial')
-            <div class="alert alert-info">لا يمكن إلغاء الفاتورة أو تعديلها لوجود دفعات جزئية. يجب إلغاء السندات أولاً.</div>
+            <div class="alert alert-info">@lang('messages.cannot_cancel_partial_payments')</div>
           @elseif($invoice->status=='paid')
-            <div class="alert alert-success">تم سداد الفاتورة بالكامل. لا يمكن تعديلها أو إلغاؤها.</div>
+            <div class="alert alert-success">@lang('messages.invoice_paid_cannot_edit_cancel')</div>
           @endif
+        </div>
+
+        <div class="mb-3 text-center">
+            <a href="{{ Route::localizedRoute('invoices.print', ['invoice' => $invoice, ]) }}" class="btn btn-primary" target="_blank"><i class="fa fa-print"></i> @lang('messages.print_invoice')</a>
         </div>
 
       </div>

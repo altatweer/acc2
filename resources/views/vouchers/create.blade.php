@@ -6,11 +6,11 @@
     <div class="container-fluid">
         <div class="row mb-2">
             <div class="col-sm-6">
-                <h1>إنشاء سند مالي جديد</h1>
+                <h1>@lang('messages.create_new_financial_voucher')</h1>
             </div>
             <div class="col-sm-6 text-left">
-                <a href="{{ route('vouchers.index') }}" class="btn btn-sm btn-secondary">
-                    <i class="fas fa-arrow-left"></i> العودة إلى السندات
+                <a href="{{ Route::localizedRoute('vouchers.index') }}" class="btn btn-sm btn-secondary">
+                    <i class="fas fa-arrow-left"></i> @lang('messages.return_to_vouchers')
                 </a>
             </div>
         </div>
@@ -22,18 +22,19 @@
     <div class="container-fluid">
         <div class="card card-info card-outline shadow-sm">
             <div class="card-header">
-                <h3 class="card-title">بيانات السند</h3>
+                <h3 class="card-title">@lang('messages.voucher_information')</h3>
                 <div class="card-tools">
                     <button type="button" class="btn btn-tool" data-card-widget="collapse">
                         <i class="fas fa-minus"></i>
                     </button>
                 </div>
             </div>
-            <form action="{{ route('vouchers.store') }}" method="POST">
+            <form action="{{ Route::localizedRoute('vouchers.store') }}" method="POST">
                 @csrf
                 <div class="card-body">
                     @if($errors->any())
                         <div class="alert alert-danger">
+                            <strong>@lang('messages.validation_errors')</strong>
                             <ul class="mb-0">
                                 @foreach($errors->all() as $error)
                                     <li>{{ $error }}</li>
@@ -44,32 +45,32 @@
 
                     <div class="form-row">
                         <div class="form-group col-md-4">
-                            <label for="voucher_type">نوع السند</label>
+                            <label for="voucher_type">@lang('messages.voucher_type')</label>
                             <select name="type" id="voucher_type" class="form-control select2" required>
-                                <option value="" disabled {{ old('type')? '':'selected' }}>-- اختر النوع --</option>
-                                <option value="receipt" {{ old('type')=='receipt'?'selected':'' }}>سند قبض</option>
-                                <option value="payment" {{ old('type')=='payment'?'selected':'' }}>سند صرف</option>
-                                <option value="deposit" {{ old('type')=='deposit'?'selected':'' }}>إيداع نقدي</option>
-                                <option value="withdraw" {{ old('type')=='withdraw'?'selected':'' }}>سحب نقدي</option>
+                                <option value="" disabled {{ old('type')? '':'selected' }}>@lang('messages.choose_type')</option>
+                                <option value="receipt" {{ old('type')=='receipt'?'selected':'' }}>@lang('messages.receipt_voucher')</option>
+                                <option value="payment" {{ old('type')=='payment'?'selected':'' }}>@lang('messages.payment_voucher')</option>
+                                <option value="deposit" {{ old('type')=='deposit'?'selected':'' }}>@lang('messages.voucher_deposit')</option>
+                                <option value="withdraw" {{ old('type')=='withdraw'?'selected':'' }}>@lang('messages.voucher_withdraw')</option>
                             </select>
                         </div>
                         <div class="form-group col-md-4">
-                            <label for="voucher_date">التاريخ</label>
+                            <label for="voucher_date">@lang('messages.voucher_date')</label>
                             <input type="datetime-local" name="date" id="voucher_date" class="form-control" value="{{ old('date', now()->format('Y-m-d\TH:i')) }}" required>
                         </div>
                         <div class="form-group col-md-4">
-                            <label for="recipient_name">مستلم/دافع</label>
-                            <input type="text" name="recipient_name" id="recipient_name" class="form-control" value="{{ old('recipient_name') }}" placeholder="اسم المستلم أو الدافع" required>
+                            <label for="recipient_name">@lang('messages.recipient_payer_name')</label>
+                            <input type="text" name="recipient_name" id="recipient_name" class="form-control" value="{{ old('recipient_name') }}" placeholder="@lang('messages.recipient_payer_placeholder_name')" required>
                         </div>
                     </div>
 
                     <div class="form-group">
-                        <label for="voucher_description">وصف عام للسند</label>
-                        <textarea name="description" id="voucher_description" rows="2" class="form-control" placeholder="اختياري">{{ old('description') }}</textarea>
+                        <label for="voucher_description">@lang('messages.general_voucher_description')</label>
+                        <textarea name="description" id="voucher_description" rows="2" class="form-control" placeholder="@lang('messages.optional')">{{ old('description') }}</textarea>
                     </div>
                     <div class="form-row">
                         <div class="form-group col-md-4">
-                            <label for="voucher_currency">العملة</label>
+                            <label for="voucher_currency">@lang('messages.currency')</label>
                             <select name="currency" id="voucher_currency" class="form-control select2" required>
                                 @foreach($currencies as $cur)
                                     <option value="{{ $cur->code }}" {{ old('currency', $defaultCurrency->code) == $cur->code ? 'selected' : '' }}>{{ $cur->code }} - {{ $cur->name }}</option>
@@ -79,28 +80,28 @@
                     </div>
 
                     <hr>
-                    <h5 class="mb-3">الحركات المالية المرتبطة بالسند</h5>
+                    <h5 class="mb-3">@lang('messages.financial_transactions_related')</h5>
                     <div class="table-responsive">
                         <table class="table table-bordered table-hover" id="transactions_table">
                             <thead class="thead-light">
                                 <tr>
-                                    <th>حساب الصندوق</th>
-                                    <th>الحساب المستهدف</th>
-                                    <th>المبلغ</th>
-                                    <th>وصف الحركة</th>
-                                    <th style="width:100px;">إجراء</th>
+                                    <th>@lang('messages.cash_account')</th>
+                                    <th>@lang('messages.target_account')</th>
+                                    <th>@lang('messages.amount')</th>
+                                    <th>@lang('messages.transaction_description')</th>
+                                    <th style="width:100px;">@lang('messages.action')</th>
                                 </tr>
                             </thead>
                             <tbody id="transactions_body">
                                 <tr>
                                     <td>
                                         <select name="transactions[0][account_id]" class="form-control select2" required>
-                                            <option value="">-- اختر صندوق --</option>
+                                            <option value="">@lang('messages.choose_cash_account')</option>
                                         </select>
                                     </td>
                                     <td>
                                         <select name="transactions[0][target_account_id]" class="form-control select2">
-                                            <option value="">-- اختر الحساب --</option>
+                                            <option value="">@lang('messages.choose_account')</option>
                                         </select>
                                     </td>
                                     <td><input type="number" name="transactions[0][amount]" value="{{ old('transactions.0.amount') }}" step="0.01" class="form-control" required></td>
@@ -114,8 +115,8 @@
                     </div>
                 </div>
                 <div class="card-footer clearfix">
-                    <button type="button" id="add_transaction" class="btn btn-secondary btn-sm"><i class="fas fa-plus"></i> إضافة حركة</button>
-                    <button type="submit" class="btn btn-success float-left"><i class="fas fa-save"></i> حفظ السند</button>
+                    <button type="button" id="add_transaction" class="btn btn-secondary btn-sm"><i class="fas fa-plus"></i> @lang('messages.add_transaction')</button>
+                    <button type="submit" class="btn btn-success float-left"><i class="fas fa-save"></i> @lang('messages.save_voucher')</button>
                 </div>
             </form>
         </div>
@@ -130,19 +131,19 @@
 $(function(){
     const loadAccounts = (currency) => {
         if(!currency) return;
-        $.getJSON("{{ url('accounts/by-currency') }}" + '/' + currency, function(data){
+        $.getJSON("{{ url('accounts/by-currency', ['lang' => app()->getLocale()]) }}" + '/' + currency, function(data){
             // populate each row's selects
             $('#transactions_body tr').each(function(){
                 const $row = $(this);
                 const $cashSel = $row.find('select[name$="[account_id]"]');
                 const $tgtSel  = $row.find('select[name$="[target_account_id]"]');
 
-                $cashSel.empty().append($('<option>').val('').text('-- اختر صندوق --'));
+                $cashSel.empty().append($('<option>').val('').text('@lang('messages.choose_cash_account')'));
                 data.cashAccounts.forEach(acc => {
                     $cashSel.append($('<option>').val(acc.id).text(acc.code + ' - ' + acc.name));
                 });
 
-                $tgtSel.empty().append($('<option>').val('').text('-- اختر الحساب --'));
+                $tgtSel.empty().append($('<option>').val('').text('@lang('messages.choose_account')'));
                 data.targetAccounts.forEach(acc => {
                     $tgtSel.append($('<option>').val(acc.id).text(acc.code + ' - ' + acc.name));
                 });

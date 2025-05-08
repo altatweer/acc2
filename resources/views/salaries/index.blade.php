@@ -4,11 +4,11 @@
 <div class="content-wrapper">
     <div class="content-header">
         <div class="container-fluid">
-            <h1 class="m-0">قائمة الرواتب</h1>
+            <h1 class="m-0">@lang('messages.salaries_list')</h1>
             <div class="card-tools">
                 @php $isSuperAdmin = auth()->check() && auth()->user()->isSuperAdmin(); @endphp
                 @if($isSuperAdmin || auth()->user()->can('إضافة راتب'))
-                <a href="{{ route('salaries.create') }}" class="btn btn-sm btn-success">إضافة راتب</a>
+                <a href="{{ route('salaries.create') }}" class="btn btn-sm btn-success">@lang('messages.new_salary')</a>
                 @endif
                 <button type="button" class="btn btn-tool" data-card-widget="collapse"><i class="fas fa-minus"></i></button>
                 <button type="button" class="btn btn-tool" data-card-widget="remove"><i class="fas fa-times"></i></button>
@@ -26,13 +26,13 @@
                         <thead>
                             <tr>
                                 <th>#</th>
-                                <th>الموظف</th>
-                                <th>الراتب الأساسي</th>
-                                <th>البدلات</th>
-                                <th>الخصومات</th>
-                                <th>من تاريخ</th>
-                                <th>إلى تاريخ</th>
-                                <th>العمليات</th>
+                                <th>@lang('messages.employee')</th>
+                                <th>@lang('messages.basic_salary')</th>
+                                <th>@lang('messages.allowances')</th>
+                                <th>@lang('messages.deductions')</th>
+                                <th>@lang('messages.effective_from')</th>
+                                <th>@lang('messages.effective_to')</th>
+                                <th>@lang('messages.actions')</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -60,13 +60,13 @@
                                     <td>
                                         <div class="btn-group btn-group-sm" role="group">
                                             @if($isSuperAdmin || auth()->user()->can('عرض الرواتب'))
-                                            <a href="{{ route('salaries.show', $salary) }}" class="btn btn-outline-info" title="عرض"><i class="fas fa-eye"></i></a>
+                                            <a href="{{ Route::localizedRoute('salaries.show', ['salary' => $salary, ]) }}" class="btn btn-outline-info" title="@lang('messages.view')"><i class="fas fa-eye"></i></a>
                                             @endif
                                             @if($isSuperAdmin || auth()->user()->can('تعديل راتب'))
-                                            <a href="{{ route('salaries.edit', $salary) }}" class="btn btn-outline-primary" title="تعديل"><i class="fas fa-edit"></i></a>
+                                            <a href="{{ Route::localizedRoute('salaries.edit', ['salary' => $salary, ]) }}" class="btn btn-outline-primary" title="@lang('messages.edit')"><i class="fas fa-edit"></i></a>
                                             @endif
                                             @if($isSuperAdmin || auth()->user()->can('حذف راتب'))
-                                            <form action="{{ route('salaries.destroy', $salary) }}" method="POST" onsubmit="return confirm('هل أنت متأكد من الحذف؟');">@csrf @method('DELETE')<button type="submit" class="btn btn-outline-danger" title="حذف"><i class="fas fa-trash"></i></button></form>
+                                            <form action="{{ Route::localizedRoute('salaries.destroy', ['salary' => $salary, ]) }}" method="POST" onsubmit="return confirm('@lang('messages.delete_salary_confirm')');">@csrf @method('DELETE')<button type="submit" class="btn btn-outline-danger" title="@lang('messages.delete')"><i class="fas fa-trash"></i></button></form>
                                             @endif
                                         </div>
                                     </td>
