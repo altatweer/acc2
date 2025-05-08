@@ -71,10 +71,10 @@
                                             <td>{{ $category->parent->name ?? '-' }}</td>
                                             <td>
                                                 <div class="btn-group btn-group-sm" role="group">
-                                                    <a href="{{ route('accounts.edit'account$category) }}" class="btn btn-outline-primary" title="@lang('messages.edit')">
+                                                    <a href="{{ route('accounts.edit', $category) }}" class="btn btn-outline-primary" title="@lang('messages.edit')">
                                                         <i class="fas fa-edit"></i>
                                                     </a>
-                                                    <form action="{{ route('accounts.destroy'account$category) }}" method="POST" onsubmit="return confirm('@lang('messages.delete_confirmation_account')');" style="display:inline-block;">
+                                                    <form action="{{ route('accounts.destroy', $category) }}" method="POST" onsubmit="return confirm('@lang('messages.delete_confirmation_account')');" style="display:inline-block;">
                                                         @csrf
                                                         @method('DELETE')
                                                         <button type="submit" class="btn btn-outline-danger" title="@lang('messages.delete')">

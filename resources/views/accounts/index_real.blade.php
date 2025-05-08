@@ -63,13 +63,13 @@
                                     </td>
                                     <td>
                                         <div class="btn-group btn-group-sm" role="group">
-                                            <a href="{{ route('accounts.show'account$account) }}" class="btn btn-outline-info" title="@lang('messages.details')">
+                                            <a href="{{ route('accounts.show', $account) }}" class="btn btn-outline-info" title="@lang('messages.details')">
                                                 <i class="fas fa-eye"></i>
                                             </a>
-                                            <a href="{{ route('accounts.edit'account$account) }}" class="btn btn-outline-primary" title="@lang('messages.edit')">
+                                            <a href="{{ route('accounts.edit', $account) }}" class="btn btn-outline-primary" title="@lang('messages.edit')">
                                                 <i class="fas fa-edit"></i>
                                             </a>
-                                            <form action="{{ route('accounts.destroy'account$account) }}" method="POST" onsubmit="return confirm('@lang('messages.delete_confirmation_account')');">
+                                            <form action="{{ route('accounts.destroy', $account) }}" method="POST" onsubmit="return confirm('@lang('messages.delete_confirmation_account')');">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="btn btn-outline-danger" title="@lang('messages.delete')">
