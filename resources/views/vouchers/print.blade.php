@@ -42,29 +42,29 @@
                 <table class="table table-bordered table-striped text-center">
                     <thead class="thead-light">
                         <tr>
-                            <th>@lang('messages.main_account')</th>
-                            <th>@lang('messages.target_account')</th>
-                            <th>@lang('messages.amount')</th>
+                            <th>@lang('messages.account')</th>
+                            <th>@lang('messages.debit')</th>
+                            <th>@lang('messages.credit')</th>
                             <th>@lang('messages.currency')</th>
-                            <th>@lang('messages.exchange_rate')</th>
                             <th>@lang('messages.description')</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @forelse($transactions as $transaction)
+                        @if($voucher->journalEntry && $voucher->journalEntry->lines && $voucher->journalEntry->lines->count())
+                            @foreach($voucher->journalEntry->lines as $line)
+                                <tr>
+                                    <td>{{ $line->account->name ?? '-' }}</td>
+                                    <td>{{ number_format($line->debit, 2) }}</td>
+                                    <td>{{ number_format($line->credit, 2) }}</td>
+                                    <td>{{ $line->currency }}</td>
+                                    <td>{{ $line->description }}</td>
+                                </tr>
+                            @endforeach
+                        @else
                             <tr>
-                                <td>{{ $transaction->account->name ?? '-' }}</td>
-                                <td>{{ $transaction->targetAccount->name ?? '-' }}</td>
-                                <td>{{ number_format($transaction->amount, 2) }}</td>
-                                <td>{{ $transaction->currency }}</td>
-                                <td>{{ $transaction->exchange_rate }}</td>
-                                <td>{{ $transaction->description }}</td>
+                                <td colspan="5" class="text-center">@lang('messages.no_financial_transactions')</td>
                             </tr>
-                        @empty
-                            <tr>
-                                <td colspan="6" class="text-center">@lang('messages.no_financial_transactions')</td>
-                            </tr>
-                        @endforelse
+                        @endif
                     </tbody>
                 </table>
                 <div class="mt-5 row">
