@@ -2,6 +2,8 @@
 
 @section('content')
 <div class="container-fluid">
+    {{-- Debug: الحالة الحقيقية من قاعدة البيانات --}}
+    <div style="color:red">حالة القيد من قاعدة البيانات: {{ $journalEntry->getRawOriginal('status') }}</div>
     {{-- Debug: الحالة الحالية --}}
     <div style="direction:ltr;color:red">Status: {{ $journalEntry->status }}</div>
     <h1 class="mb-4">@lang('messages.entry_details') #{{ $journalEntry->id }}</h1>

@@ -46,14 +46,22 @@
                             <td><input type="text" name="lines[0][description]" class="form-control"></td>
                             <td><input type="number" name="lines[0][debit]" class="form-control debit" step="0.01" value="0" min="0"></td>
                             <td><input type="number" name="lines[0][credit]" class="form-control credit" step="0.01" value="0" min="0"></td>
-                            <td><button type="button" class="btn btn-danger btn-sm remove-line">✖</button></td>
+                            <td>
+                                <input type="hidden" name="lines[0][currency]" value="{{ old('currency', $defaultCurrency) }}" class="line-currency">
+                                <input type="hidden" name="lines[0][exchange_rate]" value="1" class="line-exchange-rate">
+                                <button type="button" class="btn btn-danger btn-sm remove-line">✖</button>
+                            </td>
                         </tr>
                         <tr>
                             <td><select name="lines[1][account_id]" class="form-control" required>@foreach($accounts as $acc)<option value="{{ $acc->id }}">{{ $acc->name }}</option>@endforeach</select></td>
                             <td><input type="text" name="lines[1][description]" class="form-control"></td>
                             <td><input type="number" name="lines[1][debit]" class="form-control debit" step="0.01" value="0" min="0"></td>
                             <td><input type="number" name="lines[1][credit]" class="form-control credit" step="0.01" value="0" min="0"></td>
-                            <td><button type="button" class="btn btn-danger btn-sm remove-line">✖</button></td>
+                            <td>
+                                <input type="hidden" name="lines[1][currency]" value="{{ old('currency', $defaultCurrency) }}" class="line-currency">
+                                <input type="hidden" name="lines[1][exchange_rate]" value="1" class="line-exchange-rate">
+                                <button type="button" class="btn btn-danger btn-sm remove-line">✖</button>
+                            </td>
                         </tr>
                     </tbody>
                 </table>
@@ -82,6 +90,9 @@ $(function(){
                 }
             }.bind(this));
         });
+        // تحديث حقول العملة وسعر الصرف في كل سطر
+        $('.line-currency').val(currency);
+        $('.line-exchange-rate').val(1);
     }
     $('select[name="currency"]').on('change', function(){
         let currency = $(this).val();
@@ -96,7 +107,11 @@ $(function(){
             <td><input type="text" name="lines[${lineIdx}][description]" class="form-control"></td>
             <td><input type="number" name="lines[${lineIdx}][debit]" class="form-control debit" step="0.01" value="0" min="0"></td>
             <td><input type="number" name="lines[${lineIdx}][credit]" class="form-control credit" step="0.01" value="0" min="0"></td>
-            <td><button type="button" class="btn btn-danger btn-sm remove-line">✖</button></td>
+            <td>
+                <input type="hidden" name="lines[${lineIdx}][currency]" value="${currency}" class="line-currency">
+                <input type="hidden" name="lines[${lineIdx}][exchange_rate]" value="1" class="line-exchange-rate">
+                <button type="button" class="btn btn-danger btn-sm remove-line">✖</button>
+            </td>
         </tr>`;
         $('#linesTable tbody').append(row);
         filterAccountsByCurrency(currency);
@@ -112,6 +127,21 @@ $(function(){
         $('.credit').each(function(){ credit += parseFloat($(this).val())||0; });
         if (debit.toFixed(2) !== credit.toFixed(2)) {
             alert("{{ __('messages.debit_credit_must_equal') }}");
+            return false;
+        }
+        // تحقق من عدم تكرار نفس الحساب في المدين والدائن
+        let accounts = [];
+        let duplicate = false;
+        $('#linesTable tbody tr').each(function(){
+            let acc = $(this).find('select[name*="[account_id]"]').val();
+            if(accounts.includes(acc)) {
+                duplicate = true;
+            } else {
+                accounts.push(acc);
+            }
+        });
+        if(duplicate) {
+            alert('لا يمكن اختيار نفس الحساب في المدين والدائن. يرجى اختيار حسابات مختلفة.');
             return false;
         }
     });

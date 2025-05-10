@@ -414,6 +414,10 @@ class VoucherController extends Controller
                $salaryPayment->journal_entry_id = null;
                $salaryPayment->save();
            }
+           // تحديث حالة القيد المحاسبي المرتبط
+           if ($voucher->journalEntry) {
+               $voucher->journalEntry->update(['status' => 'canceled']);
+           }
            // توليد قيد عكسي
            if ($voucher->journalEntry) {
                $reverse = $voucher->journalEntry->replicate();
@@ -421,6 +425,7 @@ class VoucherController extends Controller
                $reverse->description = 'قيد عكسي لإلغاء السند #' . $voucher->voucher_number;
                $reverse->source_type = \App\Models\Voucher::class;
                $reverse->source_id = $voucher->id;
+               $reverse->status = 'active';
                $reverse->save();
                foreach ($voucher->journalEntry->lines as $line) {
                    $reverse->lines()->create([

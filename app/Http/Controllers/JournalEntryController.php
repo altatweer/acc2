@@ -137,12 +137,8 @@ class JournalEntryController extends Controller
 
     public function cancel(JournalEntry $journalEntry)
     {
-        // فقط القيود اليدوية (بدون مصدر أو source_type = manual)
         if ($journalEntry->status === 'canceled') {
             return redirect()->back()->with('error', 'القيد ملغي بالفعل.');
-        }
-        if ($journalEntry->source_type && $journalEntry->source_type !== 'manual') {
-            return redirect()->back()->with('error', 'لا يمكن إلغاء هذا القيد لأنه مرتبط بعملية آلية.');
         }
         // تحقق إذا كان هناك قيد عكسي سابق لهذا القيد
         $existingReverse = JournalEntry::where('source_type', 'manual')
@@ -150,18 +146,16 @@ class JournalEntryController extends Controller
             ->where('description', 'like', '%قيد عكسي%')
             ->first();
         if ($existingReverse) {
-            return redirect()->route('journal-entries.show', $journalEntry)->with('error', 'تم إلغاء القيد وتوليد قيد عكسي مسبقًا.');
+            return redirect()->route('journal-entries.show', $journalEntry->id)->with('error', 'تم إلغاء القيد وتوليد قيد عكسي مسبقًا.');
         }
         DB::transaction(function () use ($journalEntry) {
+            \Log::info('قبل التحديث', ['id' => $journalEntry->id, 'status' => $journalEntry->status]);
             $journalEntry->update(['status' => 'canceled']);
-            \Log::info('==== JournalEntryController@cancel: UPDATED STATUS ====', [
-                'id' => $journalEntry->id,
-                'status' => $journalEntry->fresh()->status,
-            ]);
+            \Log::info('بعد التحديث', ['id' => $journalEntry->id, 'status' => $journalEntry->fresh()->status]);
             // توليد قيد عكسي
             $reverse = $journalEntry->replicate();
             $reverse->date = now();
-            $reverse->description = 'قيد عكسي لإلغاء القيد اليدوي #' . $journalEntry->id;
+            $reverse->description = 'قيد عكسي لإلغاء القيد #' . $journalEntry->id;
             $reverse->status = 'active';
             $reverse->source_type = 'manual';
             $reverse->source_id = $journalEntry->id;
