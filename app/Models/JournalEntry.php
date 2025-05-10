@@ -19,6 +19,7 @@ class JournalEntry extends Model
         'exchange_rate',
         'total_debit',
         'total_credit',
+        'status',
     ];
 
     public function lines()

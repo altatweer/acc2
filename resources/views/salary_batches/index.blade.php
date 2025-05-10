@@ -41,7 +41,7 @@
                                     <td>
                                         <a href="{{ Route::localizedRoute('salary-batches.show', ['salary_batch' => $batch, ]) }}" class="btn btn-sm btn-info">@lang('messages.view')</a>
                                         @if($batch->status=='pending')
-                                        <form action="{{ Route::localizedRoute('salary-batches.approve', ['salary_batch' => $batch, ]) }}" method="POST" style="display:inline-block" onsubmit="return confirm('@lang('messages.approve_batch_confirm')');">
+                                        <form action="{{ Route::localizedRoute('salary-batches.approve', ['salaryBatch' => $batch->id]) }}" method="POST" style="display:inline-block" onsubmit="return confirm('@lang('messages.approve_batch_confirm')');">
                                             @csrf
                                             <button class="btn btn-sm btn-success">@lang('messages.approve')</button>
                                         </form>

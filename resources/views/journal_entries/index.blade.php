@@ -28,7 +28,12 @@
         </div>
     </form>
     <div class="mb-3 text-right">
-        <a href="{{ route('journal-entries.create') }}" class="btn btn-success">@lang('messages.add_manual_entry')</a>
+        <a href="{{ route('journal-entries.single-currency.create') }}" class="btn btn-primary mr-2">
+            <i class="fas fa-coins"></i> {{ __('messages.add_single_currency_entry') }}
+        </a>
+        <a href="{{ route('journal-entries.multi-currency.create') }}" class="btn btn-info mr-2">
+            <i class="fas fa-globe"></i> {{ __('messages.add_multi_currency_entry') }}
+        </a>
     </div>
     <div class="card">
         <div class="card-body p-0">
@@ -43,6 +48,7 @@
                         <th>@lang('messages.debit')</th>
                         <th>@lang('messages.credit')</th>
                         <th>@lang('messages.status')</th>
+                        <th>@lang('messages.entry_type')</th>
                         <th>@lang('messages.actions')</th>
                     </tr>
                 </thead>
@@ -64,9 +70,16 @@
                             @endif
                         </td>
                         <td>
+                            @if($entry->source_type == null || $entry->source_type == 'manual')
+                                {{ __('messages.manual_entry') }}
+                            @else
+                                {{ __('messages.automatic_entry') }}
+                            @endif
+                        </td>
+                        <td>
                             <a href="{{ Route::localizedRoute('journal-entries.show', ['journal_entry' => $entry, ]) }}" class="btn btn-sm btn-info">@lang('messages.view')</a>
-                            @if((!$entry->source_type || $entry->source_type == 'manual') && $entry->status == 'active')
-                                <form action="{{ Route::localizedRoute('journal-entries.cancel', ['id' => $entry, ]) }}" method="POST" style="display:inline-block;">
+                            @if($entry->status == 'active' && ((!$entry->source_type || $entry->source_type == 'manual') && !($entry->source_type == 'manual' && $entry->source_id && Str::contains($entry->description, 'قيد عكسي'))))
+                                <form action="{{ Route::localizedRoute('journal-entries.cancel', ['journalEntry' => $entry->id]) }}" method="POST" style="display:inline-block;">
                                     @csrf
                                     <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('@lang('messages.cancel_entry_confirm')')">@lang('messages.cancel')</button>
                                 </form>

@@ -589,4 +589,10 @@ return [
     'usd_currency_not_found' => 'عملة الدولار غير موجودة',
     'format_amount_in_iqd' => 'تنسيق المبلغ بالدينار العراقي',
     'back_to_currencies' => 'العودة إلى قائمة العملات',
+    'entry_type' => 'نوع القيد',
+    'multi_currency_entry' => 'قيد متعدد العملات',
+    'single_currency_entry' => 'قيد عملة واحدة',
+    'add_multi_currency_entry' => 'إضافة قيد متعدد العملات',
+    'add_single_currency_entry' => 'إضافة قيد عملة واحدة',
+    'automatic_entry' => 'قيد تلقائي',
 ]; 

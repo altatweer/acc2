@@ -46,6 +46,9 @@ class JournalEntryController extends Controller
 
     public function store(Request $request)
     {
+        \Log::info('==== JournalEntryController@store: REQUEST DATA ====', [
+            'all_request' => $request->all(),
+        ]);
         $validated = $request->validate([
             'date' => 'required|date',
             'description' => 'nullable|string|max:1000',
@@ -57,6 +60,9 @@ class JournalEntryController extends Controller
             'lines.*.currency' => 'required|string|max:3',
             'lines.*.exchange_rate' => 'required|numeric|min:0.000001',
         ]);
+        \Log::info('==== JournalEntryController@store: VALIDATED DATA ====', [
+            'validated' => $validated,
+        ]);
         $totalDebit = collect($validated['lines'])->sum('debit');
         $totalCredit = collect($validated['lines'])->sum('credit');
         $hasDebit = collect($validated['lines'])->where('debit', '>', 0)->count() > 0;
@@ -64,9 +70,6 @@ class JournalEntryController extends Controller
         $uniqueAccounts = collect($validated['lines'])->pluck('account_id')->unique()->count();
         if (count($validated['lines']) < 2 || !$hasDebit || !$hasCredit || $uniqueAccounts < 2) {
             return back()->withErrors(['lines'=>'يجب أن يحتوي القيد على سطرين على الأقل (مدين ودائن) ولكل منهما حساب مختلف.'])->withInput();
-        }
-        if (round($totalDebit,2) !== round($totalCredit,2)) {
-            return back()->withErrors(['lines'=>'يجب أن يتساوى مجموع المدين مع مجموع الدائن'])->withInput();
         }
         // تحقق من مطابقة العملة مع الحساب
         foreach ($validated['lines'] as $idx => $line) {
@@ -76,6 +79,44 @@ class JournalEntryController extends Controller
                     "lines.$idx.account_id" => ["عملة الحساب يجب أن تطابق العملة المدخلة في السطر."]
                 ]);
             }
+        }
+        // تحقق من توازن القيد بعد التحويل للعملة الأساسية (IQD)
+        $totalDebitIQD = 0;
+        $totalCreditIQD = 0;
+        foreach ($validated['lines'] as $idx => $line) {
+            $rate = floatval($line['exchange_rate']);
+            $debit = floatval($line['debit']);
+            $credit = floatval($line['credit']);
+
+            if ($line['currency'] !== 'IQD') {
+                $debit_converted = $debit * $rate;
+                $credit_converted = $credit * $rate;
+            } else {
+                $debit_converted = $debit;
+                $credit_converted = $credit;
+            }
+
+            $totalDebitIQD += $debit_converted;
+            $totalCreditIQD += $credit_converted;
+
+            \Log::info("JournalEntry MC Line $idx", [
+                'debit' => $debit,
+                'credit' => $credit,
+                'rate' => $rate,
+                'debit_converted' => $debit_converted,
+                'credit_converted' => $credit_converted,
+                'currency' => $line['currency'],
+            ]);
+        }
+        \Log::info('==== JournalEntryController@store: TOTALS ====', [
+            'totalDebitIQD' => $totalDebitIQD,
+            'totalCreditIQD' => $totalCreditIQD,
+            'lines' => $validated['lines'],
+        ]);
+        if (round($totalDebitIQD, 2) !== round($totalCreditIQD, 2)) {
+            return back()->withErrors([
+                'lines' => 'يجب أن يتساوى مجموع المدين مع مجموع الدائن بعد التحويل للعملة الأساسية (IQD)'
+            ])->withInput();
         }
         DB::transaction(function() use ($validated, $totalDebit, $totalCredit) {
             $entry = JournalEntry::create([
@@ -103,8 +144,20 @@ class JournalEntryController extends Controller
         if ($journalEntry->source_type && $journalEntry->source_type !== 'manual') {
             return redirect()->back()->with('error', 'لا يمكن إلغاء هذا القيد لأنه مرتبط بعملية آلية.');
         }
+        // تحقق إذا كان هناك قيد عكسي سابق لهذا القيد
+        $existingReverse = JournalEntry::where('source_type', 'manual')
+            ->where('source_id', $journalEntry->id)
+            ->where('description', 'like', '%قيد عكسي%')
+            ->first();
+        if ($existingReverse) {
+            return redirect()->route('journal-entries.show', $journalEntry)->with('error', 'تم إلغاء القيد وتوليد قيد عكسي مسبقًا.');
+        }
         DB::transaction(function () use ($journalEntry) {
             $journalEntry->update(['status' => 'canceled']);
+            \Log::info('==== JournalEntryController@cancel: UPDATED STATUS ====', [
+                'id' => $journalEntry->id,
+                'status' => $journalEntry->fresh()->status,
+            ]);
             // توليد قيد عكسي
             $reverse = $journalEntry->replicate();
             $reverse->date = now();
@@ -125,7 +178,7 @@ class JournalEntryController extends Controller
                 ]);
             }
         });
-        return redirect()->route('journal-entries.show', $journalEntry)->with('success', 'تم إلغاء القيد وتوليد قيد عكسي بنجاح.');
+        return redirect()->route('journal-entries.show', $journalEntry->id)->with('success', 'تم إلغاء القيد وتوليد قيد عكسي بنجاح.');
     }
 
     // دالة تعرض تفاصيل القيد في نافذة منبثقة (AJAX)
@@ -142,5 +195,20 @@ class JournalEntryController extends Controller
     {
         $journalEntry = \App\Models\JournalEntry::with('lines.account', 'user')->findOrFail($id);
         return view('journal_entries.print', compact('journalEntry'));
+    }
+
+    public function createSingleCurrency()
+    {
+        $accounts = Account::where('is_group', 0)->get();
+        $currencies = \App\Models\Currency::all();
+        $defaultCurrency = \App\Models\Currency::getDefaultCode();
+        return view('journal_entries.create_single_currency', compact('accounts', 'currencies', 'defaultCurrency'));
+    }
+
+    public function createMultiCurrency()
+    {
+        $accounts = Account::where('is_group', 0)->get();
+        $currencies = \App\Models\Currency::all();
+        return view('journal_entries.create_multi_currency', compact('accounts', 'currencies'));
     }
 } 

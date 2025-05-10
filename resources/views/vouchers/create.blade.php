@@ -131,7 +131,7 @@
 $(function(){
     const loadAccounts = (currency) => {
         if(!currency) return;
-        $.getJSON("{{ url('accounts/by-currency', ['lang' => app()->getLocale()]) }}" + '/' + currency, function(data){
+        $.getJSON('/accounts/by-currency/' + currency, function(data){
             // populate each row's selects
             $('#transactions_body tr').each(function(){
                 const $row = $(this);

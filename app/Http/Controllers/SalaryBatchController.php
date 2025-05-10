@@ -165,4 +165,16 @@ class SalaryBatchController extends Controller
         }
         return back()->with('success', 'تم اعتماد كشف الرواتب بنجاح وتم توليد قيد الاستحقاق.');
     }
+
+    public function destroy(SalaryBatch $salaryBatch)
+    {
+        // فقط إذا كان الكشف غير معتمد
+        if ($salaryBatch->status !== 'pending') {
+            return back()->withErrors(['لا يمكن حذف كشف معتمد أو مغلق.']);
+        }
+        // حذف جميع دفعات الرواتب المرتبطة
+        $salaryBatch->salaryPayments()->delete();
+        $salaryBatch->delete();
+        return redirect()->route('salary-batches.index')->with('success', 'تم حذف كشف الرواتب بنجاح.');
+    }
 } 

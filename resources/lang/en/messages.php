@@ -670,4 +670,10 @@ return [
     'net_salary' => 'Net Salary',
     'no_data' => 'No data available',
     'total' => 'Total',
+    'entry_type' => 'Entry Type',
+    'multi_currency_entry' => 'Multi-Currency Entry',
+    'single_currency_entry' => 'Single Currency Entry',
+    'add_multi_currency_entry' => 'Add Multi-Currency Entry',
+    'add_single_currency_entry' => 'Add Single Currency Entry',
+    'automatic_entry' => 'Automatic Entry',
 ]; 

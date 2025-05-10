@@ -7,7 +7,7 @@
             <h1 class="m-0">@lang('messages.salary_batch_details') {{ $salaryBatch->month }}</h1>
             <a href="{{ route('salary-batches.index') }}" class="btn btn-secondary">@lang('messages.back_to_batches')</a>
             @if($salaryBatch->status=='pending')
-            <form action="{{ Route::localizedRoute('salary-batches.approve', ['salary_batch' => $salaryBatch, ]) }}" method="POST" style="display:inline-block" onsubmit="return confirm('@lang('messages.approve_batch_confirm')');">
+            <form action="{{ Route::localizedRoute('salary-batches.approve', ['salaryBatch' => $salaryBatch->id]) }}" method="POST" style="display:inline-block" onsubmit="return confirm('@lang('messages.approve_batch_confirm')');">
                 @csrf
                 <button class="btn btn-success">@lang('messages.approve')</button>
             </form>
@@ -100,7 +100,7 @@
 <div class="modal fade" id="editModal" tabindex="-1" role="dialog" aria-labelledby="editModalLabel" aria-hidden="true">
   <div class="modal-dialog" role="document">
     <div class="modal-content">
-      <form id="editForm" method="POST" action="{{ url('salary-payments/update-allowances-deductions', ['lang' => app()->getLocale()]) }}">
+      <form id="editForm" method="POST" action="{{ url('salary-payments/update-allowances-deductions') }}">
         @csrf
         <input type="hidden" name="salary_payment_id" id="modal_salary_payment_id">
         <div class="modal-header">

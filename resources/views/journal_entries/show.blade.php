@@ -2,6 +2,8 @@
 
 @section('content')
 <div class="container-fluid">
+    {{-- Debug: الحالة الحالية --}}
+    <div style="direction:ltr;color:red">Status: {{ $journalEntry->status }}</div>
     <h1 class="mb-4">@lang('messages.entry_details') #{{ $journalEntry->id }}</h1>
     <div class="card mb-3">
         <div class="card-body">
@@ -32,8 +34,9 @@
                     @lang('messages.entry_cancelled_note')
                 </div>
             @endif
-            @if((!$journalEntry->source_type || $journalEntry->source_type == 'manual') && $journalEntry->status == 'active')
-                <form action="{{ Route::localizedRoute('journal-entries.cancel', ['id' => $journalEntry, ]) }}" method="POST" style="display:inline-block;">
+            @php use Illuminate\Support\Str; @endphp
+            @if($journalEntry->status == 'active' && ((!$journalEntry->source_type || $journalEntry->source_type == 'manual') && !($journalEntry->source_type == 'manual' && $journalEntry->source_id && Str::contains($journalEntry->description, 'قيد عكسي'))))
+                <form action="{{ Route::localizedRoute('journal-entries.cancel', ['journalEntry' => $journalEntry->id]) }}" method="POST" style="display:inline-block;">
                     @csrf
                     <button type="submit" class="btn btn-danger" onclick="return confirm('@lang('messages.cancel_entry_confirm')')">@lang('messages.cancel') @lang('messages.journal_entry')</button>
                 </form>
