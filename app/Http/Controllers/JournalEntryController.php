@@ -137,8 +137,19 @@ class JournalEntryController extends Controller
 
     public function cancel(JournalEntry $journalEntry)
     {
+        // إذا كان القيد ملغي مسبقًا
         if ($journalEntry->status === 'canceled') {
             return redirect()->back()->with('error', 'القيد ملغي بالفعل.');
+        }
+        // إذا كان القيد تلقائي (ناتج عن سند أو عملية آلية)
+        if ($journalEntry->source_type && $journalEntry->source_type !== 'manual') {
+            $journalEntry->update(['status' => 'canceled']);
+            \Log::info('JournalEntryController@cancel: Auto entry canceled', [
+                'id' => $journalEntry->id,
+                'status' => $journalEntry->fresh()->status,
+            ]);
+            return redirect()->route('journal-entries.show', $journalEntry->id)
+                ->with('success', 'تم إلغاء القيد التلقائي بنجاح ولن يتم إنشاء قيد عكسي.');
         }
         // تحقق إذا كان هناك قيد عكسي سابق لهذا القيد
         $existingReverse = JournalEntry::where('source_type', 'manual')
@@ -149,13 +160,15 @@ class JournalEntryController extends Controller
             return redirect()->route('journal-entries.show', $journalEntry->id)->with('error', 'تم إلغاء القيد وتوليد قيد عكسي مسبقًا.');
         }
         DB::transaction(function () use ($journalEntry) {
-            \Log::info('قبل التحديث', ['id' => $journalEntry->id, 'status' => $journalEntry->status]);
             $journalEntry->update(['status' => 'canceled']);
-            \Log::info('بعد التحديث', ['id' => $journalEntry->id, 'status' => $journalEntry->fresh()->status]);
+            \Log::info('==== JournalEntryController@cancel: UPDATED STATUS ====', [
+                'id' => $journalEntry->id,
+                'status' => $journalEntry->fresh()->status,
+            ]);
             // توليد قيد عكسي
             $reverse = $journalEntry->replicate();
             $reverse->date = now();
-            $reverse->description = 'قيد عكسي لإلغاء القيد #' . $journalEntry->id;
+            $reverse->description = 'قيد عكسي لإلغاء القيد اليدوي #' . $journalEntry->id;
             $reverse->status = 'active';
             $reverse->source_type = 'manual';
             $reverse->source_id = $journalEntry->id;

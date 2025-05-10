@@ -66,7 +66,7 @@
 
                     <div class="form-group">
                         <label for="voucher_description">@lang('messages.general_voucher_description')</label>
-                        <textarea name="description" id="voucher_description" rows="2" class="form-control" placeholder="@lang('messages.optional')">{{ old('description') }}</textarea>
+                        <textarea name="description" id="voucher_description" rows="2" class="form-control" placeholder="اكتب وصف السند" required>{{ old('description') }}</textarea>
                     </div>
                     <div class="form-row">
                         <div class="form-group col-md-4">

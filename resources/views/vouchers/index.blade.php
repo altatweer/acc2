@@ -74,6 +74,7 @@
                                 <th>@lang('messages.date')</th>
                                 <th>@lang('messages.accountant')</th>
                                 <th>@lang('messages.recipient_payer')</th>
+                                <th>@lang('messages.status')</th>
                                 <th style="width:160px;">@lang('messages.actions')</th>
                             </tr>
                         </thead>
@@ -95,25 +96,21 @@
                                     <td>{{ $voucher->user->name ?? '-' }}</td>
                                     <td>{{ $voucher->recipient_name ?? '-' }}</td>
                                     <td>
+                                        @if($voucher->status == 'active')
+                                            <span class="badge badge-success">@lang('messages.active')</span>
+                                        @else
+                                            <span class="badge badge-danger">@lang('messages.cancelled')</span>
+                                        @endif
+                                    </td>
+                                    <td>
                                         <div class="btn-group btn-group-sm" role="group">
                                             @if($isSuperAdmin || auth()->user()->can('عرض السندات'))
                                             <a href="{{ Route::localizedRoute('vouchers.show', ['voucher' => $voucher->id]) }}" class="btn btn-outline-info" title="@lang('messages.view')">
                                                 <i class="fas fa-eye"></i> @lang('messages.view')
                                             </a>
-                                            @endif
-                                            @if($isSuperAdmin || auth()->user()->can('تعديل السندات'))
-                                            <a href="{{ Route::localizedRoute('vouchers.edit', ['voucher' => $voucher, ]) }}" class="btn btn-primary btn-sm">
-                                                <i class="fas fa-edit"></i> @lang('messages.edit')
+                                            <a href="{{ Route::localizedRoute('vouchers.print', ['voucher' => $voucher->id]) }}" class="btn btn-outline-primary" title="@lang('messages.print')" target="_blank">
+                                                <i class="fas fa-print"></i> @lang('messages.print')
                                             </a>
-                                            @endif
-                                            @if($isSuperAdmin || auth()->user()->can('حذف السندات'))
-                                            <form action="{{ Route::localizedRoute('vouchers.destroy', ['voucher' => $voucher, ]) }}" method="POST" style="display:inline-block;">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('@lang('messages.delete_confirmation')')">
-                                                    <i class="fas fa-trash"></i> @lang('messages.delete')
-                                                </button>
-                                            </form>
                                             @endif
                                         </div>
                                     </td>

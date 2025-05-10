@@ -57,7 +57,7 @@ class VoucherController extends Controller
            'date' => 'required|date',
            'currency' => 'required|string|max:3|exists:currencies,code',
            'recipient_name' => 'nullable|string|max:255',
-           'description' => 'nullable|string|max:1000',
+           'description' => 'required|string|max:1000',
            'transactions' => 'required|array',
            'transactions.*.account_id' => 'required|exists:accounts,id',
            'transactions.*.target_account_id' => 'required|exists:accounts,id',
