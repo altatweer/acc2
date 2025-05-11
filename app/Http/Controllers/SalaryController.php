@@ -9,10 +9,10 @@ class SalaryController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('can:عرض الرواتب')->only(['index', 'show']);
-        $this->middleware('can:إضافة راتب')->only(['create', 'store']);
-        $this->middleware('can:تعديل راتب')->only(['edit', 'update']);
-        $this->middleware('can:حذف راتب')->only(['destroy']);
+        $this->middleware('can:view_salaries')->only(['index', 'show']);
+        $this->middleware('can:add_salary')->only(['create', 'store']);
+        $this->middleware('can:edit_salary')->only(['edit', 'update']);
+        $this->middleware('can:delete_salary')->only(['destroy']);
     }
 
     public function index(Request $request)

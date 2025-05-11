@@ -34,7 +34,7 @@
                             <label>@lang('messages.source_account')</label>
                             <select name="account_id" class="form-control" required id="from-account">
                                 <option value="">@lang('messages.choose_account')</option>
-                                @foreach($cashAccounts as $acc)
+                                @foreach($cashAccountsFrom as $acc)
                                     <option value="{{ $acc->id }}" data-currency="{{ $acc->currency ?? '' }}">
                                         {{ $acc->name }} @if($acc->currency) ({{ $acc->currency }}) @endif
                                     </option>
@@ -46,7 +46,7 @@
                             <label>@lang('messages.target_account')</label>
                             <select name="target_account_id" class="form-control" required id="to-account">
                                 <option value="">@lang('messages.choose_account')</option>
-                                @foreach($cashAccounts as $acc)
+                                @foreach($cashAccountsTo as $acc)
                                     <option value="{{ $acc->id }}" data-currency="{{ $acc->currency ?? '' }}">
                                         {{ $acc->name }} @if($acc->currency) ({{ $acc->currency }}) @endif
                                     </option>
@@ -95,8 +95,11 @@
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/i18n/ar.js"></script>
 <!-- كود التحويل بين العملات -->
 <script>
+@php
+    $allCashAccounts = $cashAccountsFrom->merge($cashAccountsTo)->unique('id');
+@endphp
 $(function(){
-    const cashAccounts = @json($cashAccounts->map(function($a){return ['id' => $a->id, 'currency' => $a->currency, 'name' => $a->name];}));
+    const cashAccounts = @json($allCashAccounts->map(function($a){return ['id' => $a->id, 'currency' => $a->currency, 'name' => $a->name];}));
     const exchangeRates = @json($exchangeRates);
     function filterTargetAccounts() {
         console.log('filterTargetAccounts', cashAccounts);

@@ -90,4 +90,9 @@ class Account extends Model
     {
         return $this->balance() >= $amount;
     }
+
+    public function users()
+    {
+        return $this->belongsToMany(\App\Models\User::class, 'account_user', 'account_id', 'user_id');
+    }
 }

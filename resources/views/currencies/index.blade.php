@@ -10,7 +10,7 @@
         </div>
         <div class="col-sm-6 text-left">
           @php $isSuperAdmin = auth()->check() && auth()->user()->isSuperAdmin(); @endphp
-          @if($isSuperAdmin || auth()->user()->can('إضافة عملة'))
+          @if($isSuperAdmin || auth()->user()->can('add_currency'))
           <a href="{{ route('currencies.create') }}" class="btn btn-primary">@lang('messages.add_new_currency')</a>
           @endif
         </div>
@@ -66,13 +66,13 @@
                   </td>
                   <td>
                     <div class="btn-group btn-group-sm" role="group">
-                      @if($isSuperAdmin || auth()->user()->can('عرض العملات'))
+                      @if($isSuperAdmin || auth()->user()->can('view_currencies'))
                       <a href="{{ route('currencies.show', $currency) }}" class="btn btn-outline-info" title="@lang('messages.view')"><i class="fas fa-eye"></i></a>
                       @endif
-                      @if($isSuperAdmin || auth()->user()->can('تعديل عملة'))
+                      @if($isSuperAdmin || auth()->user()->can('edit_currency'))
                       <a href="{{ route('currencies.edit', $currency) }}" class="btn btn-outline-primary" title="@lang('messages.edit')"><i class="fas fa-edit"></i></a>
                       @endif
-                      @if($isSuperAdmin || auth()->user()->can('حذف عملة'))
+                      @if($isSuperAdmin || auth()->user()->can('delete_currency'))
                       <form action="{{ route('currencies.destroy', $currency) }}" method="POST" class="d-inline" onsubmit="return confirm('@lang('messages.delete_currency_confirm')');">
                         @csrf 
                         @method('DELETE')

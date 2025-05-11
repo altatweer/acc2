@@ -75,10 +75,12 @@
                     @endphp
                     @if(trim((string)$voucherStatus) === 'active')
                         <a href="{{ Route::localizedRoute('vouchers.print', ['voucher' => $voucher->id, ]) }}" class="btn btn-success" target="_blank">@lang('messages.print_voucher')</a>
+                        @can('cancel_vouchers')
                         <form action="{{ Route::localizedRoute('vouchers.cancel', ['voucher' => $voucher, ]) }}" method="POST" style="display:inline-block;">
                             @csrf
                             <button type="submit" class="btn btn-danger" onclick="return confirm('@lang('messages.cancel_voucher_confirm')')">@lang('messages.cancel_voucher')</button>
                         </form>
+                        @endcan
                     @else
                         <div class="mt-3 alert alert-info">
                             <strong>@lang('messages.note'):</strong> @lang('messages.voucher_edit_note')

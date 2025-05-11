@@ -10,7 +10,7 @@
             </div>
             <div class="col-sm-6 text-left">
                 @php $isSuperAdmin = auth()->check() && auth()->user()->isSuperAdmin(); @endphp
-                @if($isSuperAdmin || auth()->user()->can('إضافة سند'))
+                @if($isSuperAdmin || auth()->user()->can('add_voucher'))
                 <a href="{{ Route::localizedRoute('vouchers.create') }}" class="btn btn-sm btn-success">
                     <i class="fas fa-plus-circle"></i> @lang('messages.create_new_voucher')
                 </a>
@@ -27,7 +27,7 @@
             <div class="card-header">
                 <h3 class="card-title">@lang('messages.vouchers_list')</h3>
                 <div class="card-tools">
-                    @if($isSuperAdmin || auth()->user()->can('إضافة سند'))
+                    @if($isSuperAdmin || auth()->user()->can('add_voucher'))
                     <a href="{{ Route::localizedRoute('vouchers.create') }}" class="btn btn-sm btn-success">@lang('messages.new_voucher')</a>
                     @endif
                     @if(request('type') == 'transfer')
@@ -104,7 +104,7 @@
                                     </td>
                                     <td>
                                         <div class="btn-group btn-group-sm" role="group">
-                                            @if($isSuperAdmin || auth()->user()->can('عرض السندات'))
+                                            @if($isSuperAdmin || auth()->user()->can('view_vouchers'))
                                             <a href="{{ Route::localizedRoute('vouchers.show', ['voucher' => $voucher->id]) }}" class="btn btn-outline-info" title="@lang('messages.view')">
                                                 <i class="fas fa-eye"></i> @lang('messages.view')
                                             </a>

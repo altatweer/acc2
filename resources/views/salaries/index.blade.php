@@ -7,7 +7,7 @@
             <h1 class="m-0">@lang('messages.salaries_list')</h1>
             <div class="card-tools">
                 @php $isSuperAdmin = auth()->check() && auth()->user()->isSuperAdmin(); @endphp
-                @if($isSuperAdmin || auth()->user()->can('إضافة راتب'))
+                @if($isSuperAdmin || auth()->user()->can('add_salary'))
                 <a href="{{ route('salaries.create') }}" class="btn btn-sm btn-success">@lang('messages.new_salary')</a>
                 @endif
                 <button type="button" class="btn btn-tool" data-card-widget="collapse"><i class="fas fa-minus"></i></button>
@@ -59,13 +59,13 @@
                                     <td>{{ $salary->effective_to ?? '-' }}</td>
                                     <td>
                                         <div class="btn-group btn-group-sm" role="group">
-                                            @if($isSuperAdmin || auth()->user()->can('عرض الرواتب'))
+                                            @if($isSuperAdmin || auth()->user()->can('view_salaries'))
                                             <a href="{{ Route::localizedRoute('salaries.show', ['salary' => $salary, ]) }}" class="btn btn-outline-info" title="@lang('messages.view')"><i class="fas fa-eye"></i></a>
                                             @endif
-                                            @if($isSuperAdmin || auth()->user()->can('تعديل راتب'))
+                                            @if($isSuperAdmin || auth()->user()->can('edit_salary'))
                                             <a href="{{ Route::localizedRoute('salaries.edit', ['salary' => $salary, ]) }}" class="btn btn-outline-primary" title="@lang('messages.edit')"><i class="fas fa-edit"></i></a>
                                             @endif
-                                            @if($isSuperAdmin || auth()->user()->can('حذف راتب'))
+                                            @if($isSuperAdmin || auth()->user()->can('delete_salary'))
                                             <form action="{{ Route::localizedRoute('salaries.destroy', ['salary' => $salary, ]) }}" method="POST" onsubmit="return confirm('@lang('messages.delete_salary_confirm')');">@csrf @method('DELETE')<button type="submit" class="btn btn-outline-danger" title="@lang('messages.delete')"><i class="fas fa-trash"></i></button></form>
                                             @endif
                                         </div>

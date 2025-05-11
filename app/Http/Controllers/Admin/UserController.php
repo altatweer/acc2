@@ -101,4 +101,26 @@ class UserController extends Controller
         $user->delete();
         return redirect()->route('admin.users.index')->with('success', 'تم حذف المستخدم بنجاح');
     }
+
+    /**
+     * عرض صفحة تحديد الصناديق النقدية للموظف
+     */
+    public function editCashBoxes($id)
+    {
+        $user = \App\Models\User::findOrFail($id);
+        $cashBoxes = \App\Models\Account::where('is_cash_box', 1)->get();
+        $userCashBoxes = $user->cashBoxes()->pluck('accounts.id')->toArray();
+        return view('admin.users.edit_cash_boxes', compact('user', 'cashBoxes', 'userCashBoxes'));
+    }
+
+    /**
+     * حفظ ربط الصناديق النقدية للموظف
+     */
+    public function updateCashBoxes(Request $request, $id)
+    {
+        $user = \App\Models\User::findOrFail($id);
+        $cashBoxIds = $request->input('cash_boxes', []);
+        $user->cashBoxes()->sync($cashBoxIds);
+        return redirect()->route('admin.users.index')->with('success', 'تم تحديث الصناديق النقدية للموظف بنجاح.');
+    }
 }

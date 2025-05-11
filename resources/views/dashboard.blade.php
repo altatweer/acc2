@@ -113,6 +113,24 @@
           </div>
         </div>
       </div>
+
+      @if($userCashBoxes && $userCashBoxes->count())
+        <div class="container-fluid mt-4">
+          <h4 class="mb-3">صناديقك النقدية وأرصدتها:</h4>
+          <div class="row">
+            @foreach($userCashBoxes as $box)
+              <div class="col-lg-3 col-md-4 col-6 mb-3">
+                <div class="card border-info">
+                  <div class="card-body text-center">
+                    <h5 class="card-title">{{ $box['name'] }}</h5>
+                    <p class="card-text">الرصيد: <b>{{ number_format($box['balance'], 2) }}</b> {{ $box['currency'] }}</p>
+                  </div>
+                </div>
+              </div>
+            @endforeach
+          </div>
+        </div>
+      @endif
     </div>
   </div>
 @endsection

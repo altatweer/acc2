@@ -38,10 +38,12 @@
             @endif
             @php use Illuminate\Support\Str; @endphp
             @if($journalEntry->status == 'active' && ((!$journalEntry->source_type || $journalEntry->source_type == 'manual') && !($journalEntry->source_type == 'manual' && $journalEntry->source_id && Str::contains($journalEntry->description, 'قيد عكسي'))))
+                @can('cancel_journal_entries')
                 <form action="{{ Route::localizedRoute('journal-entries.cancel', ['journalEntry' => $journalEntry->id]) }}" method="POST" style="display:inline-block;">
                     @csrf
                     <button type="submit" class="btn btn-danger" onclick="return confirm('@lang('messages.cancel_entry_confirm')')">@lang('messages.cancel') @lang('messages.journal_entry')</button>
                 </form>
+                @endcan
             @endif
             @if($journalEntry->source_type && $journalEntry->source_id)
                 <hr>

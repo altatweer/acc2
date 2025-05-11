@@ -86,7 +86,7 @@
                             <thead class="thead-light">
                                 <tr>
                                     <th>@lang('messages.cash_account')</th>
-                                    <th>@lang('messages.target_account')</th>
+                                    <th>إلى الحساب المستهدف</th>
                                     <th>@lang('messages.amount')</th>
                                     <th>@lang('messages.transaction_description')</th>
                                     <th style="width:100px;">@lang('messages.action')</th>
@@ -97,11 +97,17 @@
                                     <td>
                                         <select name="transactions[0][account_id]" class="form-control select2" required>
                                             <option value="">@lang('messages.choose_cash_account')</option>
+                                            @foreach($cashAccounts as $acc)
+                                                <option value="{{ $acc->id }}">{{ $acc->code }} - {{ $acc->name }}</option>
+                                            @endforeach
                                         </select>
                                     </td>
                                     <td>
                                         <select name="transactions[0][target_account_id]" class="form-control select2">
                                             <option value="">@lang('messages.choose_account')</option>
+                                            @foreach($targetAccounts as $acc)
+                                                <option value="{{ $acc->id }}">{{ $acc->code }} - {{ $acc->name }}</option>
+                                            @endforeach
                                         </select>
                                     </td>
                                     <td><input type="number" name="transactions[0][amount]" value="{{ old('transactions.0.amount') }}" step="0.01" class="form-control" required></td>

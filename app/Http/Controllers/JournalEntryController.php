@@ -10,9 +10,17 @@ use Illuminate\Support\Facades\DB;
 
 class JournalEntryController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('can:cancel_journal_entries')->only(['cancel']);
+    }
+
     public function index(Request $request)
     {
         $query = JournalEntry::with('user');
+        if (!auth()->user()->can('view_all_journal_entries')) {
+            $query->where('created_by', auth()->id());
+        }
         if ($request->filled('date_from')) {
             $query->where('date', '>=', $request->date_from);
         }

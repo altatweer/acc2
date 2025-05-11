@@ -17,10 +17,10 @@ class InvoiceController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('can:عرض الفواتير')->only(['index', 'show']);
-        $this->middleware('can:إضافة فاتورة')->only(['create', 'store']);
-        $this->middleware('can:تعديل فاتورة')->only(['edit', 'update']);
-        $this->middleware('can:حذف فاتورة')->only(['destroy']);
+        $this->middleware('can:view_invoices')->only(['index', 'show']);
+        $this->middleware('can:add_invoice')->only(['create', 'store']);
+        $this->middleware('can:edit_invoice')->only(['edit', 'update']);
+        $this->middleware('can:delete_invoice')->only(['destroy']);
     }
 
     /**
@@ -113,9 +113,17 @@ class InvoiceController extends Controller
         $payments = Voucher::where('recipient_name', $invoice->invoice_number)
             ->latest()->get();
         // Cash accounts matching the invoice currency
-        $cashAccounts = Account::where('is_cash_box', 1)
-            ->where('currency', $invoice->currency)
-            ->get();
+        $user = auth()->user();
+        if ($user->isSuperAdmin() || $user->hasRole('admin')) {
+            $cashAccounts = Account::where('is_cash_box', 1)
+                ->where('currency', $invoice->currency)
+                ->get();
+        } else {
+            $cashAccounts = $user->cashBoxes()
+                ->where('is_cash_box', 1)
+                ->where('currency', $invoice->currency)
+                ->get();
+        }
         // available currencies
         $currencies = Currency::all();
         return view('invoices.show', compact('invoice', 'payments', 'cashAccounts', 'currencies'));

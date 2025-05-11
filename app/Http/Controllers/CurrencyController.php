@@ -9,10 +9,10 @@ class CurrencyController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('can:عرض العملات')->only(['index', 'show']);
-        $this->middleware('can:إضافة عملة')->only(['create', 'store']);
-        $this->middleware('can:تعديل عملة')->only(['edit', 'update']);
-        $this->middleware('can:حذف عملة')->only(['destroy']);
+        $this->middleware('can:view_currencies')->only(['index', 'show']);
+        $this->middleware('can:add_currency')->only(['create', 'store']);
+        $this->middleware('can:edit_currency')->only(['edit', 'update']);
+        $this->middleware('can:delete_currency')->only(['destroy']);
     }
 
     /**

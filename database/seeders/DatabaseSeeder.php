@@ -53,8 +53,13 @@ class DatabaseSeeder extends Seeder
         }
         // إضافة صلاحيات للإعدادات الخاصة
         $permissions[] = 'manage settings';
+        // إضافة الصلاحيات الأساسية إذا لم تكن موجودة
+        $permissions[] = 'view_all_vouchers';
+        $permissions[] = 'view_all_journal_entries';
+        $permissions[] = 'cancel_vouchers';
+        $permissions[] = 'cancel_journal_entries';
         foreach ($permissions as $perm) {
-            \Spatie\Permission\Models\Permission::firstOrCreate(['name' => $perm]);
+            Permission::findOrCreate($perm);
         }
 
         // دور المدير العام

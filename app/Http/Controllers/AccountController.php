@@ -10,11 +10,12 @@ class AccountController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('can:عرض الحسابات')->only(['index', 'realAccounts', 'show', 'chart', 'byCurrency']);
-        $this->middleware('can:إضافة حساب')->only(['createAccount', 'storeAccount']);
-        $this->middleware('can:إضافة فئة')->only(['createGroup', 'storeGroup']);
-        $this->middleware('can:تعديل حساب')->only(['edit', 'update']);
-        $this->middleware('can:حذف حساب')->only(['destroy']);
+        // أزل أو علق التحقق من الصلاحية عن دالة byCurrency
+        // $this->middleware('can:عرض الحسابات')->only(['index', 'realAccounts', 'show', 'chart', 'byCurrency']);
+        $this->middleware('can:add_account')->only(['createAccount', 'storeAccount']);
+        $this->middleware('can:add_category')->only(['createGroup', 'storeGroup']);
+        $this->middleware('can:edit_account')->only(['edit', 'update']);
+        $this->middleware('can:delete_account')->only(['destroy']);
     }
 
     public function index() // عرض الفئات
@@ -243,14 +244,22 @@ class AccountController extends Controller
      */
     public function byCurrency(string $currency)
     {
-        $cashAccounts = Account::where('is_cash_box', 1)
-            ->where('currency', $currency)
-            ->get(['id', 'code', 'name']);
+        $user = auth()->user();
+        if ($user->isSuperAdmin() || $user->hasRole('admin')) {
+            $cashAccounts = Account::where('is_cash_box', 1)
+                ->where('currency', $currency)
+                ->get(['id', 'code', 'name']);
+        } else {
+            $cashAccounts = $user->cashBoxes()
+                ->where('is_cash_box', 1)
+                ->where('currency', $currency)
+                ->select('accounts.id', 'accounts.code', 'accounts.name')
+                ->get();
+        }
         $targetAccounts = Account::where('is_group', 0)
             ->where('is_cash_box', 0)
             ->where('currency', $currency)
             ->get(['id', 'code', 'name']);
-
         return response()->json(compact('cashAccounts', 'targetAccounts'));
     }
 

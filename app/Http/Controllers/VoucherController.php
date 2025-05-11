@@ -13,16 +13,19 @@ class VoucherController extends Controller
 {
    public function __construct()
    {
-       $this->middleware('can:عرض السندات')->only(['index', 'show']);
-       $this->middleware('can:إضافة سند')->only(['create', 'store']);
-       $this->middleware('can:تعديل سند')->only(['edit', 'update']);
-       $this->middleware('can:حذف سند')->only(['destroy']);
+       $this->middleware('can:view_vouchers')->only(['index', 'show']);
+       $this->middleware('can:add_voucher')->only(['create', 'store']);
+       $this->middleware('can:edit_voucher')->only(['edit', 'update']);
+       $this->middleware('can:delete_voucher')->only(['destroy']);
+       $this->middleware('can:cancel_vouchers')->only(['cancel']);
    }
 
    public function index(Request $request)
    {
        $query = Voucher::query();
-
+       if (!auth()->user()->can('view_all_vouchers')) {
+           $query->where('created_by', auth()->id());
+       }
        if ($request->filled('type')) {
            $query->where('type', $request->type);
        }
@@ -32,18 +35,31 @@ class VoucherController extends Controller
        if ($request->filled('recipient_name')) {
            $query->where('recipient_name', 'like', '%' . $request->recipient_name . '%');
        }
-
        $vouchers = $query->latest()->paginate(20);
        return view('vouchers.index', compact('vouchers'));
    }
 
-   public function create()
+   public function create(Request $request)
    {
-       // Default currency for initial selection
        $defaultCurrency = Currency::where('is_default', true)->first();
        $currencies = Currency::all();
-
-       return view('vouchers.create', compact('currencies', 'defaultCurrency'));
+       $user = auth()->user();
+       $currency = $request->input('currency', old('currency', $defaultCurrency->code ?? null));
+       if ($user->isSuperAdmin() || $user->hasRole('admin')) {
+           $cashAccounts = Account::where('is_cash_box', 1)
+               ->when($currency, fn($q) => $q->where('currency', $currency))
+               ->get();
+       } else {
+           $cashAccounts = $user->cashBoxes()
+               ->where('is_cash_box', 1)
+               ->when($currency, fn($q) => $q->where('currency', $currency))
+               ->get();
+       }
+       $targetAccounts = Account::where('is_group', 0)
+           ->where('is_cash_box', 0)
+           ->when($currency, fn($q) => $q->where('currency', $currency))
+           ->get();
+       return view('vouchers.create', compact('currencies', 'defaultCurrency', 'cashAccounts', 'targetAccounts'));
    }
 
    public function store(Request $request)
@@ -252,6 +268,10 @@ class VoucherController extends Controller
 
    public function show(Voucher $voucher)
    {
+       $user = auth()->user();
+       if (!$user->can('view_all_vouchers') && $voucher->created_by !== $user->id) {
+           abort(403, 'غير مصرح لك بمشاهدة هذا السند');
+       }
        $voucher->load('journalEntry.lines.account', 'user');
        return view('vouchers.show', compact('voucher'));
    }
@@ -470,19 +490,23 @@ class VoucherController extends Controller
     */
    public function transferCreate()
    {
-       $cashAccounts = \App\Models\Account::where('is_cash_box', 1)->get();
-       // بناء exchangeRates ديناميكي من جدول العملات
+       $user = auth()->user();
+       if ($user->isSuperAdmin() || $user->hasRole('admin')) {
+           $cashAccountsFrom = \App\Models\Account::where('is_cash_box', 1)->get();
+       } else {
+           $cashAccountsFrom = $user->cashBoxes()->where('is_cash_box', 1)->get();
+       }
+       $cashAccountsTo = \App\Models\Account::where('is_cash_box', 1)->get();
        $currencies = \App\Models\Currency::all();
        $exchangeRates = [];
        foreach ($currencies as $from) {
            foreach ($currencies as $to) {
                if ($from->code !== $to->code) {
-                   // سعر الصرف من عملة إلى أخرى = سعر عملة الهدف ÷ سعر عملة المصدر
                    $exchangeRates[$from->code . '_' . $to->code] = $to->exchange_rate / $from->exchange_rate;
                }
            }
        }
-       return view('vouchers.transfer_create', compact('cashAccounts', 'exchangeRates'));
+       return view('vouchers.transfer_create', compact('cashAccountsFrom', 'cashAccountsTo', 'exchangeRates'));
    }
 
    /**

@@ -51,4 +51,9 @@ class User extends Authenticatable
     {
         return $this->id === 1;
     }
+
+    public function cashBoxes()
+    {
+        return $this->belongsToMany(\App\Models\Account::class, 'account_user', 'user_id', 'account_id');
+    }
 }

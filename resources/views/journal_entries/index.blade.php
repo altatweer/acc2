@@ -28,12 +28,14 @@
         </div>
     </form>
     <div class="mb-3 text-right">
+        @if(auth()->user()->can('add_journal_entry'))
         <a href="{{ route('journal-entries.single-currency.create') }}" class="btn btn-primary mr-2">
             <i class="fas fa-coins"></i> {{ __('messages.add_single_currency_entry') }}
         </a>
         <a href="{{ route('journal-entries.multi-currency.create') }}" class="btn btn-info mr-2">
             <i class="fas fa-globe"></i> {{ __('messages.add_multi_currency_entry') }}
         </a>
+        @endif
     </div>
     <div class="card">
         <div class="card-body p-0">

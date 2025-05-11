@@ -9,10 +9,10 @@ class ItemController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('can:عرض العناصر')->only(['index', 'show']);
-        $this->middleware('can:إضافة عنصر')->only(['create', 'store']);
-        $this->middleware('can:تعديل عنصر')->only(['edit', 'update']);
-        $this->middleware('can:حذف عنصر')->only(['destroy']);
+        $this->middleware('can:view_items')->only(['index', 'show']);
+        $this->middleware('can:add_item')->only(['create', 'store']);
+        $this->middleware('can:edit_item')->only(['edit', 'update']);
+        $this->middleware('can:delete_item')->only(['destroy']);
     }
 
     /**

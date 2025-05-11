@@ -202,6 +202,8 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('permissions', \App\Http\Controllers\Admin\PermissionController::class);
         Route::resource('user-roles', \App\Http\Controllers\Admin\UserRoleController::class);
         Route::resource('users', \App\Http\Controllers\Admin\UserController::class);
+        Route::get('users/{user}/cash-boxes', [\App\Http\Controllers\Admin\UserController::class, 'editCashBoxes'])->name('users.cash_boxes.edit');
+        Route::post('users/{user}/cash-boxes', [\App\Http\Controllers\Admin\UserController::class, 'updateCashBoxes'])->name('users.cash_boxes.update');
     });
 
     // Ledger

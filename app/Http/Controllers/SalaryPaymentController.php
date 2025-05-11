@@ -47,9 +47,17 @@ class SalaryPaymentController extends Controller
                 ->first();
             if ($salaryPayment) {
                 $salary = $salaryPayment;
-                // جلب الصناديق المطابقة لعملة الموظف
+                // جلب الصناديق المصرح بها للموظف فقط
                 $currency = $salaryPayment->employee->currency;
-                $cashAccounts = \App\Models\Account::where('is_cash_box', 1)->where('currency', $currency)->get();
+                $user = $salaryPayment->employee->user;
+                if ($user && method_exists($user, 'cashBoxes')) {
+                    $cashAccounts = $user->cashBoxes()
+                        ->where('is_cash_box', 1)
+                        ->where('currency', $currency)
+                        ->get();
+                } else {
+                    $cashAccounts = collect();
+                }
             }
         }
         return view('salary_payments.create', compact('batches', 'selectedBatchId', 'employees', 'selectedEmployeeId', 'salary', 'cashAccounts'));

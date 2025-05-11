@@ -8,7 +8,7 @@
                 <h3 class="card-title">@lang('messages.customers_list')</h3>
                 <div class="card-tools">
                     @php $isSuperAdmin = auth()->check() && auth()->user()->isSuperAdmin(); @endphp
-                    @if($isSuperAdmin || auth()->user()->can('إضافة عميل'))
+                    @if($isSuperAdmin || auth()->user()->can('add_customer'))
                     <a href="{{ route('customers.create') }}" class="btn btn-sm btn-success">@lang('messages.new_customer')</a>
                     @endif
                     <button type="button" class="btn btn-tool" data-card-widget="collapse"><i class="fas fa-minus"></i></button>
@@ -44,13 +44,13 @@
                                 <td>{{ $cust->account->name }}</td>
                                 <td>
                                     <div class="btn-group btn-group-sm" role="group">
-                                        @if($isSuperAdmin || auth()->user()->can('عرض العملاء'))
+                                        @if($isSuperAdmin || auth()->user()->can('view_customers'))
                                         <a href="{{ Route::localizedRoute('customers.show', ['customer' => $cust, ]) }}" class="btn btn-outline-info" title="@lang('messages.view')"><i class="fas fa-eye"></i></a>
                                         @endif
-                                        @if($isSuperAdmin || auth()->user()->can('تعديل عميل'))
+                                        @if($isSuperAdmin || auth()->user()->can('edit_customer'))
                                         <a href="{{ Route::localizedRoute('customers.edit', ['customer' => $cust, ]) }}" class="btn btn-outline-primary" title="@lang('messages.edit')"><i class="fas fa-edit"></i></a>
                                         @endif
-                                        @if($isSuperAdmin || auth()->user()->can('حذف عميل'))
+                                        @if($isSuperAdmin || auth()->user()->can('delete_customer'))
                                         <form action="{{ Route::localizedRoute('customers.destroy', ['customer' => $cust, ]) }}" method="POST" onsubmit="return confirm('@lang('messages.delete_customer_confirm')');">@csrf @method('DELETE')<button type="submit" class="btn btn-outline-danger" title="@lang('messages.delete')"><i class="fas fa-trash"></i></button></form>
                                         @endif
                                     </div>

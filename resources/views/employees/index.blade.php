@@ -7,7 +7,7 @@
             <h1 class="m-0">@lang('messages.employees_list')</h1>
             <div class="card-tools">
                 @php $isSuperAdmin = auth()->check() && auth()->user()->isSuperAdmin(); @endphp
-                @if($isSuperAdmin || auth()->user()->can('إضافة موظف'))
+                @if($isSuperAdmin || auth()->user()->can('add_employee'))
                 <a href="{{ route('employees.create') }}" class="btn btn-sm btn-success">@lang('messages.new_employee')</a>
                 @endif
                 <button type="button" class="btn btn-tool" data-card-widget="collapse"><i class="fas fa-minus"></i></button>
@@ -57,13 +57,13 @@
                                     </td>
                                     <td>
                                         <div class="btn-group btn-group-sm" role="group">
-                                            @if($isSuperAdmin || auth()->user()->can('عرض الموظفين'))
+                                            @if($isSuperAdmin || auth()->user()->can('view_employees'))
                                             <a href="{{ Route::localizedRoute('employees.show', ['employee' => $emp->id, ]) }}" class="btn btn-outline-info" title="@lang('messages.view')"><i class="fas fa-eye"></i></a>
                                             @endif
-                                            @if($isSuperAdmin || auth()->user()->can('تعديل موظف'))
+                                            @if($isSuperAdmin || auth()->user()->can('edit_employee'))
                                             <a href="{{ Route::localizedRoute('employees.edit', ['employee' => $emp->id, ]) }}" class="btn btn-outline-primary" title="@lang('messages.edit')"><i class="fas fa-edit"></i></a>
                                             @endif
-                                            @if($isSuperAdmin || auth()->user()->can('حذف موظف'))
+                                            @if($isSuperAdmin || auth()->user()->can('delete_employee'))
                                             <form action="{{ Route::localizedRoute('employees.destroy', ['employee' => $emp->id, ]) }}" method="POST" onsubmit="return confirm('@lang('messages.delete_employee_confirm')');">@csrf @method('DELETE')<button type="submit" class="btn btn-outline-danger" title="@lang('messages.delete')"><i class="fas fa-trash"></i></button></form>
                                             @endif
                                         </div>

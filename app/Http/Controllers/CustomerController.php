@@ -10,10 +10,10 @@ class CustomerController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('can:عرض العملاء')->only(['index', 'show']);
-        $this->middleware('can:إضافة عميل')->only(['create', 'store']);
-        $this->middleware('can:تعديل عميل')->only(['edit', 'update']);
-        $this->middleware('can:حذف عميل')->only(['destroy']);
+        $this->middleware('can:view_customers')->only(['index', 'show']);
+        $this->middleware('can:add_customer')->only(['create', 'store']);
+        $this->middleware('can:edit_customer')->only(['edit', 'update']);
+        $this->middleware('can:delete_customer')->only(['destroy']);
     }
 
     /**

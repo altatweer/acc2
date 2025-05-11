@@ -9,29 +9,44 @@ class PermissionSeeder extends Seeder
 {
     public function run(): void
     {
-        $permissionsBySection = [
-            'المستخدمين' => ['عرض المستخدمين', 'إضافة مستخدم', 'تعديل مستخدم', 'حذف مستخدم'],
-            'الأدوار' => ['عرض الأدوار', 'إضافة دور', 'تعديل دور', 'حذف دور'],
-            'الصلاحيات' => ['عرض الصلاحيات', 'إضافة صلاحية', 'تعديل صلاحية', 'حذف صلاحية'],
-            'الحسابات' => ['عرض الحسابات', 'إضافة حساب', 'تعديل حساب', 'حذف حساب'],
-            'الفواتير' => ['عرض الفواتير', 'إضافة فاتورة', 'تعديل فاتورة', 'حذف فاتورة', 'تسديد فاتورة', 'طباعة فاتورة'],
-            'السندات' => ['عرض السندات', 'إضافة سند', 'تعديل سند', 'حذف سند', 'طباعة سند'],
-            'الحركات المالية' => ['عرض الحركات المالية', 'إضافة حركة مالية', 'تعديل حركة مالية', 'حذف حركة مالية'],
-            'العملاء' => ['عرض العملاء', 'إضافة عميل', 'تعديل عميل', 'حذف عميل'],
-            'العناصر' => ['عرض العناصر', 'إضافة عنصر', 'تعديل عنصر', 'حذف عنصر'],
-            'الموظفين' => ['عرض الموظفين', 'إضافة موظف', 'تعديل موظف', 'حذف موظف'],
-            'الرواتب' => ['عرض الرواتب', 'إضافة راتب', 'تعديل راتب', 'حذف راتب'],
-            'دفعات الرواتب' => ['عرض دفعات الرواتب', 'إضافة دفعة راتب', 'تعديل دفعة راتب', 'حذف دفعة راتب'],
-            'كشوف الرواتب' => ['عرض كشوف الرواتب', 'إضافة كشف رواتب', 'تعديل كشف رواتب', 'حذف كشف رواتب'],
-            'العملات' => ['عرض العملات', 'إضافة عملة', 'تعديل عملة', 'حذف عملة'],
-            'الفروع' => ['عرض الفروع', 'إضافة فرع', 'تعديل فرع', 'حذف فرع'],
-            'الإعدادات' => ['عرض الإعدادات', 'تعديل الإعدادات', 'إدارة إعدادات النظام'],
-            'القيود المحاسبية' => ['عرض القيود المحاسبية', 'إضافة قيد محاسبي', 'تعديل قيد محاسبي', 'حذف قيد محاسبي'],
+        $permissions = [
+            // المستخدمين
+            'view_users', 'add_user', 'edit_user', 'delete_user',
+            // الأدوار
+            'view_roles', 'add_role', 'edit_role', 'delete_role',
+            // الصلاحيات
+            'view_permissions', 'add_permission', 'edit_permission', 'delete_permission',
+            // الحسابات
+            'view_accounts', 'add_account', 'edit_account', 'delete_account',
+            // الفواتير
+            'view_invoices', 'add_invoice', 'edit_invoice', 'delete_invoice', 'pay_invoice', 'print_invoice',
+            // السندات
+            'view_vouchers', 'add_voucher', 'edit_voucher', 'delete_voucher', 'print_voucher', 'view_all_vouchers', 'cancel_vouchers',
+            // الحركات المالية
+            'view_transactions', 'add_transaction', 'edit_transaction', 'delete_transaction',
+            // العملاء
+            'view_customers', 'add_customer', 'edit_customer', 'delete_customer',
+            // العناصر
+            'view_items', 'add_item', 'edit_item', 'delete_item',
+            // الموظفين
+            'view_employees', 'add_employee', 'edit_employee', 'delete_employee',
+            // الرواتب
+            'view_salaries', 'add_salary', 'edit_salary', 'delete_salary',
+            // دفعات الرواتب
+            'view_salary_payments', 'add_salary_payment', 'edit_salary_payment', 'delete_salary_payment',
+            // كشوف الرواتب
+            'view_salary_batches', 'add_salary_batch', 'edit_salary_batch', 'delete_salary_batch',
+            // العملات
+            'view_currencies', 'add_currency', 'edit_currency', 'delete_currency',
+            // الفروع
+            'view_branches', 'add_branch', 'edit_branch', 'delete_branch',
+            // الإعدادات
+            'view_settings', 'edit_settings', 'manage_settings',
+            // القيود المحاسبية
+            'view_journal_entries', 'add_journal_entry', 'edit_journal_entry', 'delete_journal_entry', 'view_all_journal_entries', 'cancel_journal_entries',
         ];
-        foreach ($permissionsBySection as $section => $perms) {
-            foreach ($perms as $perm) {
-                Permission::firstOrCreate(['name' => $perm]);
-            }
+        foreach ($permissions as $perm) {
+            Permission::firstOrCreate(['name' => $perm]);
         }
     }
 } 

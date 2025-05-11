@@ -37,6 +37,7 @@
                 <td>{{ $user->email }}</td>
                 <td>
                   <a href="{{ route('admin.users.edit', $user->id) }}" class="btn btn-sm btn-primary">تعديل</a>
+                  <a href="{{ route('admin.users.cash_boxes.edit', $user->id) }}" class="btn btn-sm btn-info">إدارة الصناديق</a>
                   <form action="{{ route('admin.users.destroy', $user->id) }}" method="POST" style="display:inline-block;">
                     @csrf
                     @method('DELETE')

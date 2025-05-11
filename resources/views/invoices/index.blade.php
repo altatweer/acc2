@@ -9,7 +9,7 @@
       </div>
       <div class="col-sm-6 text-left">
         @php $isSuperAdmin = auth()->check() && auth()->user()->isSuperAdmin(); @endphp
-        @if($isSuperAdmin || auth()->user()->can('إضافة فاتورة'))
+        @if($isSuperAdmin || auth()->user()->can('add_invoice'))
         <a href="{{ route('invoices.create') }}" class="btn btn-primary">@lang('messages.create_invoice')</a>
         @endif
       </div>
@@ -60,7 +60,7 @@
                 </span>
               </td>
               <td>
-                @if($isSuperAdmin || auth()->user()->can('عرض الفواتير'))
+                @if($isSuperAdmin || auth()->user()->can('view_invoices'))
                 <a href="{{ Route::localizedRoute('invoices.show', ['invoice' => $inv, ]) }}" class="btn btn-sm btn-info">@lang('messages.view')</a>
                 @endif
               </td>

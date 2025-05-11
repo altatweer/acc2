@@ -174,7 +174,7 @@
             <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
 
                 <li class="nav-header">@lang('sidebar.dashboard')</li>
-                @if($isSuperAdmin || auth()->user()->can('عرض لوحة التحكم'))
+                @if($isSuperAdmin || auth()->user()->can('view_dashboard'))
                 <li class="nav-item">
                     <a href="{{ route('dashboard') }}" class="nav-link {{ Request::routeIs('dashboard') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-home"></i>
@@ -183,7 +183,7 @@
                 </li>
                 @endif
 
-                @if($isSuperAdmin || auth()->user()->can('عرض الحسابات'))
+                @if($isSuperAdmin || auth()->user()->can('view_accounts'))
                 <li class="nav-header">@lang('sidebar.accounts')</li>
                 <li class="nav-item has-treeview {{ Request::routeIs('accounts.*') ? 'menu-open' : '' }}">
                     <a href="#" class="nav-link {{ Request::routeIs('accounts.*') ? 'active' : '' }}">
@@ -228,7 +228,7 @@
                 </li>
                 @endif
 
-                @if($isSuperAdmin || auth()->user()->can('عرض السندات'))
+                @if($isSuperAdmin || auth()->user()->can('view_vouchers'))
                 <li class="nav-header">@lang('sidebar.vouchers')</li>
                 <li class="nav-item has-treeview {{ Request::routeIs('vouchers.*') ? 'menu-open' : '' }}">
                     <a href="#" class="nav-link {{ Request::routeIs('vouchers.*') ? 'active' : '' }}">
@@ -261,7 +261,7 @@
                 </li>
                 @endif
 
-                @if($isSuperAdmin || auth()->user()->can('عرض الحركات المالية'))
+                @if($isSuperAdmin || auth()->user()->can('view_transactions'))
                 <li class="nav-header">@lang('sidebar.transactions')</li>
                 <li class="nav-item">
                     <a href="{{ route('transactions.index') }}" class="nav-link {{ Request::routeIs('transactions.*') ? 'active' : '' }}">
@@ -271,7 +271,7 @@
                 </li>
                 @endif
 
-                @if($isSuperAdmin || auth()->user()->can('عرض العملات'))
+                @if($isSuperAdmin || auth()->user()->can('view_currencies'))
                 <li class="nav-header">@lang('sidebar.currencies')</li>
                 <li class="nav-item">
                     <a href="{{ route('currencies.index') }}" class="nav-link {{ Request::routeIs('currencies.*') ? 'active' : '' }}">
@@ -281,7 +281,7 @@
                 </li>
                 @endif
 
-                @if($isSuperAdmin || auth()->user()->can('عرض الفواتير'))
+                @if($isSuperAdmin || auth()->user()->can('view_invoices'))
                 <li class="nav-header">@lang('sidebar.invoices')</li>
                 <li class="nav-item has-treeview {{ Request::routeIs('invoices.*') || Request::routeIs('invoice-payments.*') ? 'menu-open' : '' }}">
                     <a href="#" class="nav-link {{ Request::routeIs('invoices.*') || Request::routeIs('invoice-payments.*') ? 'active' : '' }}">
@@ -314,7 +314,7 @@
                 </li>
                 @endif
 
-                @if($isSuperAdmin || auth()->user()->can('عرض العملاء'))
+                @if($isSuperAdmin || auth()->user()->can('view_customers'))
                 <li class="nav-header">@lang('sidebar.customers')</li>
                 <li class="nav-item has-treeview {{ Request::routeIs('customers.*') ? 'menu-open' : '' }}">
                     <a href="#" class="nav-link {{ Request::routeIs('customers.*') ? 'active' : '' }}">
@@ -338,7 +338,7 @@
                 </li>
                 @endif
 
-                @if($isSuperAdmin || auth()->user()->can('عرض العناصر'))
+                @if($isSuperAdmin || auth()->user()->can('view_items'))
                 <li class="nav-header">@lang('sidebar.items')</li>
                 <li class="nav-item has-treeview {{ Request::routeIs('items.*') ? 'menu-open' : '' }}">
                     <a href="#" class="nav-link {{ Request::routeIs('items.*') ? 'active' : '' }}">
@@ -362,7 +362,7 @@
                 </li>
                 @endif
 
-                @if($isSuperAdmin || auth()->user()->can('عرض القيود المحاسبية'))
+                @if($isSuperAdmin || auth()->user()->can('view_journal_entries'))
                 <li class="nav-item">
                     <a class="nav-link" href="{{ route('journal-entries.index') }}">
                         <i class="fas fa-book"></i>
@@ -377,7 +377,7 @@
                 </li>
                 @endif
 
-                @if($isSuperAdmin || auth()->user()->can('عرض دفعات الرواتب'))
+                @if($isSuperAdmin || auth()->user()->can('view_salary_payments'))
                 <li class="nav-item">
                     <a href="{{ route('salary-payments.index') }}" class="nav-link">
                         <i class="nav-icon fas fa-money-check-alt"></i>
@@ -386,7 +386,7 @@
                 </li>
                 @endif
 
-                @if($isSuperAdmin || auth()->user()->can('عرض الموظفين'))
+                @if($isSuperAdmin || auth()->user()->can('view_employees'))
                 <li class="nav-header">@lang('sidebar.hr')</li>
                 <li class="nav-item">
                     <a href="{{ route('employees.index') }}" class="nav-link">
@@ -395,7 +395,7 @@
                     </a>
                 </li>
                 @endif
-                @if($isSuperAdmin || auth()->user()->can('عرض الرواتب'))
+                @if($isSuperAdmin || auth()->user()->can('view_salaries'))
                 <li class="nav-item">
                     <a href="{{ route('salaries.index') }}" class="nav-link">
                         <i class="nav-icon fas fa-money-bill-wave"></i>
@@ -403,7 +403,7 @@
                     </a>
                 </li>
                 @endif
-                @if($isSuperAdmin || auth()->user()->can('عرض دفعات الرواتب'))
+                @if($isSuperAdmin || auth()->user()->can('view_salary_payments'))
                 <li class="nav-item">
                     <a href="{{ route('salary-payments.index') }}" class="nav-link">
                         <i class="nav-icon fas fa-money-check-alt"></i>
@@ -411,7 +411,7 @@
                     </a>
                 </li>
                 @endif
-                @if($isSuperAdmin || auth()->user()->can('عرض كشوف الرواتب'))
+                @if($isSuperAdmin || auth()->user()->can('view_salary_batches'))
                 <li class="nav-item">
                     <a href="{{ route('salary-batches.index') }}" class="nav-link">
                         <i class="nav-icon fas fa-file-invoice-dollar"></i>
@@ -420,7 +420,7 @@
                 </li>
                 @endif
 
-                @if($isSuperAdmin || auth()->user()->can('عرض الأدوار'))
+                @if($isSuperAdmin || auth()->user()->can('view_roles'))
                 <li class="nav-header">@lang('sidebar.system_settings')</li>
                 <li class="nav-item">
                     <a href="{{ route('admin.roles.index') }}" class="nav-link {{ Request::routeIs('admin.roles.*') ? 'active' : '' }}">
@@ -429,7 +429,7 @@
                     </a>
                 </li>
                 @endif
-                @if($isSuperAdmin || auth()->user()->can('عرض الصلاحيات'))
+                @if($isSuperAdmin || auth()->user()->can('view_permissions'))
                 <li class="nav-item">
                     <a href="{{ route('admin.permissions.index') }}" class="nav-link {{ Request::routeIs('admin.permissions.*') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-key"></i>
@@ -437,7 +437,7 @@
                     </a>
                 </li>
                 @endif
-                @if($isSuperAdmin || auth()->user()->can('عرض أدوار المستخدمين'))
+                @if($isSuperAdmin || auth()->user()->can('view_user_roles'))
                 <li class="nav-item">
                     <a href="{{ route('admin.user-roles.index') }}" class="nav-link {{ Request::routeIs('admin.user-roles.*') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-users-cog"></i>
@@ -445,7 +445,7 @@
                     </a>
                 </li>
                 @endif
-                @if($isSuperAdmin || auth()->user()->can('عرض المستخدمين'))
+                @if($isSuperAdmin || auth()->user()->can('view_users'))
                 <li class="nav-item">
                     <a href="{{ route('admin.users.index') }}" class="nav-link {{ Request::routeIs('admin.users.*') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-users"></i>
@@ -453,7 +453,7 @@
                     </a>
                 </li>
                 @endif
-                @if($isSuperAdmin || auth()->user()->can('إدارة إعدادات النظام'))
+                @if($isSuperAdmin || auth()->user()->can('manage_system_settings'))
                 <li class="nav-item">
                     <a href="{{ route('accounting-settings.edit') }}" class="nav-link {{ Request::routeIs('accounting-settings.edit') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-cogs"></i>
@@ -461,7 +461,7 @@
                     </a>
                 </li>
                 @endif
-                @if($isSuperAdmin || auth()->user()->can('إدارة إعدادات النظام'))
+                @if($isSuperAdmin || auth()->user()->can('عرض الصلاحيات'))
                 <li class="nav-item">
                     <a href="{{ route('settings.system.edit') }}" class="nav-link {{ Request::routeIs('settings.system.edit') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-cog"></i>
@@ -470,7 +470,7 @@
                 </li>
                 @endif
 
-                @if($isSuperAdmin || auth()->user()->can('عرض التقارير'))
+                @if($isSuperAdmin || auth()->user()->can('view_reports'))
                 <li class="nav-header">@lang('sidebar.reports')</li>
                 <li class="nav-item">
                     <a class="nav-link" href="{{ route('reports.trial-balance') }}">
