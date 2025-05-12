@@ -117,8 +117,9 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="7" class="py-4">@lang('messages.no_vouchers')</td>
+                                    <td colspan="8" class="py-4">@lang('messages.no_vouchers')</td>
                                 </tr>
+                                <tr style="display:none;"><td colspan="8"></td></tr>
                             @endforelse
                         </tbody>
                     </table>

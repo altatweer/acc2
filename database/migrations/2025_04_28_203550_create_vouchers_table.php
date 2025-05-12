@@ -16,6 +16,7 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->unsignedBigInteger('created_by');
             $table->string('recipient_name')->nullable();
+            $table->unsignedBigInteger('journal_entry_id')->nullable();
             $table->enum('status', ['active', 'canceled'])->default('active');
             $table->timestamps();
 

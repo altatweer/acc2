@@ -64,33 +64,6 @@ class AppServiceProvider extends ServiceProvider
             return "<?php echo Route::localizedRoute($expression); ?>";
         });
         
-        // تهيئة الطول الأقصى للسلاسل النصية للإصدارات القديمة من MySQL
-        Schema::defaultStringLength(191);
-        
-        // في حالة HTTPS
-        if (config('app.env') !== 'local') {
-            URL::forceScheme('https');
-        }
-        
-        // Add macro for localized route generation without language prefix
-        Route::macro('localizedRoute', function ($name, $parameters = [], $absolute = true) {
-            // Do not modify parameters - no locale needed
-            return route($name, $parameters, $absolute);
-        });
-        
-        // Extend the redirector to handle routes without language prefix
-        $this->app->extend('redirect', function (Redirector $redirector, $app) {
-            $redirector->macro('localizedRoute', function ($route, $parameters = [], $status = 302, $headers = []) {
-                // Do not add locale parameter
-                return $this->route($route, $parameters, $status, $headers);
-            });
-            
-            return $redirector;
-        });
-        
-        // تهيئة اللغة باستخدام خدمة اللغة المركزية
-        // LanguageService::initializeLanguage(); // تم التعطيل حتى لا تتعارض مع الجلسة
-        
         // إضافة توجيهية blade جديدة لاختبار اللغة الحالية
         Blade::if('arabic', function () {
             return LanguageService::isArabic();
@@ -100,15 +73,36 @@ class AppServiceProvider extends ServiceProvider
             return !LanguageService::isArabic();
         });
         
-        // تفعيل اللغة من الجلسة أو من الإعدادات الافتراضية
-        $defaultLang = null;
-        try {
-            $defaultLang = Setting::get('default_language', config('app.locale'));
-        } catch (\Throwable $e) {
-            $defaultLang = config('app.locale');
+        // Only run DB-dependent code if not in installer
+        if (!request()->is('install*') && file_exists(base_path('.env')) && env('DB_DATABASE')) {
+            Schema::defaultStringLength(191);
+            if (config('app.env') !== 'local') {
+                URL::forceScheme('https');
+            }
+            Route::macro('localizedRoute', function ($name, $parameters = [], $absolute = true) {
+                return route($name, $parameters, $absolute);
+            });
+            $this->app->extend('redirect', function (Redirector $redirector, $app) {
+                $redirector->macro('localizedRoute', function ($route, $parameters = [], $status = 302, $headers = []) {
+                    return $this->route($route, $parameters, $status, $headers);
+                });
+                return $redirector;
+            });
+            // تفعيل اللغة من الجلسة أو من الإعدادات الافتراضية
+            $defaultLang = null;
+            try {
+                $defaultLang = Setting::get('default_language', config('app.locale'));
+            } catch (\Throwable $e) {
+                $defaultLang = config('app.locale');
+            }
+            App::setLocale(
+                Session::get('locale', $defaultLang)
+            );
+        } else {
+            // During installer, use config/app locale only
+            App::setLocale(
+                Session::get('locale', config('app.locale'))
+            );
         }
-        App::setLocale(
-            Session::get('locale', $defaultLang)
-        );
     }
 }

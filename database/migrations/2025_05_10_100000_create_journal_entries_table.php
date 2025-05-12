@@ -19,6 +19,7 @@ return new class extends Migration
             $table->decimal('exchange_rate', 15, 6)->default(1);
             $table->decimal('total_debit', 18, 2)->default(0);
             $table->decimal('total_credit', 18, 2)->default(0);
+            $table->enum('status', ['active', 'canceled'])->default('active');
             $table->timestamps();
 
             $table->foreign('created_by')->references('id')->on('users')->onDelete('cascade');

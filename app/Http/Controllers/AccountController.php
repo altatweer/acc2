@@ -107,7 +107,7 @@ class AccountController extends Controller
         // Validate including currency only for actual accounts
         $validated = $request->validate([
             'name'         => 'required|string|max:255',
-            'code'         => 'nullable|string|max:20|unique:accounts,code',
+            'code'         => 'nullable|string|max:20|unique:accounts,code,NULL,id,currency,' . $request->currency,
             'parent_id'    => 'required|exists:accounts,id',
             'nature'       => 'required|in:debit,credit',
             'currency'     => 'required|string|max:3|exists:currencies,code',
@@ -156,7 +156,7 @@ class AccountController extends Controller
         // Validate input based on is_group flag: 1=group (category), 0=actual account
         $validated = $request->validate([
             'name'        => 'required|string|max:255',
-            'code'        => 'nullable|string|max:20|unique:accounts,code,' . $account->id,
+            'code'        => 'nullable|string|max:20|unique:accounts,code,' . $account->id . ',id,currency,' . $request->currency,
             'parent_id'   => 'nullable|exists:accounts,id',
             'type'        => 'required_if:is_group,1|in:asset,liability,revenue,expense,equity',
             'nature'      => 'required_if:is_group,0|in:debit,credit',

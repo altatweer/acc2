@@ -244,3 +244,21 @@ Route::get('/lang/{locale}', function ($locale) {
     App::setLocale($locale);
     return redirect('/dashboard');
 })->name('lang.switch');
+
+// Installer routes
+Route::group(['middleware' => ['web'], 'prefix' => 'install'], function () {
+    Route::get('/', [\App\Http\Controllers\InstallController::class, 'index'])->name('install.index');
+    Route::post('/', [\App\Http\Controllers\InstallController::class, 'processStep'])->name('install.process');
+    Route::get('/database', [\App\Http\Controllers\InstallController::class, 'database'])->name('install.database');
+    Route::post('/database', [\App\Http\Controllers\InstallController::class, 'saveDatabase'])->name('install.saveDatabase');
+    Route::get('/migrate', [\App\Http\Controllers\InstallController::class, 'migrate'])->name('install.migrate');
+    Route::post('/migrate', [\App\Http\Controllers\InstallController::class, 'runMigrate'])->name('install.runMigrate');
+    Route::get('/admin', [\App\Http\Controllers\InstallController::class, 'admin'])->name('install.admin');
+    Route::post('/admin', [\App\Http\Controllers\InstallController::class, 'saveAdmin'])->name('install.saveAdmin');
+    Route::get('/currencies', [\App\Http\Controllers\InstallController::class, 'currencies'])->name('install.currencies');
+    Route::post('/currencies', [\App\Http\Controllers\InstallController::class, 'saveCurrencies'])->name('install.saveCurrencies');
+    Route::get('/chart', [\App\Http\Controllers\InstallController::class, 'chart'])->name('install.chart');
+    Route::post('/chart/import', [\App\Http\Controllers\InstallController::class, 'importChart'])->name('install.importChart');
+    Route::post('/chart/skip', [\App\Http\Controllers\InstallController::class, 'skipChart'])->name('install.skipChart');
+    Route::get('/finish', [\App\Http\Controllers\InstallController::class, 'finish'])->name('install.finish');
+});

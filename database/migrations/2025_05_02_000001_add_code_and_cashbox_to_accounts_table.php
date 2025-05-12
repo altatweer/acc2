@@ -11,7 +11,7 @@ return new class extends Migration
         // Only add code column if it does not exist
         if (!Schema::hasColumn('accounts', 'code')) {
             Schema::table('accounts', function (Blueprint $table) {
-                $table->string('code')->unique()->after('name');
+                $table->string('code')->after('name');
             });
         }
         // Only add is_cash_box column if it does not exist

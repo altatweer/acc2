@@ -35,6 +35,7 @@
                                 <th>@lang('messages.parent_category')</th>
                                 <th>@lang('messages.account_nature')</th>
                                 <th>@lang('messages.is_cash_box')</th>
+                                <th>@lang('messages.account_currency')</th>
                                 <th style="width:120px;">@lang('messages.actions')</th>
                             </tr>
                         </thead>
@@ -61,6 +62,7 @@
                                             <span class="badge badge-secondary">@lang('messages.no')</span>
                                         @endif
                                     </td>
+                                    <td>{{ $account->currency ?? '-' }}</td>
                                     <td>
                                         <div class="btn-group btn-group-sm" role="group">
                                             <a href="{{ route('accounts.show', $account) }}" class="btn btn-outline-info" title="@lang('messages.details')">
@@ -81,8 +83,9 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="7" class="py-4">@lang('messages.no_accounts_to_display')</td>
+                                    <td colspan="8" class="py-4">@lang('messages.no_accounts_to_display')</td>
                                 </tr>
+                                <tr style="display:none;"><td colspan="8"></td></tr>
                             @endforelse
                         </tbody>
                     </table>

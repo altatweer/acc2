@@ -15,7 +15,7 @@ return new class extends Migration {
             $table->decimal('total_allowances', 18, 2)->default(0);
             $table->decimal('total_deductions', 18, 2)->default(0);
             $table->decimal('net_salary', 18, 2);
-            $table->date('payment_date');
+            $table->date('payment_date')->nullable();
             $table->enum('status', ['pending','paid','cancelled'])->default('pending');
             $table->foreignId('journal_entry_id')->nullable()->constrained('journal_entries')->nullOnDelete();
             $table->foreignId('voucher_id')->nullable()->constrained('vouchers')->nullOnDelete();

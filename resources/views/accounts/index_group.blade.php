@@ -88,6 +88,7 @@
                                         <tr>
                                             <td colspan="6" class="py-4">@lang('messages.no_categories_to_display')</td>
                                         </tr>
+                                        <tr style="display:none;"><td colspan="6"></td></tr>
                                     @endforelse
                                 </tbody>
                             </table>
