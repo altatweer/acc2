@@ -196,6 +196,12 @@ Route::middleware(['auth'])->group(function () {
     Route::get('settings/system', [SettingController::class, 'edit'])->name('settings.system.edit');
     Route::put('settings/system', [SettingController::class, 'update'])->name('settings.system.update');
 
+    // Language management
+    Route::get('languages', [LanguageController::class, 'index'])->name('languages.index');
+    Route::get('languages/upload', [LanguageController::class, 'uploadForm'])->name('languages.uploadForm');
+    Route::post('languages/upload', [LanguageController::class, 'upload'])->name('languages.upload');
+    Route::get('languages/{code}/download', [LanguageController::class, 'download'])->name('languages.download');
+
     // Admin routes
     Route::prefix('admin')->name('admin.')->group(function () {
         Route::resource('roles', \App\Http\Controllers\Admin\RoleController::class);

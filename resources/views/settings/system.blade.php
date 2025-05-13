@@ -36,6 +36,9 @@
                                 <option value="en" {{ $settings['default_language'] == 'en' ? 'selected' : '' }}>English</option>
                             </select>
                             <small class="form-text text-muted">@lang('messages.default_language_hint')</small>
+                            <div class="alert alert-info mt-2" style="font-size:0.97em;">
+                                <i class="fas fa-info-circle"></i> @lang('messages.language_setting_admin_only')
+                            </div>
                         </div>
                         <button type="submit" class="btn btn-success">@lang('messages.save_settings')</button>
                     </form>

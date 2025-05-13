@@ -63,4 +63,5 @@ return [
     'income_statement' => 'Income Statement',
     'payroll_report' => 'Payroll Report',
     'expenses_revenues' => 'Expenses & Revenues Report',
+    'languages_management' => 'Languages Management',
 ]; 

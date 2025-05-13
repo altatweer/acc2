@@ -676,4 +676,14 @@ return [
     'add_multi_currency_entry' => 'Add Multi-Currency Entry',
     'add_single_currency_entry' => 'Add Single Currency Entry',
     'automatic_entry' => 'Automatic Entry',
+    'language_setting_admin_only' => 'Only the system administrator can change the default language. This will affect the login page and all system interfaces for all users.',
+
+    // Language management UI
+    'languages_management' => 'Languages Management',
+    'upload_new_language' => 'Upload New Language',
+    'language_code' => 'Language Code',
+    'has_messages_file' => 'Has messages.php',
+    'download' => 'Download',
+    'language_file' => 'Language File',
+    'upload' => 'Upload',
 ]; 

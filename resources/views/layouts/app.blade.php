@@ -469,6 +469,14 @@
                     </a>
                 </li>
                 @endif
+                @if($isSuperAdmin)
+                <li class="nav-item">
+                    <a href="{{ route('languages.index') }}" class="nav-link {{ Request::routeIs('languages.*') ? 'active' : '' }}">
+                        <i class="nav-icon fas fa-language"></i>
+                        <p>@lang('sidebar.languages_management')</p>
+                    </a>
+                </li>
+                @endif
 
                 @if($isSuperAdmin || auth()->user()->can('view_reports'))
                 <li class="nav-header">@lang('sidebar.reports')</li>

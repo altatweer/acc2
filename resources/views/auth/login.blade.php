@@ -82,16 +82,16 @@
 <body class="login-bg">
 <div class="login-box">
   <div class="login-logo">
-    <img src="/assets/dist/img/logo.png" alt="شعار النظام" onerror="this.style.display='none'">
-    <div><b>نظام</b> الحسابات</div>
+    <img src="/assets/dist/img/logo.png" alt="@lang('auth.system_name')" onerror="this.style.display='none'">
+    <div><b>@lang('auth.system_word')</b> @lang('auth.accounts_word')</div>
   </div>
   <div class="card">
     <div class="card-body login-card-body">
-      <p class="login-box-msg">مرحباً بك! الرجاء تسجيل الدخول للمتابعة</p>
+      <p class="login-box-msg">@lang('auth.login_welcome')</p>
       <form method="POST" action="{{ route('login') }}">
         @csrf
         <div class="input-group mb-3">
-          <input type="email" name="email" class="form-control" placeholder="البريد الإلكتروني" required autofocus>
+          <input type="email" name="email" class="form-control" placeholder="@lang('auth.email')" required autofocus>
           <div class="input-group-append">
             <div class="input-group-text">
               <span class="fas fa-envelope"></span>
@@ -99,7 +99,7 @@
           </div>
         </div>
         <div class="input-group mb-3">
-          <input type="password" name="password" class="form-control" placeholder="كلمة المرور" required>
+          <input type="password" name="password" class="form-control" placeholder="@lang('auth.password')" required>
           <div class="input-group-append">
             <div class="input-group-text">
               <span class="fas fa-lock"></span>
@@ -110,21 +110,21 @@
           <div class="col-7">
             <div class="icheck-primary">
               <input type="checkbox" id="remember" name="remember">
-              <label for="remember">تذكرني</label>
+              <label for="remember">@lang('auth.remember_me')</label>
             </div>
           </div>
           <div class="col-5 text-left">
-            <button type="submit" class="btn btn-primary btn-block">دخول</button>
+            <button type="submit" class="btn btn-primary btn-block">@lang('auth.login')</button>
           </div>
         </div>
       </form>
       <p class="mb-1 mt-3 text-center">
-        <a href="{{ route('password.request') }}">نسيت كلمة المرور؟</a>
+        <a href="{{ route('password.request') }}">@lang('auth.forgot_password')</a>
       </p>
     </div>
   </div>
   <div class="login-footer mt-3">
-    نظام الحسابات &copy; 2025 | تصميم وبرمجة <a href="https://altatweertech.com" target="_blank" style="color:#007bff;font-weight:600;text-decoration:none;">التطوير للحلول البرمجية</a>
+    @lang('auth.system_name') &copy; 2025 | @lang('auth.designed_by') <a href="https://altatweertech.com" target="_blank" style="color:#007bff;font-weight:600;text-decoration:none;">@lang('auth.company_name')</a>
   </div>
 </div>
 </body>

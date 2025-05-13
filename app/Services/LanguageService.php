@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
+use App\Models\Setting;
 
 class LanguageService
 {
@@ -36,9 +37,9 @@ class LanguageService
     }
     
     /**
-     * تعيين اللغة
+     * تعيين اللغة (تستخدم فقط من الإعدادات بواسطة الأدمن)
      *
-     * @param string $lang اللغة المراد تعيينها
+     * @param string $lang
      * @return bool
      */
     public static function setLanguage($lang)
@@ -47,52 +48,23 @@ class LanguageService
         if (!in_array($lang, self::SUPPORTED_LANGUAGES)) {
             $lang = self::DEFAULT_LANGUAGE;
         }
-        
-        // تسجيل المعلومات
-        Log::debug("Setting language", [
-            'language' => $lang,
-            'previous_language' => App::getLocale(),
-            'previous_session' => Session::get(self::SESSION_KEY),
-        ]);
-        
-        // تعيين اللغة في كل الأماكن المطلوبة
+        // حفظ اللغة في الإعدادات
+        Setting::set('default_language', $lang);
         App::setLocale($lang);
         Config::set('app.locale', $lang);
-        Session::put(self::SESSION_KEY, $lang);
-        
-        // تخزين اللغة في الكوكي لمدة شهر
-        $cookieMinutes = 60 * 24 * 30;
-        Cookie::queue(self::SESSION_KEY, $lang, $cookieMinutes);
-        
-        // حفظ الجلسة لضمان تطبيق التغييرات
-        if (Session::isStarted()) {
-            Session::save();
-        }
-        
         return true;
     }
     
     /**
-     * تهيئة اللغة من الجلسة والكوكي
+     * تهيئة اللغة من الإعدادات فقط
      *
-     * @return string اللغة التي تم تحديدها
+     * @return string
      */
     public static function initializeLanguage()
     {
-        $lang = self::DEFAULT_LANGUAGE;
-        
-        // البحث عن اللغة في الجلسة أولاً
-        if (Session::has(self::SESSION_KEY) && in_array(Session::get(self::SESSION_KEY), self::SUPPORTED_LANGUAGES)) {
-            $lang = Session::get(self::SESSION_KEY);
-        } 
-        // ثم في الكوكي
-        elseif (isset($_COOKIE[self::SESSION_KEY]) && in_array($_COOKIE[self::SESSION_KEY], self::SUPPORTED_LANGUAGES)) {
-            $lang = $_COOKIE[self::SESSION_KEY];
-        }
-        
-        // تعيين اللغة
-        self::setLanguage($lang);
-        
+        $lang = Setting::get('default_language', self::DEFAULT_LANGUAGE);
+        App::setLocale($lang);
+        Config::set('app.locale', $lang);
         return $lang;
     }
     

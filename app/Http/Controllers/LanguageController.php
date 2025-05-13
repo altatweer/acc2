@@ -82,4 +82,66 @@ class LanguageController extends Controller
             ->header('Expires', 'Thu, 01 Jan 1970 00:00:00 GMT')
             ->header('Content-Language', $lang);
     }
+
+    /**
+     * عرض قائمة اللغات المتوفرة
+     */
+    public function index()
+    {
+        $langPath = resource_path('lang');
+        $languages = [];
+        foreach (scandir($langPath) as $dir) {
+            if ($dir === '.' || $dir === '..' || !is_dir($langPath . DIRECTORY_SEPARATOR . $dir)) continue;
+            $messagesFile = $langPath . DIRECTORY_SEPARATOR . $dir . DIRECTORY_SEPARATOR . 'messages.php';
+            $languages[] = [
+                'code' => $dir,
+                'has_messages' => file_exists($messagesFile),
+            ];
+        }
+        return view('languages.index', compact('languages'));
+    }
+
+    /**
+     * عرض نموذج رفع ملف لغة جديدة
+     */
+    public function uploadForm()
+    {
+        return view('languages.upload');
+    }
+
+    /**
+     * معالجة رفع ملف لغة جديدة
+     */
+    public function upload(Request $request)
+    {
+        $request->validate([
+            'code' => 'required|string|alpha|size:2',
+            'messages' => 'required|file|mimes:php',
+        ]);
+        $code = strtolower($request->code);
+        $langDir = resource_path('lang/' . $code);
+        if (!is_dir($langDir)) {
+            mkdir($langDir, 0775, true);
+        }
+        $file = $request->file('messages');
+        // تحقق أن الملف يحتوي على مصفوفة PHP فقط
+        $content = file_get_contents($file->getRealPath());
+        if (strpos($content, 'return [') === false) {
+            return back()->withErrors(['messages' => 'ملف اللغة غير صالح. يجب أن يكون مصفوفة PHP تبدأ بـ return [']);
+        }
+        move_uploaded_file($file->getRealPath(), $langDir . '/messages.php');
+        return redirect()->route('languages.index')->with('success', 'تم رفع اللغة بنجاح.');
+    }
+
+    /**
+     * تحميل ملف لغة موجودة
+     */
+    public function download($code)
+    {
+        $file = resource_path('lang/' . $code . '/messages.php');
+        if (!file_exists($file)) {
+            abort(404);
+        }
+        return response()->download($file, $code . '_messages.php');
+    }
 }

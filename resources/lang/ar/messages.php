@@ -595,4 +595,13 @@ return [
     'add_multi_currency_entry' => 'إضافة قيد متعدد العملات',
     'add_single_currency_entry' => 'إضافة قيد عملة واحدة',
     'automatic_entry' => 'قيد تلقائي',
+    'language_setting_admin_only' => 'فقط مسؤول النظام يمكنه تغيير اللغة الافتراضية. هذا الخيار يؤثر على صفحة الدخول وجميع واجهات النظام لكل المستخدمين.',
+    // إدارة اللغات
+    'languages_management' => 'إدارة اللغات',
+    'upload_new_language' => 'رفع لغة جديدة',
+    'language_code' => 'كود اللغة',
+    'has_messages_file' => 'يوجد ملف messages.php',
+    'download' => 'تحميل',
+    'language_file' => 'ملف اللغة',
+    'upload' => 'رفع',
 ]; 

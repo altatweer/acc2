@@ -63,4 +63,5 @@ return [
     'income_statement' => 'قائمة الدخل',
     'payroll_report' => 'تقرير الرواتب والمستحقات',
     'expenses_revenues' => 'تقرير المصروفات والإيرادات',
+    'languages_management' => 'إدارة اللغات',
 ]; 

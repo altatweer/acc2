@@ -88,21 +88,20 @@ class AppServiceProvider extends ServiceProvider
                 });
                 return $redirector;
             });
-            // تفعيل اللغة من الجلسة أو من الإعدادات الافتراضية
+            // تفعيل اللغة من الإعدادات فقط
             $defaultLang = null;
             try {
                 $defaultLang = Setting::get('default_language', config('app.locale'));
             } catch (\Throwable $e) {
                 $defaultLang = config('app.locale');
             }
-            App::setLocale(
-                Session::get('locale', $defaultLang)
-            );
+            App::setLocale($defaultLang);
+            Config::set('app.locale', $defaultLang);
         } else {
             // During installer, use config/app locale only
-            App::setLocale(
-                Session::get('locale', config('app.locale'))
-            );
+            $defaultLang = config('app.locale');
+            App::setLocale($defaultLang);
+            Config::set('app.locale', $defaultLang);
         }
     }
 }
