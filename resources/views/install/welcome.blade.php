@@ -10,7 +10,21 @@
                     <p class="mb-0">A step-by-step wizard to install your accounting system easily and professionally.</p>
                 </div>
                 <div class="card-body">
+                    @if(session('install_notice'))
+                        <div class="alert alert-warning text-center">{{ session('install_notice') }}</div>
+                    @endif
                     <h4 class="mb-3">System Requirements Check</h4>
+                    @if(!empty($requirements['installer_dirs']))
+                        <div class="alert alert-danger">
+                            <b>بعض المجلدات لم يتم إنشاؤها أو لم يتم ضبط الصلاحيات تلقائيًا:</b>
+                            <ul style="margin-top:10px;">
+                                @foreach($requirements['installer_dirs'] as $err)
+                                    <li>{!! $err !!}</li>
+                                @endforeach
+                            </ul>
+                            <div class="mt-2">يرجى إنشاء هذه المجلدات وضبط الصلاحيات يدويًا عبر لوحة تحكم الاستضافة (File Manager).</div>
+                        </div>
+                    @endif
                     <ul class="list-group mb-4">
                         <li class="list-group-item d-flex justify-content-between align-items-center">
                             <span>Required PHP Version: <strong>{{ $requirements['php']['required'] }}+</strong></span>

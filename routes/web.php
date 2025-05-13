@@ -28,6 +28,9 @@ use Illuminate\Support\Facades\Session;
 
 // Default root route redirects to login or dashboard
 Route::get('/', function () {
+   if (!file_exists(storage_path('app/install.lock'))) {
+       return redirect('/install');
+   }
    return redirect('/login');
 });
 

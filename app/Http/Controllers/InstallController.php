@@ -27,6 +27,7 @@ class InstallController extends Controller
             storage_path('app'),
             storage_path('app/public'),
             storage_path('app/private'),
+            storage_path('app/public/logos'),
             storage_path('framework'),
             storage_path('framework/cache'),
             storage_path('framework/sessions'),
@@ -38,6 +39,17 @@ class InstallController extends Controller
             storage_path('fonts/mpdf/ttfontdata'),
             base_path('bootstrap/cache'),
         ];
+        $installerErrors = [];
+        foreach ($requiredDirs as $dir) {
+            if (!is_dir($dir)) {
+                if (!@mkdir($dir, 0777, true)) {
+                    $installerErrors[] = "<b>تعذر إنشاء المجلد:</b> $dir";
+                }
+            }
+            if (!@chmod($dir, 0777)) {
+                $installerErrors[] = "<b>تعذر ضبط الصلاحيات (0777):</b> $dir";
+            }
+        }
         $permissions = [
             'storage' => is_writable(storage_path()),
             'env' => is_writable(base_path('.env')),
@@ -62,6 +74,7 @@ class InstallController extends Controller
                 'gd' => extension_loaded('gd'),
             ],
             'permissions' => $permissions,
+            'installer_dirs' => $installerErrors,
         ];
         return view('install.welcome', compact('requirements'));
     }
@@ -298,6 +311,12 @@ class InstallController extends Controller
         $lockPath = storage_path('app/install.lock');
         if (!file_exists($lockPath)) {
             file_put_contents($lockPath, 'installed');
+            // Seed permissions after install
+            try {
+                \Artisan::call('db:seed', ['--class' => 'Database\\Seeders\\PermissionSeeder', '--force' => true]);
+            } catch (\Exception $e) {
+                // يمكن عرض رسالة أو تسجيل الخطأ إذا لزم الأمر
+            }
         }
         return view('install.finish');
     }

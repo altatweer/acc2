@@ -131,9 +131,9 @@
 @php
     $isSuperAdmin = auth()->check() && auth()->user()->isSuperAdmin();
     use App\Models\Setting;
-    $systemName = Setting::get('system_name', 'نظام الحسابات');
-    $companyLogo = Setting::get('company_logo');
-    $companyName = Setting::get('company_name', '');
+    $systemName = file_exists(storage_path('app/install.lock')) ? Setting::get('system_name', 'نظام الحسابات') : 'نظام الحسابات';
+    $companyLogo = file_exists(storage_path('app/install.lock')) ? Setting::get('company_logo') : null;
+    $companyName = file_exists(storage_path('app/install.lock')) ? Setting::get('company_name', '') : '';
 @endphp
 
 @auth

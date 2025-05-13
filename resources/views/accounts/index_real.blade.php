@@ -85,7 +85,6 @@
                                 <tr>
                                     <td colspan="8" class="py-4">@lang('messages.no_accounts_to_display')</td>
                                 </tr>
-                                <tr style="display:none;"><td colspan="8"></td></tr>
                             @endforelse
                         </tbody>
                     </table>
