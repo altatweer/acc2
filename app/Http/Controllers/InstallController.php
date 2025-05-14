@@ -86,7 +86,8 @@ class InstallController extends Controller
             'purchase_code' => 'required',
         ]);
         // تحقق من رمز الشراء عبر API الوسيط باستخدام cURL
-        $verifyUrl = 'https://envatocode.aursuite.com/envato-verify.php?purchase_code=' . urlencode($request->purchase_code);
+        $domain = $request->getHost();
+        $verifyUrl = 'https://envatocode.aursuite.com/envato-verify.php?purchase_code=' . urlencode($request->purchase_code) . '&domain=' . urlencode($domain);
         $ch = curl_init($verifyUrl);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($ch, CURLOPT_TIMEOUT, 10);
@@ -96,6 +97,13 @@ class InstallController extends Controller
         if (!$result || empty($result['success'])) {
             return back()->withInput()->with('purchase_error', $result['message'] ?? 'فشل التحقق من رمز الشراء.');
         }
+        // حفظ رمز الشراء والدومين في ملف آمن
+        $purchaseData = [
+            'purchase_code' => $request->purchase_code,
+            'domain' => $domain,
+            'verified_at' => now()->toDateTimeString(),
+        ];
+        file_put_contents(storage_path('app/private/purchase.json'), json_encode($purchaseData));
         // بعد تحقق المتطلبات، انتقل لخطوة إعداد قاعدة البيانات
         return redirect()->route('install.database');
     }
