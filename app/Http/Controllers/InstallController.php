@@ -81,6 +81,21 @@ class InstallController extends Controller
 
     public function processStep(Request $request)
     {
+        \Log::info('Install processStep started');
+        $request->validate([
+            'purchase_code' => 'required',
+        ]);
+        // تحقق من رمز الشراء عبر API الوسيط باستخدام cURL
+        $verifyUrl = 'https://envatocode.aursuite.com/envato-verify.php?purchase_code=' . urlencode($request->purchase_code);
+        $ch = curl_init($verifyUrl);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+        $verify = curl_exec($ch);
+        curl_close($ch);
+        $result = json_decode($verify, true);
+        if (!$result || empty($result['success'])) {
+            return back()->withInput()->with('purchase_error', $result['message'] ?? 'فشل التحقق من رمز الشراء.');
+        }
         // بعد تحقق المتطلبات، انتقل لخطوة إعداد قاعدة البيانات
         return redirect()->route('install.database');
     }

@@ -44,9 +44,18 @@
                         @endforeach
                     </ul>
                     @if($requirements['php']['ok'] && !in_array(false, $requirements['extensions']) && !in_array(false, $requirements['permissions']))
-                        <form method="POST" action="{{ route('install.process') }}">
+                        <form method="POST" action="{{ route('install.process') }}" id="purchase-form">
                             @csrf
-                            <button type="submit" class="btn btn-success btn-lg btn-block">Continue Installation <i class="fas fa-arrow-right"></i></button>
+                            <div class="form-group">
+                                <label for="purchase_code">Envato Purchase Code <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="purchase_code" name="purchase_code" value="{{ old('purchase_code') }}" required>
+                                <small class="form-text text-muted">You must enter a valid purchase code to continue installation.</small>
+                                <div id="purchase-status" class="mt-2"></div>
+                                @if(session('purchase_error'))
+                                    <div class="alert alert-danger mt-2">{{ session('purchase_error') }}</div>
+                                @endif
+                            </div>
+                            <button type="submit" class="btn btn-success btn-lg btn-block" id="continue-btn" disabled>Continue Installation <i class="fas fa-arrow-right"></i></button>
                         </form>
                     @else
                         <div class="alert alert-danger text-center">
@@ -58,4 +67,26 @@
         </div>
     </div>
 </div>
+<script>
+document.getElementById('purchase_code').addEventListener('blur', function() {
+    var code = this.value.trim();
+    var status = document.getElementById('purchase-status');
+    var btn = document.getElementById('continue-btn');
+    if (!code) { status.innerHTML = ''; btn.disabled = true; return; }
+    status.innerHTML = '<span class="text-info">Checking purchase code...</span>';
+    btn.disabled = true;
+    fetch('https://envatocode.aursuite.com/envato-verify.php?purchase_code=' + encodeURIComponent(code))
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                status.innerHTML = '<span class="text-success">Valid purchase code for <b>' + data.item + '</b> (buyer: ' + data.buyer + ')</span>';
+                btn.disabled = false;
+            } else {
+                status.innerHTML = '<span class="text-danger">' + data.message + '</span>';
+                btn.disabled = true;
+            }
+        })
+        .catch(() => { status.innerHTML = '<span class="text-danger">Could not verify code. Check your internet connection.</span>'; btn.disabled = true; });
+});
+</script>
 @endsection 
