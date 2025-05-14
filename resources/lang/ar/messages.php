@@ -78,7 +78,7 @@ return [
     'description' => 'الوصف',
     
     // عناوين عامة
-    'accounting_system' => 'نظام الحسابات',
+    'accounting_system' => 'AurSuite',
     'dashboard' => 'لوحة التحكم',
     'settings' => 'الإعدادات',
     'profile' => 'الملف الشخصي',

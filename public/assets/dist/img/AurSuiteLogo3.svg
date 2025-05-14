@@ -1,0 +1,6 @@
+<svg width="240" height="60" viewBox="0 0 240 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <text x="0" y="45" font-family="Segoe UI, Arial, sans-serif" font-size="44" font-weight="bold" fill="#1565c0">Aur</text>
+  <text x="100" y="45" font-family="Segoe UI, Arial, sans-serif" font-size="44" font-weight="bold" fill="#111">Suite</text>
+  <ellipse cx="200" cy="30" rx="18" ry="10" fill="#1565c0" opacity="0.3"/>
+  <ellipse cx="210" cy="35" rx="10" ry="6" fill="#1565c0" opacity="0.3"/>
+</svg> 

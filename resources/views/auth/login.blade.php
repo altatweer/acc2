@@ -82,8 +82,8 @@
 <body class="login-bg">
 <div class="login-box">
   <div class="login-logo">
-    <img src="/assets/dist/img/logo.png" alt="@lang('auth.system_name')" onerror="this.style.display='none'">
-    <div><b>@lang('auth.system_word')</b> @lang('auth.accounts_word')</div>
+    <img src="/assets/dist/img/logo.png" alt="AurSuite">
+    <div><b>AurSuite</b></div>
   </div>
   <div class="card">
     <div class="card-body login-card-body">
@@ -124,7 +124,7 @@
     </div>
   </div>
   <div class="login-footer mt-3">
-    @lang('auth.system_name') &copy; 2025 | @lang('auth.designed_by') <a href="https://altatweertech.com" target="_blank" style="color:#007bff;font-weight:600;text-decoration:none;">@lang('auth.company_name')</a>
+    AurSuite &copy; 2025
   </div>
 </div>
 </body>

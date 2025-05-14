@@ -131,9 +131,9 @@
 @php
     $isSuperAdmin = auth()->check() && auth()->user()->isSuperAdmin();
     use App\Models\Setting;
-    $systemName = file_exists(storage_path('app/install.lock')) ? Setting::get('system_name', 'نظام الحسابات') : 'نظام الحسابات';
-    $companyLogo = file_exists(storage_path('app/install.lock')) ? Setting::get('company_logo') : null;
-    $companyName = file_exists(storage_path('app/install.lock')) ? Setting::get('company_name', '') : '';
+    $systemName = Setting::get('system_name', 'AurSuite');
+    $companyLogo = Setting::get('company_logo', '');
+    $companyName = Setting::get('company_name', '');
 @endphp
 
 @auth
@@ -162,9 +162,9 @@
 <aside class="main-sidebar sidebar-dark-primary elevation-4">
     <a href="{{ route('dashboard') }}" class="brand-link text-center">
         @if($companyLogo)
-            <img src="{{ asset('storage/'.$companyLogo) }}" alt="Logo" class="mb-2">
+            <img src="{{ asset('storage/'.$companyLogo) }}" alt="AurSuite" class="mb-2">
         @else
-            <img src="{{ asset('assets/logo.png') }}" alt="Logo" class="mb-2">
+            <img src="{{ asset('assets/dist/img/logo4.png') }}" alt="AurSuite" class="mb-2">
         @endif
         <span class="brand-text font-weight-light">{{ $systemName }}</span>
     </a>

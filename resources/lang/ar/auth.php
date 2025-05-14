@@ -1,6 +1,6 @@
 <?php
 return [
-    'system_name' => 'نظام الحسابات',
+    'system_name' => 'AurSuite',
     'system_word' => 'نظام',
     'accounts_word' => 'الحسابات',
     'login_welcome' => 'مرحباً بك! الرجاء تسجيل الدخول للمتابعة',

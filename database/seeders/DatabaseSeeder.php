@@ -21,14 +21,11 @@ class DatabaseSeeder extends Seeder
          //   'email' => 'test@example.com',
   //      ]);
 
-        // استدعاء Seeder الحسابات
-        $this->call(CurrencySeeder::class);
-        // استدعاء Seeder للشجرة الحسابية (الفئات والحسابات)
-        $this->call(AccountsTableSeeder::class);
-        // إنشاء مستخدم المدير الافتراضي
+        // استدعاء Seeder الصلاحيات والأدوار أولاً
+        $this->call(PermissionSeeder::class);
         $this->call(AdminUserSeeder::class);
-        // استدعاء Seeder أرصدة الحسابات للعملة الافتراضية
-        $this->call(AccountBalanceSeeder::class);
+        $this->call(CurrencySeeder::class);
+        $this->call(AccountsTableSeeder::class);
 
         // إنشاء سوبر أدمن
         $super = User::firstOrCreate([

@@ -1,6 +1,6 @@
 <?php
 return [
-    'system_name' => 'Accounting System',
+    'system_name' => 'AurSuite',
     'system_word' => 'Accounting',
     'accounts_word' => 'System',
     'login_welcome' => 'Welcome! Please sign in to continue',

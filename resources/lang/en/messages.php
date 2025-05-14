@@ -78,7 +78,7 @@ return [
     'description' => 'Description',
     
     // General headings
-    'accounting_system' => 'Accounting System',
+    'accounting_system' => 'AurSuite',
     'dashboard' => 'Dashboard',
     'settings' => 'Settings',
     'profile' => 'Profile',
