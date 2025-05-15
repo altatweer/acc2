@@ -41,7 +41,7 @@ class InvoicePaymentController extends Controller
 
         // منع السداد إذا كانت الفاتورة ملغية أو مسودة أو مدفوعة بالكامل
         if (!in_array($invoice->status, ['unpaid', 'partial'])) {
-            return back()->with('error', 'لا يمكن سداد فاتورة ملغية أو مسودة أو مدفوعة بالكامل.');
+            return back()->with('error', __('messages.error_general'));
         }
 
         // تحقق من عدم تجاوز السداد لإجمالي الفاتورة
@@ -65,7 +65,7 @@ class InvoicePaymentController extends Controller
                 'date' => $validated['date'],
                 'currency' => $cashAccount->currency,
                 'exchange_rate' => $validated['exchange_rate'],
-                'description' => 'سداد فاتورة ' . $invoice->invoice_number,
+                'description' => __('messages.invoice_payment_desc', ['number' => $invoice->invoice_number]),
                 'recipient_name' => $invoice->invoice_number,
                 'created_by' => auth()->id(),
                 'invoice_id' => $invoice->id,
@@ -77,7 +77,7 @@ class InvoicePaymentController extends Controller
             $lines = [
                 [
                     'account_id' => $cashAccount->id,
-                    'description' => 'استلام نقد لفاتورة ' . $invoice->invoice_number,
+                    'description' => __('messages.invoice_cash_desc', ['number' => $invoice->invoice_number]),
                     'debit' => $amount,
                     'credit' => 0,
                     'currency' => $cashAccount->currency,
@@ -85,7 +85,7 @@ class InvoicePaymentController extends Controller
                 ],
                 [
                     'account_id' => $receivablesAccountId,
-                    'description' => 'تسوية فاتورة ' . $invoice->invoice_number,
+                    'description' => __('messages.invoice_settle_desc', ['number' => $invoice->invoice_number]),
                     'debit' => 0,
                     'credit' => $amount,
                     'currency' => $invoice->currency,
@@ -94,7 +94,7 @@ class InvoicePaymentController extends Controller
             ];
             $journal = \App\Models\JournalEntry::create([
                 'date' => $validated['date'],
-                'description' => 'قيد سداد فاتورة ' . $invoice->invoice_number,
+                'description' => __('messages.invoice_journal_desc', ['number' => $invoice->invoice_number]),
                 'source_type' => \App\Models\Voucher::class,
                 'source_id' => $voucher->id,
                 'created_by' => auth()->id(),
@@ -116,7 +116,7 @@ class InvoicePaymentController extends Controller
                 'amount' => $amount,
                 'currency' => $invoice->currency,
                 'exchange_rate' => $validated['exchange_rate'],
-                'description' => 'سداد فاتورة ' . $invoice->invoice_number,
+                'description' => __('messages.invoice_payment_desc', ['number' => $invoice->invoice_number]),
                 'user_id' => auth()->id(),
             ]);
             // حساب مجموع المدفوعات للفاتورة
@@ -133,7 +133,7 @@ class InvoicePaymentController extends Controller
             $invoice->save();
         });
         return redirect()->route('invoice-payments.create')
-            ->with('success', 'تمت معالجة الدفع بنجاح.');
+            ->with('success', __('messages.created_success'));
     }
 
     /**

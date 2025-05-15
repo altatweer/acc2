@@ -5,7 +5,7 @@
   <div class="container-fluid">
     <div class="row mb-2">
       <div class="col-sm-6">
-        <h1 class="m-0">إدارة أدوار المستخدمين</h1>
+        <h1 class="m-0">{{ __('messages.user_roles_management') }}</h1>
       </div>
     </div>
   </div>
@@ -14,17 +14,17 @@
   <div class="container-fluid">
     <div class="card">
       <div class="card-header">
-        <h3 class="card-title">قائمة المستخدمين والأدوار</h3>
+        <h3 class="card-title">{{ __('messages.users_and_roles_list') }}</h3>
       </div>
       <div class="card-body">
         <table class="table table-bordered table-striped">
           <thead>
             <tr>
               <th>#</th>
-              <th>اسم المستخدم</th>
-              <th>البريد الإلكتروني</th>
-              <th>الأدوار</th>
-              <th>إجراء</th>
+              <th>{{ __('messages.user_name') }}</th>
+              <th>{{ __('messages.email') }}</th>
+              <th>{{ __('messages.roles') }}</th>
+              <th>{{ __('messages.actions') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -40,7 +40,7 @@
                 </td>
                 <td>
                   @if(!$user->isSuperAdmin())
-                  <a href="{{ route('admin.user-roles.edit', $user->id) }}" class="btn btn-sm btn-primary">تعديل الأدوار</a>
+                  <a href="{{ route('admin.user-roles.edit', $user->id) }}" class="btn btn-sm btn-primary">{{ __('messages.edit_roles') }}</a>
                   @endif
                 </td>
               </tr>

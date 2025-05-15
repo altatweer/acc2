@@ -89,7 +89,7 @@ class AccountController extends Controller
 
         Account::create($validated);
 
-        return redirect()->localizedRoute('accounts.index')->with('success', 'تمت إضافة الفئة بنجاح.');
+        return redirect()->localizedRoute('accounts.index')->with('success', __('messages.created_success'));
     }
 
     public function createAccount()
@@ -136,7 +136,7 @@ class AccountController extends Controller
 
         Account::create($validated);
 
-        return redirect()->localizedRoute('accounts.real')->with('success', 'تمت إضافة الحساب بنجاح.');
+        return redirect()->localizedRoute('accounts.real')->with('success', __('messages.created_success'));
     }
 
     public function edit(Account $account)
@@ -179,7 +179,7 @@ class AccountController extends Controller
                 'is_group' => 1,
             ]);
 
-            return redirect()->localizedRoute('accounts.index')->with('success', 'تم تحديث الفئة بنجاح.');
+            return redirect()->localizedRoute('accounts.index')->with('success', __('messages.updated_success'));
         }
 
         $account->update([
@@ -193,22 +193,22 @@ class AccountController extends Controller
             'is_group'    => 0,
         ]);
 
-        return redirect()->localizedRoute('accounts.real')->with('success', 'تم تحديث الحساب بنجاح.');
+        return redirect()->localizedRoute('accounts.real')->with('success', __('messages.updated_success'));
     }
 
     public function destroy(Account $account)
     {
         // منع الحذف إذا كان هناك حسابات أبناء للفئة
         if ($account->is_group && $account->children()->exists()) {
-            return back()->with('error', 'لا يمكن حذف الفئة لوجود حسابات أو فئات تابعة لها.');
+            return back()->with('error', __('messages.error_general'));
         }
         // منع الحذف إذا كان هناك حركات مالية
         $hasTransactions = $account->journalEntryLines()->exists() || $account->transactions()->exists();
         if ($hasTransactions) {
-            return back()->with('error', 'لا يمكن حذف الحساب لوجود حركات مالية مرتبطة به.');
+            return back()->with('error', __('messages.error_general'));
         }
         $account->delete();
-        return back()->with('success', 'تم الحذف بنجاح.');
+        return back()->with('success', __('messages.deleted_success'));
     }
 
     public function chart()

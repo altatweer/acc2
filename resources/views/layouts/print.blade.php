@@ -8,11 +8,7 @@
 @endphp
 <div class="container print-container">
     <div class="print-header text-center mb-4">
-        @if($companyLogo)
-            <img src="{{ asset('storage/'.$companyLogo) }}" alt="Logo" style="height:60px;">
-        @else
-            <img src="{{ asset('assets/logo.png') }}" alt="Logo" style="height:60px;">
-        @endif
+        {{-- شعار الشركة تم حذفه بناءً على طلب العميل --}}
         <h2 class="mt-2">{{ $companyName }}</h2>
         <div class="text-muted">تاريخ الطباعة: {{ now()->format('Y-m-d H:i') }}</div>
         <hr>

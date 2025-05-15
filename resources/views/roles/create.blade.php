@@ -30,35 +30,69 @@
             <label>@lang('messages.permissions')</label>
             @php
               $permissionsBySection = [
-                'المستخدمين' => ['عرض المستخدمين', 'إضافة مستخدم', 'تعديل مستخدم', 'حذف مستخدم'],
-                'الأدوار' => ['عرض الأدوار', 'إضافة دور', 'تعديل دور', 'حذف دور'],
-                'الصلاحيات' => ['عرض الصلاحيات', 'إضافة صلاحية', 'تعديل صلاحية', 'حذف صلاحية'],
-                'الحسابات' => ['عرض الحسابات', 'إضافة حساب', 'تعديل حساب', 'حذف حساب'],
-                'الفواتير' => ['عرض الفواتير', 'إضافة فاتورة', 'تعديل فاتورة', 'حذف فاتورة', 'تسديد فاتورة', 'طباعة فاتورة'],
-                'السندات' => ['عرض السندات', 'إضافة سند', 'تعديل سند', 'حذف سند', 'طباعة سند'],
-                'الحركات المالية' => ['عرض الحركات المالية', 'إضافة حركة مالية', 'تعديل حركة مالية', 'حذف حركة مالية'],
-                'العملاء' => ['عرض العملاء', 'إضافة عميل', 'تعديل عميل', 'حذف عميل'],
-                'العناصر' => ['عرض العناصر', 'إضافة عنصر', 'تعديل عنصر', 'حذف عنصر'],
-                'الموظفين' => ['عرض الموظفين', 'إضافة موظف', 'تعديل موظف', 'حذف موظف'],
-                'الرواتب' => ['عرض الرواتب', 'إضافة راتب', 'تعديل راتب', 'حذف راتب'],
-                'دفعات الرواتب' => ['عرض دفعات الرواتب', 'إضافة دفعة راتب', 'تعديل دفعة راتب', 'حذف دفعة راتب'],
-                'كشوف الرواتب' => ['عرض كشوف الرواتب', 'إضافة كشف رواتب', 'تعديل كشف رواتب', 'حذف كشف رواتب'],
-                'العملات' => ['عرض العملات', 'إضافة عملة', 'تعديل عملة', 'حذف عملة'],
-                'الفروع' => ['عرض الفروع', 'إضافة فرع', 'تعديل فرع', 'حذف فرع'],
-                'الإعدادات' => ['عرض الإعدادات', 'تعديل الإعدادات', 'إدارة إعدادات النظام'],
-                'القيود المحاسبية' => ['عرض القيود المحاسبية', 'إضافة قيد محاسبي', 'تعديل قيد محاسبي', 'حذف قيد محاسبي'],
+                'users' => [
+                  'view_users', 'add_user', 'edit_user', 'delete_user',
+                ],
+                'roles' => [
+                  'view_roles', 'add_role', 'edit_role', 'delete_role',
+                ],
+                'permissions' => [
+                  'view_permissions', 'add_permission', 'edit_permission', 'delete_permission',
+                ],
+                'accounts' => [
+                  'view_accounts', 'add_account', 'edit_account', 'delete_account',
+                ],
+                'invoices' => [
+                  'view_invoices', 'add_invoice', 'edit_invoice', 'delete_invoice', 'pay_invoice', 'print_invoice',
+                ],
+                'vouchers' => [
+                  'view_vouchers', 'add_voucher', 'edit_voucher', 'delete_voucher', 'print_voucher', 'view_all_vouchers', 'cancel_vouchers',
+                ],
+                'transactions' => [
+                  'view_transactions', 'add_transaction', 'edit_transaction', 'delete_transaction',
+                ],
+                'customers' => [
+                  'view_customers', 'add_customer', 'edit_customer', 'delete_customer',
+                ],
+                'items' => [
+                  'view_items', 'add_item', 'edit_item', 'delete_item',
+                ],
+                'employees' => [
+                  'view_employees', 'add_employee', 'edit_employee', 'delete_employee',
+                ],
+                'salaries' => [
+                  'view_salaries', 'add_salary', 'edit_salary', 'delete_salary',
+                ],
+                'salary_payments' => [
+                  'view_salary_payments', 'add_salary_payment', 'edit_salary_payment', 'delete_salary_payment',
+                ],
+                'salary_batches' => [
+                  'view_salary_batches', 'add_salary_batch', 'edit_salary_batch', 'delete_salary_batch',
+                ],
+                'currencies' => [
+                  'view_currencies', 'add_currency', 'edit_currency', 'delete_currency',
+                ],
+                'branches' => [
+                  'view_branches', 'add_branch', 'edit_branch', 'delete_branch',
+                ],
+                'settings' => [
+                  'view_settings', 'edit_settings', 'manage_settings',
+                ],
+                'journal_entries' => [
+                  'view_journal_entries', 'add_journal_entry', 'edit_journal_entry', 'delete_journal_entry', 'view_all_journal_entries', 'cancel_journal_entries',
+                ],
               ];
             @endphp
             <div class="row">
               @foreach($permissionsBySection as $section => $perms)
                 <div class="col-md-12 mb-2">
-                  <strong style="font-size:1.1em; color:#007bff">{{ $section }}</strong>
+                  <strong style="font-size:1.1em; color:#007bff">@lang('messages.' . $section)</strong>
                 </div>
                 @foreach($perms as $perm)
                   <div class="col-md-3">
                     <div class="form-check">
                       <input class="form-check-input" type="checkbox" name="permissions[]" value="{{ $perm }}" id="perm_{{ md5($perm) }}">
-                      <label class="form-check-label" for="perm_{{ md5($perm) }}">{{ $perm }}</label>
+                      <label class="form-check-label" for="perm_{{ md5($perm) }}">@lang('messages.' . $perm)</label>
                     </div>
                   </div>
                 @endforeach

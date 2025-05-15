@@ -35,7 +35,7 @@ class PermissionController extends Controller
             'description' => 'nullable|string|max:255',
         ]);
         Permission::create($validated);
-        return redirect()->route('admin.permissions.index')->with('success', 'تم إضافة الصلاحية بنجاح');
+        return redirect()->route('admin.permissions.index')->with('success', __('messages.created_success'));
     }
 
     /**
@@ -66,7 +66,7 @@ class PermissionController extends Controller
             'description' => 'nullable|string|max:255',
         ]);
         $permission->update($validated);
-        return redirect()->route('admin.permissions.index')->with('success', 'تم تحديث الصلاحية بنجاح');
+        return redirect()->route('admin.permissions.index')->with('success', __('messages.updated_success'));
     }
 
     /**
@@ -76,6 +76,6 @@ class PermissionController extends Controller
     {
         $permission = Permission::findOrFail($id);
         $permission->delete();
-        return redirect()->route('admin.permissions.index')->with('success', 'تم حذف الصلاحية بنجاح');
+        return redirect()->route('admin.permissions.index')->with('success', __('messages.deleted_success'));
     }
 }

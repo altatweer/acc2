@@ -42,18 +42,22 @@
                                     <td>{{ $salary->employee->name ?? '-' }}</td>
                                     <td>{{ number_format($salary->basic_salary, 2) }}</td>
                                     <td>
-                                        @if($salary->allowances)
+                                        @if(is_array($salary->allowances) && count($salary->allowances))
                                             @foreach($salary->allowances as $a)
                                                 <span class="badge badge-success">{{ $a['name'] }}: {{ number_format($a['amount'], 2) }}</span>
                                             @endforeach
-                                        @else - @endif
+                                        @else
+                                            -
+                                        @endif
                                     </td>
                                     <td>
-                                        @if($salary->deductions)
+                                        @if(is_array($salary->deductions) && count($salary->deductions))
                                             @foreach($salary->deductions as $d)
                                                 <span class="badge badge-danger">{{ $d['name'] }}: {{ number_format($d['amount'], 2) }}</span>
                                             @endforeach
-                                        @else - @endif
+                                        @else
+                                            -
+                                        @endif
                                     </td>
                                     <td>{{ $salary->effective_from }}</td>
                                     <td>{{ $salary->effective_to ?? '-' }}</td>

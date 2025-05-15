@@ -38,7 +38,7 @@ class RoleController extends Controller
         ]);
         $role = Role::create(['name' => $validated['name']]);
         $role->syncPermissions($validated['permissions'] ?? []);
-        return redirect()->route('admin.roles.index')->with('success', 'تم إضافة الدور بنجاح');
+        return redirect()->route('admin.roles.index')->with('success', __('messages.created_success'));
     }
 
     /**
@@ -71,7 +71,7 @@ class RoleController extends Controller
         ]);
         $role->update(['name' => $validated['name']]);
         $role->syncPermissions($validated['permissions'] ?? []);
-        return redirect()->route('admin.roles.index')->with('success', 'تم تحديث الدور بنجاح');
+        return redirect()->route('admin.roles.index')->with('success', __('messages.updated_success'));
     }
 
     /**
@@ -81,6 +81,6 @@ class RoleController extends Controller
     {
         $role = Role::findOrFail($id);
         $role->delete();
-        return redirect()->route('admin.roles.index')->with('success', 'تم حذف الدور بنجاح');
+        return redirect()->route('admin.roles.index')->with('success', __('messages.deleted_success'));
     }
 }

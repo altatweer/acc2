@@ -4,8 +4,6 @@
 <div class="content-wrapper">
     <div class="content-header">
         <div class="container-fluid">
-            <div class="alert alert-warning">@lang('messages.debug_voucher_status') <b>{{ $voucher->status }}</b></div>
-            <div class="alert alert-info">@lang('messages.debug_journal_entry') {{ $voucher->journalEntry ? __('messages.debug_yes') : __('messages.debug_no') }} | @lang('messages.debug_line_count') {{ $voucher->journalEntry && $voucher->journalEntry->lines ? $voucher->journalEntry->lines->count() : 0 }}</div>
             <h1 class="m-0">@lang('messages.voucher_details_title')</h1>
         </div>
     </div>

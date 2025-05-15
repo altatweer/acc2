@@ -47,10 +47,15 @@ class SalaryPaymentController extends Controller
                 ->first();
             if ($salaryPayment) {
                 $salary = $salaryPayment;
-                // جلب الصناديق المصرح بها للموظف فقط
+                // جلب الصناديق المصرح بها للموظف فقط أو جميعها للسوبر أدمن
                 $currency = $salaryPayment->employee->currency;
                 $user = $salaryPayment->employee->user;
-                if ($user && method_exists($user, 'cashBoxes')) {
+                if (auth()->user()->isSuperAdmin()) {
+                    // السوبر أدمن يرى كل الصناديق النقدية بعملة الموظف
+                    $cashAccounts = \App\Models\Account::where('is_cash_box', 1)
+                        ->where('currency', $currency)
+                        ->get();
+                } elseif ($user && method_exists($user, 'cashBoxes')) {
                     $cashAccounts = $user->cashBoxes()
                         ->where('is_cash_box', 1)
                         ->where('currency', $currency)
@@ -107,7 +112,7 @@ class SalaryPaymentController extends Controller
                 'date' => $validated['payment_date'],
                 'currency' => $employee->currency,
                 'exchange_rate' => $exchangeRate,
-                'description' => 'صرف راتب شهر ' . $salaryPayment->salary_month . ' للموظف ' . $employee->name,
+                'description' => __('messages.salary_journal_desc', ['month' => $salaryPayment->salary_month, 'name' => $employee->name]),
                 'recipient_name' => $employee->name,
                 'created_by' => auth()->id(),
             ]);
@@ -123,7 +128,7 @@ class SalaryPaymentController extends Controller
             }
             $journal = \App\Models\JournalEntry::create([
                 'date' => $validated['payment_date'],
-                'description' => 'دفع راتب شهر ' . $salaryPayment->salary_month . ' للموظف ' . $employee->name,
+                'description' => __('messages.salary_journal_desc', ['month' => $salaryPayment->salary_month, 'name' => $employee->name]),
                 'source_type' => \App\Models\Voucher::class,
                 'source_id' => $voucher->id,
                 'created_by' => auth()->id(),
@@ -134,7 +139,7 @@ class SalaryPaymentController extends Controller
             ]);
             $journal->lines()->create([
                 'account_id' => $liabilityAccountId,
-                'description' => 'صرف راتب للموظف ' . $employee->name,
+                'description' => __('messages.salary_payment_desc', ['name' => $employee->name]),
                 'debit' => $salaryPayment->net_salary,
                 'credit' => 0,
                 'currency' => $employee->currency,
@@ -142,14 +147,14 @@ class SalaryPaymentController extends Controller
             ]);
             $journal->lines()->create([
                 'account_id' => $cashAccount->id,
-                'description' => 'دفع راتب للموظف ' . $employee->name,
+                'description' => __('messages.salary_payment_desc', ['name' => $employee->name]),
                 'debit' => 0,
                 'credit' => $salaryPayment->net_salary,
                 'currency' => $employee->currency,
                 'exchange_rate' => $exchangeRate,
             ]);
             $salaryPayment->update(['journal_entry_id' => $journal->id]);
-            return redirect()->route('salary-payments.index')->with('success', 'تم دفع الراتب وإنشاء القيد المحاسبي وسند الصرف بنجاح.');
+            return redirect()->route('salary-payments.index')->with('success', __('messages.created_success'));
         });
     }
 
@@ -174,7 +179,7 @@ class SalaryPaymentController extends Controller
     public function destroy(SalaryPayment $salaryPayment)
     {
         $salaryPayment->delete();
-        return redirect()->route('salary-payments.index')->with('success', 'تم حذف الدفعة بنجاح.');
+        return redirect()->route('salary-payments.index')->with('success', __('messages.deleted_success'));
     }
 
     public function updateAllowancesDeductions(Request $request)
@@ -193,7 +198,7 @@ class SalaryPaymentController extends Controller
         $payment->total_deductions = $validated['total_deductions'];
         $payment->net_salary = $net;
         $payment->save();
-        return redirect()->route('salary-batches.show', $payment->salaryBatch)->with('success', 'تم تحديث البدلات والخصومات بنجاح.');
+        return redirect()->route('salary-batches.show', $payment->salaryBatch)->with('success', __('messages.updated_success'));
     }
 
     // دالة توليد رقم سند الصرف

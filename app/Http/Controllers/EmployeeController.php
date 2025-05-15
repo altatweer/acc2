@@ -39,7 +39,7 @@ class EmployeeController extends Controller
             'currency' => 'required|string|exists:currencies,code',
         ]);
         Employee::create($validated);
-        return redirect()->route('employees.index')->with('success', 'تم إضافة الموظف بنجاح.');
+        return redirect()->route('employees.index')->with('success', __('messages.created_success'));
     }
 
     public function show(Employee $employee)
@@ -65,7 +65,7 @@ class EmployeeController extends Controller
             'currency' => 'required|string|exists:currencies,code',
         ]);
         $employee->update($validated);
-        return redirect()->route('employees.index')->with('success', 'تم تحديث بيانات الموظف بنجاح.');
+        return redirect()->route('employees.index')->with('success', __('messages.updated_success'));
     }
 
     public function destroy(Employee $employee)
@@ -73,9 +73,9 @@ class EmployeeController extends Controller
         $hasSalaries = $employee->salaries()->exists();
         $hasSalaryPayments = $employee->salaryPayments()->exists();
         if ($hasSalaries || $hasSalaryPayments) {
-            return redirect()->route('employees.index')->with('error', 'لا يمكن حذف الموظف لوجود رواتب أو دفعات رواتب مرتبطة به.');
+            return redirect()->route('employees.index')->with('error', __('messages.error_general'));
         }
         $employee->delete();
-        return redirect()->route('employees.index')->with('success', 'تم حذف الموظف بنجاح.');
+        return redirect()->route('employees.index')->with('success', __('messages.deleted_success'));
     }
 } 

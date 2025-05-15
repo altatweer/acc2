@@ -50,7 +50,7 @@ class CustomerController extends Controller
         $setting = \App\Models\AccountingSetting::where('currency', $defaultCurrency->code)->first();
         $validated['account_id'] = $setting?->receivables_account_id;
         Customer::create($validated);
-        return redirect()->route('customers.index')->with('success', 'تم إضافة العميل بنجاح.');
+        return redirect()->route('customers.index')->with('success', __('messages.created_success'));
     }
 
     /**
@@ -85,7 +85,7 @@ class CustomerController extends Controller
             'account_id' => 'required|exists:accounts,id',
         ]);
         $customer->update($validated);
-        return redirect()->route('customers.index')->with('success', 'تم تحديث العميل بنجاح.');
+        return redirect()->route('customers.index')->with('success', __('messages.updated_success'));
     }
 
     /**
@@ -97,9 +97,9 @@ class CustomerController extends Controller
         $hasInvoices = $customer->invoices()->exists();
         $hasAccountTransactions = $customer->account && ($customer->account->journalEntryLines()->exists() || $customer->account->transactions()->exists());
         if ($hasInvoices || $hasAccountTransactions) {
-            return redirect()->route('customers.index')->with('error', 'لا يمكن حذف العميل لوجود حركات أو فواتير مرتبطة به.');
+            return redirect()->route('customers.index')->with('error', __('messages.error_general'));
         }
         $customer->delete();
-        return redirect()->route('customers.index')->with('success', 'تم حذف العميل بنجاح.');
+        return redirect()->route('customers.index')->with('success', __('messages.deleted_success'));
     }
 }

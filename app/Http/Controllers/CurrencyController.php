@@ -49,7 +49,7 @@ class CurrencyController extends Controller
             Currency::where('is_default', true)->update(['is_default' => false]);
         }
         Currency::create($data);
-        return redirect()->route('currencies.index')->with('success', 'تم إضافة العملة بنجاح.');
+        return redirect()->route('currencies.index')->with('success', __('messages.created_success'));
     }
 
     /**
@@ -85,7 +85,7 @@ class CurrencyController extends Controller
             Currency::where('is_default', true)->where('id', '!=', $currency->id)->update(['is_default' => false]);
         }
         $currency->update($data);
-        return redirect()->route('currencies.index')->with('success', 'تم تحديث العملة بنجاح.');
+        return redirect()->route('currencies.index')->with('success', __('messages.updated_success'));
     }
 
     /**
@@ -98,9 +98,9 @@ class CurrencyController extends Controller
         $usedInVouchers = \App\Models\Voucher::where('currency', $currency->code)->exists();
         $usedInSettings = \App\Models\AccountingSetting::where('currency', $currency->code)->exists();
         if ($usedInAccounts || $usedInInvoices || $usedInVouchers || $usedInSettings) {
-            return redirect()->route('currencies.index')->with('error', 'لا يمكن حذف العملة لأنها مستخدمة في الحسابات أو الفواتير أو السندات أو الإعدادات.');
+            return redirect()->route('currencies.index')->with('error', __('messages.error_general'));
         }
         $currency->delete();
-        return redirect()->route('currencies.index')->with('success', 'تم حذف العملة بنجاح.');
+        return redirect()->route('currencies.index')->with('success', __('messages.deleted_success'));
     }
 }

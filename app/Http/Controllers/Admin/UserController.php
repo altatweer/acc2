@@ -43,7 +43,7 @@ class UserController extends Controller
         if ($request->has('roles')) {
             $user->syncRoles($request->roles);
         }
-        return redirect()->route('admin.users.index')->with('success', 'تم إضافة المستخدم بنجاح');
+        return redirect()->route('admin.users.index')->with('success', __('messages.created_success'));
     }
 
     /**
@@ -71,7 +71,7 @@ class UserController extends Controller
     {
         $user = User::findOrFail($id);
         if ($user->isSuperAdmin()) {
-            return back()->with('error', 'لا يمكن تعديل بيانات السوبر أدمن.');
+            return back()->with('error', __('messages.error_general'));
         }
         $validated = $request->validate([
             'name' => 'required|string|max:255',
@@ -86,7 +86,7 @@ class UserController extends Controller
         if ($request->has('roles')) {
             $user->syncRoles($request->roles);
         }
-        return redirect()->route('admin.users.index')->with('success', 'تم تحديث المستخدم بنجاح');
+        return redirect()->route('admin.users.index')->with('success', __('messages.updated_success'));
     }
 
     /**
@@ -96,10 +96,10 @@ class UserController extends Controller
     {
         $user = User::findOrFail($id);
         if ($user->isSuperAdmin()) {
-            return back()->with('error', 'لا يمكن حذف السوبر أدمن.');
+            return back()->with('error', __('messages.error_general'));
         }
         $user->delete();
-        return redirect()->route('admin.users.index')->with('success', 'تم حذف المستخدم بنجاح');
+        return redirect()->route('admin.users.index')->with('success', __('messages.deleted_success'));
     }
 
     /**
@@ -121,6 +121,6 @@ class UserController extends Controller
         $user = \App\Models\User::findOrFail($id);
         $cashBoxIds = $request->input('cash_boxes', []);
         $user->cashBoxes()->sync($cashBoxIds);
-        return redirect()->route('admin.users.index')->with('success', 'تم تحديث الصناديق النقدية للموظف بنجاح.');
+        return redirect()->route('admin.users.index')->with('success', __('messages.updated_success'));
     }
 }

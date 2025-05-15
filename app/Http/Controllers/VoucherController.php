@@ -65,7 +65,7 @@ class VoucherController extends Controller
    public function store(Request $request)
    {
        if (!auth()->check()) {
-           return redirect()->route('login')->with('error', 'يجب تسجيل الدخول لإنشاء السند.');
+           return redirect()->route('login')->with('error', __('messages.error_general'));
        }
 
        $validated = $request->validate([
@@ -263,7 +263,7 @@ class VoucherController extends Controller
            }
        });
 
-       return redirect()->route('vouchers.index')->with('success', 'تم إنشاء السند بنجاح.');
+       return redirect()->route('vouchers.index')->with('success', __('messages.created_success'));
    }
 
    public function show(Voucher $voucher)
@@ -413,13 +413,13 @@ class VoucherController extends Controller
                $journal->lines()->create($line);
            }
        });
-       return redirect()->route('vouchers.index')->with('success', 'تم تحديث السند بنجاح.');
+       return redirect()->route('vouchers.index')->with('success', __('messages.updated_success'));
    }
 
    public function cancel(Voucher $voucher)
    {
        if ($voucher->status === 'canceled') {
-           return redirect()->back()->with('error', 'السند ملغي بالفعل.');
+           return redirect()->back()->with('error', __('messages.error_general'));
        }
        \DB::transaction(function () use ($voucher) {
            $voucher->update(['status' => 'canceled']);
@@ -476,7 +476,7 @@ class VoucherController extends Controller
                }
            }
        });
-       return redirect()->route('vouchers.show', ['voucher' => $voucher->id])->with('success', 'تم إلغاء السند وتوليد قيد عكسي بنجاح.');
+       return redirect()->route('vouchers.show', ['voucher' => $voucher->id])->with('success', __('messages.deleted_success'));
    }
 
    private function generateVoucherNumber()
@@ -547,7 +547,6 @@ class VoucherController extends Controller
            $voucher->voucher_number = $this->generateVoucherNumber();
            $voucher->type = 'transfer';
            $voucher->date = $validated['date'];
-           $voucher->amount = $amountFrom;
            $voucher->description = $validated['description'] ?? null;
            $voucher->account_id = $from->id;
            $voucher->target_account_id = $to->id;
@@ -643,7 +642,7 @@ class VoucherController extends Controller
            $journal->save();
        });
 
-       return redirect()->route('vouchers.index', ['type' => 'transfer'])->with('success', 'تم إضافة سند التحويل بنجاح.');
+       return redirect()->route('vouchers.index', ['type' => 'transfer'])->with('success', __('messages.created_success'));
    }
 
    /**

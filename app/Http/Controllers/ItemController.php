@@ -44,7 +44,7 @@ class ItemController extends Controller
             'description'=> 'nullable|string',
         ]);
         Item::create($validated);
-        return redirect()->route('items.index')->with('success', 'تم إضافة العنصر بنجاح.');
+        return redirect()->route('items.index')->with('success', __('messages.created_success'));
     }
 
     /**
@@ -75,7 +75,7 @@ class ItemController extends Controller
             'description'=> 'nullable|string',
         ]);
         $item->update($validated);
-        return redirect()->route('items.index')->with('success', 'تم تحديث العنصر بنجاح.');
+        return redirect()->route('items.index')->with('success', __('messages.updated_success'));
     }
 
     /**
@@ -84,9 +84,9 @@ class ItemController extends Controller
     public function destroy(Item $item)
     {
         if ($item->invoiceItems()->exists()) {
-            return redirect()->route('items.index')->with('error', 'لا يمكن حذف الصنف لوجود فواتير مرتبطة به.');
+            return redirect()->route('items.index')->with('error', __('messages.error_general'));
         }
         $item->delete();
-        return redirect()->route('items.index')->with('success', 'تم حذف العنصر بنجاح.');
+        return redirect()->route('items.index')->with('success', __('messages.deleted_success'));
     }
 }

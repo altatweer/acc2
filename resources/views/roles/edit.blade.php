@@ -31,126 +31,69 @@
             <label>@lang('messages.permissions')</label>
             @php
               $permissionsBySection = [
-                'المستخدمين' => [
-                  'عرض المستخدمين' => 'view_users',
-                  'إضافة مستخدم' => 'add_user',
-                  'تعديل مستخدم' => 'edit_user',
-                  'حذف مستخدم' => 'delete_user',
+                'users' => [
+                  'view_users', 'add_user', 'edit_user', 'delete_user',
                 ],
-                'الأدوار' => [
-                  'عرض الأدوار' => 'view_roles',
-                  'إضافة دور' => 'add_role',
-                  'تعديل دور' => 'edit_role',
-                  'حذف دور' => 'delete_role',
+                'roles' => [
+                  'view_roles', 'add_role', 'edit_role', 'delete_role',
                 ],
-                'الصلاحيات' => [
-                  'عرض الصلاحيات' => 'view_permissions',
-                  'إضافة صلاحية' => 'add_permission',
-                  'تعديل صلاحية' => 'edit_permission',
-                  'حذف صلاحية' => 'delete_permission',
+                'permissions' => [
+                  'view_permissions', 'add_permission', 'edit_permission', 'delete_permission',
                 ],
-                'الحسابات' => [
-                  'عرض الحسابات' => 'view_accounts',
-                  'إضافة حساب' => 'add_account',
-                  'تعديل حساب' => 'edit_account',
-                  'حذف حساب' => 'delete_account',
+                'accounts' => [
+                  'view_accounts', 'add_account', 'edit_account', 'delete_account',
                 ],
-                'الفواتير' => [
-                  'عرض الفواتير' => 'view_invoices',
-                  'إضافة فاتورة' => 'add_invoice',
-                  'تعديل فاتورة' => 'edit_invoice',
-                  'حذف فاتورة' => 'delete_invoice',
-                  'تسديد فاتورة' => 'pay_invoice',
-                  'طباعة فاتورة' => 'print_invoice',
+                'invoices' => [
+                  'view_invoices', 'add_invoice', 'edit_invoice', 'delete_invoice', 'pay_invoice', 'print_invoice',
                 ],
-                'السندات' => [
-                  'عرض السندات' => 'view_vouchers',
-                  'إضافة سند' => 'add_voucher',
-                  'تعديل سند' => 'edit_voucher',
-                  'حذف سند' => 'delete_voucher',
-                  'طباعة سند' => 'print_voucher',
-                  'جميع السندات' => 'view_all_vouchers',
-                  'إلغاء سند' => 'cancel_vouchers',
+                'vouchers' => [
+                  'view_vouchers', 'add_voucher', 'edit_voucher', 'delete_voucher', 'print_voucher', 'view_all_vouchers', 'cancel_vouchers',
                 ],
-                'الحركات المالية' => [
-                  'عرض الحركات المالية' => 'view_transactions',
-                  'إضافة حركة مالية' => 'add_transaction',
-                  'تعديل حركة مالية' => 'edit_transaction',
-                  'حذف حركة مالية' => 'delete_transaction',
+                'transactions' => [
+                  'view_transactions', 'add_transaction', 'edit_transaction', 'delete_transaction',
                 ],
-                'العملاء' => [
-                  'عرض العملاء' => 'view_customers',
-                  'إضافة عميل' => 'add_customer',
-                  'تعديل عميل' => 'edit_customer',
-                  'حذف عميل' => 'delete_customer',
+                'customers' => [
+                  'view_customers', 'add_customer', 'edit_customer', 'delete_customer',
                 ],
-                'العناصر' => [
-                  'عرض العناصر' => 'view_items',
-                  'إضافة عنصر' => 'add_item',
-                  'تعديل عنصر' => 'edit_item',
-                  'حذف عنصر' => 'delete_item',
+                'items' => [
+                  'view_items', 'add_item', 'edit_item', 'delete_item',
                 ],
-                'الموظفين' => [
-                  'عرض الموظفين' => 'view_employees',
-                  'إضافة موظف' => 'add_employee',
-                  'تعديل موظف' => 'edit_employee',
-                  'حذف موظف' => 'delete_employee',
+                'employees' => [
+                  'view_employees', 'add_employee', 'edit_employee', 'delete_employee',
                 ],
-                'الرواتب' => [
-                  'عرض الرواتب' => 'view_salaries',
-                  'إضافة راتب' => 'add_salary',
-                  'تعديل راتب' => 'edit_salary',
-                  'حذف راتب' => 'delete_salary',
+                'salaries' => [
+                  'view_salaries', 'add_salary', 'edit_salary', 'delete_salary',
                 ],
-                'دفعات الرواتب' => [
-                  'عرض دفعات الرواتب' => 'view_salary_payments',
-                  'إضافة دفعة راتب' => 'add_salary_payment',
-                  'تعديل دفعة راتب' => 'edit_salary_payment',
-                  'حذف دفعة راتب' => 'delete_salary_payment',
+                'salary_payments' => [
+                  'view_salary_payments', 'add_salary_payment', 'edit_salary_payment', 'delete_salary_payment',
                 ],
-                'كشوف الرواتب' => [
-                  'عرض كشوف الرواتب' => 'view_salary_batches',
-                  'إضافة كشف رواتب' => 'add_salary_batch',
-                  'تعديل كشف رواتب' => 'edit_salary_batch',
-                  'حذف كشف رواتب' => 'delete_salary_batch',
+                'salary_batches' => [
+                  'view_salary_batches', 'add_salary_batch', 'edit_salary_batch', 'delete_salary_batch',
                 ],
-                'العملات' => [
-                  'عرض العملات' => 'view_currencies',
-                  'إضافة عملة' => 'add_currency',
-                  'تعديل عملة' => 'edit_currency',
-                  'حذف عملة' => 'delete_currency',
+                'currencies' => [
+                  'view_currencies', 'add_currency', 'edit_currency', 'delete_currency',
                 ],
-                'الفروع' => [
-                  'عرض الفروع' => 'view_branches',
-                  'إضافة فرع' => 'add_branch',
-                  'تعديل فرع' => 'edit_branch',
-                  'حذف فرع' => 'delete_branch',
+                'branches' => [
+                  'view_branches', 'add_branch', 'edit_branch', 'delete_branch',
                 ],
-                'الإعدادات' => [
-                  'عرض الإعدادات' => 'view_settings',
-                  'تعديل الإعدادات' => 'edit_settings',
-                  'إدارة إعدادات النظام' => 'manage_settings',
+                'settings' => [
+                  'view_settings', 'edit_settings', 'manage_settings',
                 ],
-                'القيود المحاسبية' => [
-                  'عرض القيود المحاسبية' => 'view_journal_entries',
-                  'إضافة قيد محاسبي' => 'add_journal_entry',
-                  'تعديل قيد محاسبي' => 'edit_journal_entry',
-                  'حذف قيد محاسبي' => 'delete_journal_entry',
-                  'جميع القيود المحاسبية' => 'view_all_journal_entries',
-                  'إلغاء قيد محاسبي' => 'cancel_journal_entries',
+                'journal_entries' => [
+                  'view_journal_entries', 'add_journal_entry', 'edit_journal_entry', 'delete_journal_entry', 'view_all_journal_entries', 'cancel_journal_entries',
                 ],
               ];
             @endphp
             <div class="row">
               @foreach($permissionsBySection as $section => $perms)
                 <div class="col-md-12 mb-2">
-                  <strong style="font-size:1.1em; color:#007bff">{{ $section }}</strong>
+                  <strong style="font-size:1.1em; color:#007bff">@lang('messages.' . $section)</strong>
                 </div>
-                @foreach($perms as $permLabel => $permName)
+                @foreach($perms as $perm)
                   <div class="col-md-3">
                     <div class="form-check">
-                      <input class="form-check-input" type="checkbox" name="permissions[]" value="{{ $permName }}" id="perm_{{ md5($permName) }}" {{ $role->permissions->contains('name', $permName) ? 'checked' : '' }}>
-                      <label class="form-check-label" for="perm_{{ md5($permName) }}">{{ $permLabel }}</label>
+                      <input class="form-check-input" type="checkbox" name="permissions[]" value="{{ $perm }}" id="perm_{{ md5($perm) }}" {{ $role->permissions->contains('name', $perm) ? 'checked' : '' }}>
+                      <label class="form-check-label" for="perm_{{ md5($perm) }}">@lang('messages.' . $perm)</label>
                     </div>
                   </div>
                 @endforeach

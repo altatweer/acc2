@@ -37,7 +37,7 @@ class BranchController extends Controller
 
         Branch::create($request->all());
 
-        return redirect()->route('branches.index')->with('success', 'تم إضافة الفرع بنجاح.');
+        return redirect()->route('branches.index')->with('success', __('messages.created_success'));
     }
 
     /**
@@ -61,7 +61,7 @@ class BranchController extends Controller
 
         $branch->update($request->all());
 
-        return redirect()->route('branches.index')->with('success', 'تم تحديث بيانات الفرع بنجاح.');
+        return redirect()->route('branches.index')->with('success', __('messages.updated_success'));
     }
 
     /**
@@ -71,9 +71,9 @@ class BranchController extends Controller
     {
         // إذا كان هناك موظفين مرتبطين بالفرع امنع الحذف
         if (method_exists($branch, 'employees') && $branch->employees()->exists()) {
-            return redirect()->route('branches.index')->with('error', 'لا يمكن حذف الفرع لوجود موظفين مرتبطين به.');
+            return redirect()->route('branches.index')->with('error', __('messages.error_general'));
         }
         $branch->delete();
-        return redirect()->route('branches.index')->with('success', 'تم حذف الفرع بنجاح.');
+        return redirect()->route('branches.index')->with('success', __('messages.deleted_success'));
     }
 }
