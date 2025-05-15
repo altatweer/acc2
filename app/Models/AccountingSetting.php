@@ -7,21 +7,28 @@ use Illuminate\Database\Eloquent\Model;
 class AccountingSetting extends Model
 {
     protected $fillable = [
+        'key',
+        'value',
         'currency',
-        'sales_account_id',
-        'purchases_account_id',
-        'receivables_account_id',
-        'payables_account_id',
-        'expenses_account_id',
-        'liabilities_account_id',
-        'deductions_account_id',
     ];
 
-    public function salesAccount() { return $this->belongsTo(Account::class, 'sales_account_id'); }
-    public function purchasesAccount() { return $this->belongsTo(Account::class, 'purchases_account_id'); }
-    public function receivablesAccount() { return $this->belongsTo(Account::class, 'receivables_account_id'); }
-    public function payablesAccount() { return $this->belongsTo(Account::class, 'payables_account_id'); }
-    public function expensesAccount() { return $this->belongsTo(Account::class, 'expenses_account_id'); }
-    public function liabilitiesAccount() { return $this->belongsTo(Account::class, 'liabilities_account_id'); }
-    public function deductionsAccount() { return $this->belongsTo(Account::class, 'deductions_account_id'); }
+    public static function get($key, $currency = null)
+    {
+        $query = static::where('key', $key);
+        if ($currency) {
+            $query->where('currency', $currency);
+        }
+        $row = $query->first();
+        return $row ? $row->value : null;
+    }
+
+    public static function set($key, $value, $currency = null)
+    {
+        return static::updateOrCreate([
+            'key' => $key,
+            'currency' => $currency,
+        ], [
+            'value' => $value,
+        ]);
+    }
 } 

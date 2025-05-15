@@ -8,7 +8,7 @@
                 <div class="card-header bg-info text-white text-center">
                     <h2>Import Chart of Accounts</h2>
                     <p class="mb-0">You can import a ready-made chart of accounts in Arabic or English for <b>each selected currency</b>.<br>
-                        <span class="text-danger">This step is optional. You can skip it and add accounts later.</span>
+                        <span class="text-danger font-weight-bold">This step is required. You must import the chart to continue installation.</span>
                     </p>
                 </div>
                 <div class="card-body">
@@ -38,10 +38,6 @@
                             </div>
                         </div>
                         <button type="submit" class="btn btn-primary btn-lg btn-block">Import Chart for All Currencies <i class="fas fa-arrow-right"></i></button>
-                    </form>
-                    <form method="POST" action="{{ route('install.skipChart') }}" class="mt-3">
-                        @csrf
-                        <button type="submit" class="btn btn-secondary btn-block">Skip This Step</button>
                     </form>
                 </div>
             </div>

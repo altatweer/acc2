@@ -14,14 +14,9 @@ return new class extends Migration
         Schema::dropIfExists('accounting_settings');
         Schema::create('accounting_settings', function (Blueprint $table) {
             $table->id();
-            $table->string('currency', 3); // IQD, USD, ...
-            $table->unsignedBigInteger('sales_account_id')->nullable();
-            $table->unsignedBigInteger('purchases_account_id')->nullable();
-            $table->unsignedBigInteger('receivables_account_id')->nullable();
-            $table->unsignedBigInteger('payables_account_id')->nullable();
-            $table->unsignedBigInteger('expenses_account_id')->nullable();
-            $table->unsignedBigInteger('liabilities_account_id')->nullable();
-            $table->unsignedBigInteger('deductions_account_id')->nullable();
+            $table->string('key'); // اسم الإعداد الافتراضي (مثال: default_sales_account)
+            $table->string('value'); // قيمة الإعداد (عادة id الحساب)
+            $table->string('currency', 3)->nullable(); // العملة (اختياري)
             $table->timestamps();
         });
     }

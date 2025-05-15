@@ -286,7 +286,7 @@ class InstallController extends Controller
         $request->validate([
             'chart_type' => 'required|in:ar,en',
         ]);
-        $currencies = session('install_currencies', ['USD']); // استرجع العملات المختارة من الجلسة أو USD افتراضي
+        $currencies = session('install_currencies', ['USD']);
         if ($request->has('currencies')) {
             $currencies = $request->input('currencies');
             session(['install_currencies' => $currencies]);
@@ -297,7 +297,7 @@ class InstallController extends Controller
                     ? \App\Helpers\ChartOfAccounts::getArabicChart($currency)
                     : \App\Helpers\ChartOfAccounts::getEnglishChart($currency);
                 $codeToId = [];
-                // أولاً أنشئ كل المجموعات والحسابات بدون parent_id
+                // إنشاء الحسابات
                 foreach ($chart as $row) {
                     $data = $row;
                     unset($data['parent_code']);
@@ -305,7 +305,7 @@ class InstallController extends Controller
                     $account = \App\Models\Account::create($data);
                     $codeToId[$row['code']] = $account->id;
                 }
-                // ثم حدث parent_id لكل حساب بناءً على parent_code
+                // تحديث parent_id
                 foreach ($chart as $row) {
                     if ($row['parent_code']) {
                         $account = \App\Models\Account::where('code', $row['code'])->where('currency', $currency)->first();
@@ -315,16 +315,39 @@ class InstallController extends Controller
                         }
                     }
                 }
+                // ربط الحسابات الافتراضية تلقائيًا
+                $defaultAccounts = [
+                    'default_sales_account' => '4100',
+                    'default_purchases_account' => '4200', // أضف حساب مشتريات في الشجرة إذا لم يكن موجودًا
+                    'default_customers_account' => '1301',
+                    'default_suppliers_account' => '2101',
+                    'salary_expense_account' => '4101',
+                    'employee_payables_account' => '2106',
+                    'deductions_account' => '2201',
+                    'tax_account' => '5300',
+                    'inventory_account' => '1401',
+                    'main_bank_account' => '1201',
+                    'main_cash_account' => '1101',
+                ];
+                $missing = [];
+                foreach ($defaultAccounts as $settingKey => $accountCode) {
+                    $account = \App\Models\Account::where('code', $accountCode)->where('currency', $currency)->first();
+                    if ($account) {
+                        \App\Models\AccountingSetting::updateOrCreate(
+                            ['key' => $settingKey, 'currency' => $currency],
+                            ['value' => $account->id]
+                        );
+                    } else {
+                        $missing[] = $accountCode;
+                    }
+                }
+                if (count($missing) > 0) {
+                    return back()->with('chart_error', 'لم يتم العثور على بعض الحسابات الافتراضية المطلوبة في الشجرة: ' . implode(", ", $missing));
+                }
             }
         } catch (\Exception $e) {
-            return back()->with('chart_error', 'فشل استيراد الشجرة: ' . $e->getMessage());
+            return back()->with('chart_error', 'فشل استيراد الشجرة أو ربط الحسابات الافتراضية: ' . $e->getMessage());
         }
-        // انتقل مباشرة إلى صفحة النهاية
-        return redirect()->route('install.finish');
-    }
-
-    public function skipChart(Request $request)
-    {
         // انتقل مباشرة إلى صفحة النهاية
         return redirect()->route('install.finish');
     }

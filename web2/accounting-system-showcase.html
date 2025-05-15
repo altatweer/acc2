@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aur Suite - نظام الحسابات الذكي</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/glightbox/dist/css/glightbox.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <style>
+    body {
+      font-family: 'Cairo', Arial, sans-serif;
+      background: #f7f7fa;
+      margin: 0;
+      padding: 0;
+      color: #222;
+    }
+    .banner {
+      width: 100%;
+      min-height: 320px;
+      background: url('https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=1200&q=80') center/cover no-repeat;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      border-bottom: 6px solid #1a237e;
+    }
+    .banner-overlay {
+      background: rgba(26,35,126,0.65);
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0; right: 0; left: 0; bottom: 0;
+      z-index: 1;
+    }
+    .banner-content {
+      position: relative;
+      z-index: 2;
+      color: #fff;
+      text-align: center;
+      padding: 60px 20px 40px 20px;
+    }
+    .banner-content img.logo {
+      max-width: 160px;
+      margin-bottom: 18px;
+      background: #fff;
+      border-radius: 12px;
+      padding: 8px 18px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.13);
+    }
+    .banner-content h1 {
+      font-size: 2.8rem;
+      margin: 0 0 12px 0;
+      letter-spacing: 1px;
+    }
+    .banner-content .slogan {
+      font-size: 1.4rem;
+      font-weight: bold;
+      margin-bottom: 18px;
+      color: #ffe082;
+    }
+    .banner-content .cta-btn {
+      margin-top: 18px;
+      font-size: 1.1rem;
+      padding: 12px 32px;
+    }
+    .explain-section {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 32px;
+      align-items: center;
+      margin: 48px 0 36px 0;
+      justify-content: space-between;
+    }
+    .explain-img {
+      flex: 1 1 320px;
+      min-width: 260px;
+      max-width: 400px;
+      border-radius: 16px;
+      box-shadow: 0 2px 16px rgba(26,35,126,0.10);
+      object-fit: cover;
+      margin: 0 auto;
+    }
+    .explain-text {
+      flex: 2 1 400px;
+      min-width: 260px;
+      font-size: 1.18rem;
+      color: #1a237e;
+      line-height: 2.1;
+      text-align: right;
+    }
+    .pain-points {
+      background: #fff3e0;
+      border-radius: 10px;
+      padding: 18px 24px;
+      margin: 24px 0 36px 0;
+      color: #e65100;
+      font-size: 1.08rem;
+      box-shadow: 0 2px 8px rgba(255,152,0,0.07);
+    }
+    .pain-points ul {
+      margin: 0;
+      padding-right: 24px;
+      line-height: 2.1;
+    }
+    .pain-points i {
+      color: #ff9800;
+      margin-left: 8px;
+    }
+    .container {
+      max-width: 1100px;
+      margin: 40px auto;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+      padding: 32px 24px;
+    }
+    .cta {
+      display: flex;
+      justify-content: center;
+      margin: 32px 0 40px 0;
+    }
+    .cta-btn {
+      background: linear-gradient(90deg, #1a237e 60%, #0d47a1 100%);
+      color: #fff;
+      font-size: 1.25rem;
+      padding: 16px 38px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      box-shadow: 0 2px 12px rgba(26,35,126,0.13);
+      transition: background 0.2s, transform 0.2s;
+      text-decoration: none;
+      margin: 0 8px;
+    }
+    .cta-btn:hover {
+      background: linear-gradient(90deg, #0d47a1 60%, #1a237e 100%);
+      transform: scale(1.04);
+    }
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 22px;
+      margin-bottom: 40px;
+      justify-content: center;
+    }
+    .feature-card {
+      background: #f7f7fa;
+      border-radius: 12px;
+      padding: 22px 18px 18px 18px;
+      box-shadow: 0 2px 8px rgba(26,35,126,0.07);
+      font-size: 1.08rem;
+      color: #1a237e;
+      text-align: right;
+      position: relative;
+      min-height: 120px;
+    }
+    .feature-card i {
+      color: #0d47a1;
+      font-size: 2.1rem;
+      position: absolute;
+      left: 18px;
+      top: 18px;
+      opacity: 0.85;
+    }
+    .gallery-title {
+      font-size: 1.4rem;
+      color: #1a237e;
+      margin-bottom: 18px;
+      text-align: right;
+    }
+    .gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 18px;
+    }
+    .gallery a {
+      display: block;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      background: #f3f3f3;
+      transition: transform 0.2s;
+    }
+    .gallery a:hover {
+      transform: scale(1.04);
+      box-shadow: 0 4px 24px rgba(26,35,126,0.13);
+    }
+    .gallery img {
+      width: 100%;
+      max-height: 340px;
+      object-fit: contain;
+      display: block;
+    }
+    .contact {
+      background: #e3eafc;
+      border-radius: 10px;
+      padding: 18px 24px;
+      margin-top: 40px;
+      font-size: 1.15rem;
+      color: #1a237e;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(26,35,126,0.07);
+    }
+    .contact a {
+      color: #0d47a1;
+      text-decoration: underline;
+      font-weight: bold;
+      direction: ltr;
+      display: inline-block;
+      margin: 0 4px;
+    }
+    @media (max-width: 900px) {
+      .explain-section { flex-direction: column; gap: 18px; }
+      .explain-img, .explain-text { max-width: 100%; min-width: 0; }
+    }
+    @media (max-width: 700px) {
+      .container { padding: 10px; }
+      .features { grid-template-columns: 1fr; gap: 10px; }
+      .feature-card { max-width: 100%; }
+      .feature-card i { left: 12px; top: 12px; font-size: 1.5rem; }
+      .banner-content h1 { font-size: 1.5rem; }
+      .banner-content .slogan { font-size: 1rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="banner">
+    <div class="banner-overlay"></div>
+    <div class="banner-content">
+      <img src="AurSuite-Accounting-System/assets/images/logo.png" alt="شعار Aur Suite" class="logo">
+      <h1>Aur Suite</h1>
+      <div class="slogan">نظام الحسابات الذكي لإدارة أعمالك بثقة واحترافية</div>
+      <a href="https://aursuite.com" target="_blank" class="cta-btn"><i class="fa-solid fa-globe"></i> الموقع الرسمي</a>
+      <a href="mailto:support@aursuite.com" class="cta-btn"><i class="fa-solid fa-envelope"></i> تواصل مع الدعم</a>
+    </div>
+  </div>
+  <div class="container">
+    <div class="explain-section">
+      <div class="explain-text">
+        <h2 style="color:#1a237e; margin-top:0;">لماذا Aur Suite؟</h2>
+        <p>
+          <b>Aur Suite</b> هو الحل الأمثل لكل من يبحث عن نظام محاسبي متكامل وسهل الاستخدام. صُمم النظام ليواكب تطلعات الشركات الحديثة، ويوفر لك كل ما تحتاجه لإدارة حساباتك المالية بكفاءة وشفافية.<br><br>
+          مع Aur Suite، يمكنك التخلص من التعقيدات الورقية، وتبسيط جميع عملياتك المالية من إصدار الفواتير، تتبع المصروفات، إدارة الأصول، وحتى إعداد التقارير المالية المتقدمة بضغطة زر.<br><br>
+          النظام يدعم تعدد الفروع والعملات، ويوفر لك أمانًا عاليًا ونسخًا احتياطيًا، مع إمكانية الوصول من أي مكان وفي أي وقت.
+        </p>
+      </div>
+      <img class="explain-img" src="https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=600&q=80" alt="فريق عمل تقني">
+    </div>
+    <div class="pain-points">
+      <b><i class="fa-solid fa-triangle-exclamation"></i> مشاكل المحاسبة التقليدية التي يحلها Aur Suite:</b>
+      <ul>
+        <li><i class="fa-solid fa-times-circle"></i> ضياع أو تأخر البيانات المالية</li>
+        <li><i class="fa-solid fa-times-circle"></i> صعوبة تتبع الإيرادات والمصروفات بدقة</li>
+        <li><i class="fa-solid fa-times-circle"></i> ضعف الأمان أو فقدان البيانات</li>
+        <li><i class="fa-solid fa-times-circle"></i> تعقيد إعداد التقارير المالية</li>
+        <li><i class="fa-solid fa-times-circle"></i> صعوبة الإدارة عند تعدد الفروع أو العملات</li>
+      </ul>
+    </div>
+    <div class="explain-section">
+      <img class="explain-img" src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80" alt="تحليل مالي">
+      <div class="explain-text">
+        <h2 style="color:#1a237e; margin-top:0;">فوائد استخدام Aur Suite</h2>
+        <ul style="color:#1a237e; font-size:1.08rem; line-height:2.1;">
+          <li><b>سهولة الاستخدام:</b> واجهة عصرية تدعم اللغة العربية بالكامل.</li>
+          <li><b>تقارير فورية:</b> احصل على تقارير مالية وتحليلية متقدمة في أي وقت.</li>
+          <li><b>تكامل ذكي:</b> ربط مع أنظمة المخزون، الرواتب، الموارد البشرية والمزيد.</li>
+          <li><b>أمان وموثوقية:</b> حماية بياناتك ونسخ احتياطي تلقائي.</li>
+          <li><b>دعم فني سريع:</b> فريق متخصص لمساعدتك في أي وقت.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="features">
+      <div class="feature-card"><i class="fa-solid fa-chart-line"></i> تقارير مالية وتحليلية متقدمة لحظية</div>
+      <div class="feature-card"><i class="fa-solid fa-file-invoice-dollar"></i> إدارة الفواتير والمصروفات والإيرادات بسهولة</div>
+      <div class="feature-card"><i class="fa-solid fa-coins"></i> دعم تعدد العملات والحسابات البنكية</div>
+      <div class="feature-card"><i class="fa-solid fa-users-cog"></i> صلاحيات مرنة وتعدد المستخدمين</div>
+      <div class="feature-card"><i class="fa-solid fa-file-export"></i> تصدير البيانات والتقارير إلى Excel وPDF</div>
+      <div class="feature-card"><i class="fa-solid fa-layer-group"></i> تكامل مع أنظمة المخزون والرواتب والأصول</div>
+      <div class="feature-card"><i class="fa-solid fa-shield-alt"></i> أمان عالي ونسخ احتياطي تلقائي</div>
+      <div class="feature-card"><i class="fa-solid fa-headset"></i> دعم فني سريع وتحديثات مستمرة</div>
+      <div class="feature-card"><i class="fa-solid fa-mobile-alt"></i> متوافق مع جميع الأجهزة (ويب وجوال)</div>
+      <div class="feature-card"><i class="fa-solid fa-gauge-high"></i> أداء سريع وتجربة مستخدم سلسة</div>
+    </div>
+    <!-- قسم الميزات الموسعة -->
+    <div style="margin: 56px 0 40px 0;">
+      <h2 style="color:#1a237e; text-align:center; margin-bottom:32px;">كل ما تحتاجه لإدارة أعمالك المالية والإدارية في نظام واحد</h2>
+      <div class="explain-section">
+        <img class="explain-img" src="https://images.unsplash.com/photo-1515168833906-d2a3b82b302b?auto=format&fit=crop&w=600&q=80" alt="سندات وقيود">
+        <div class="explain-text">
+          <h3 style="color:#0d47a1;">السندات والقيود المحاسبية</h3>
+          <p>إدارة متكاملة للسندات (سندات القبض والصرف) والقيود اليومية مع إمكانية الربط التلقائي بالحسابات، وتوثيق كل الحركات المالية بدقة وشفافية.</p>
+        </div>
+      </div>
+      <div class="explain-section">
+        <div class="explain-text">
+          <h3 style="color:#0d47a1;">الحركات المالية المتقدمة</h3>
+          <p>تتبع جميع الحركات المالية (إيرادات، مصروفات، تحويلات، تسويات) مع سجل زمني مفصل لكل عملية، وإمكانية البحث والتصفية الذكية.</p>
+        </div>
+        <img class="explain-img" src="https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=600&q=80" alt="الحركات المالية">
+      </div>
+      <div class="explain-section">
+        <img class="explain-img" src="https://images.unsplash.com/photo-1464983953574-0892a716854b?auto=format&fit=crop&w=600&q=80" alt="العملات">
+        <div class="explain-text">
+          <h3 style="color:#0d47a1;">دعم العملات المتعددة</h3>
+          <p>إدارة حساباتك وفواتيرك بعدة عملات مع تحديث تلقائي لأسعار الصرف، وإعداد تقارير مالية موحدة أو منفصلة حسب العملة.</p>
+        </div>
+      </div>
+      <div class="explain-section">
+        <div class="explain-text">
+          <h3 style="color:#0d47a1;">الفواتير الإلكترونية الذكية</h3>
+          <p>إنشاء وإرسال الفواتير للعملاء إلكترونيًا، مع إمكانية تخصيص القوالب، وتتبع حالة كل فاتورة (مدفوعة/معلقة/متأخرة)، وربطها مباشرة بالحسابات والعملاء.</p>
+        </div>
+        <img class="explain-img" src="https://images.unsplash.com/photo-1515378791036-0648a3ef77b2?auto=format&fit=crop&w=600&q=80" alt="الفواتير">
+      </div>
+      <div class="explain-section">
+        <img class="explain-img" src="https://images.unsplash.com/photo-1518609878373-06d740f60d8b?auto=format&fit=crop&w=600&q=80" alt="العملاء">
+        <div class="explain-text">
+          <h3 style="color:#0d47a1;">إدارة العملاء والموردين</h3>
+          <p>سجل شامل لكل عميل ومورد، مع تتبع الفواتير، المدفوعات، الرصيد، والتواصل، وإمكانية تصنيف العملاء وتحليل الأداء المالي لكل عميل.</p>
+        </div>
+      </div>
+      <div class="explain-section">
+        <div class="explain-text">
+          <h3 style="color:#0d47a1;">نظام الموارد البشرية والرواتب</h3>
+          <p>إدارة الموظفين، الحضور والانصراف، الرواتب، البدلات، الاستقطاعات، والتقارير الشهرية، مع تكامل كامل مع الحسابات العامة.</p>
+        </div>
+        <img class="explain-img" src="https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=600&q=80" alt="الموارد البشرية والرواتب">
+      </div>
+    </div>
+    <!-- نهاية قسم الميزات الموسعة -->
+    <!-- معرض الصور (الجاليري) -->
+    <div class="gallery-title">لقطات من النظام:</div>
+    <div class="gallery" id="gallery">
+      <a href="Screenshot 2025-05-15 at 2.30.23 AM.png" class="glightbox" data-gallery="screens"><img src="Screenshot 2025-05-15 at 2.30.23 AM.png" alt="صورة شاشة النظام 1"></a>
+      <a href="Screenshot 2025-05-15 at 2.30.33 AM.png" class="glightbox" data-gallery="screens"><img src="Screenshot 2025-05-15 at 2.30.33 AM.png" alt="صورة شاشة النظام 2"></a>
+      <a href="Screenshot 2025-05-15 at 2.30.45 AM.png" class="glightbox" data-gallery="screens"><img src="Screenshot 2025-05-15 at 2.30.45 AM.png" alt="صورة شاشة النظام 3"></a>
+      <a href="Screenshot 2025-05-15 at 2.30.54 AM.png" class="glightbox" data-gallery="screens"><img src="Screenshot 2025-05-15 at 2.30.54 AM.png" alt="صورة شاشة النظام 4"></a>
+      <a href="Screenshot 2025-05-15 at 2.31.05 AM.png" class="glightbox" data-gallery="screens"><img src="Screenshot 2025-05-15 at 2.31.05 AM.png" alt="صورة شاشة النظام 5"></a>
+      <a href="Screenshot 2025-05-15 at 2.31.13 AM.png" class="glightbox" data-gallery="screens"><img src="Screenshot 2025-05-15 at 2.31.13 AM.png" alt="صورة شاشة النظام 6"></a>
+      <a href="Screenshot 2025-05-15 at 2.31.24 AM.png" class="glightbox" data-gallery="screens"><img src="Screenshot 2025-05-15 at 2.31.24 AM.png" alt="صورة شاشة النظام 7"></a>
+      <a href="Screenshot 2025-05-15 at 2.31.31 AM.png" class="glightbox" data-gallery="screens"><img src="Screenshot 2025-05-15 at 2.31.31 AM.png" alt="صورة شاشة النظام 8"></a>
+      <a href="Screenshot 2025-05-15 at 2.31.42 AM.png" class="glightbox" data-gallery="screens"><img src="Screenshot 2025-05-15 at 2.31.42 AM.png" alt="صورة شاشة النظام 9"></a>
+      <a href="Screenshot 2025-05-15 at 2.31.49 AM.png" class="glightbox" data-gallery="screens"><img src="Screenshot 2025-05-15 at 2.31.49 AM.png" alt="صورة شاشة النظام 10"></a>
+      <a href="Screenshot 2025-05-15 at 2.31.58 AM.png" class="glightbox" data-gallery="screens"><img src="Screenshot 2025-05-15 at 2.31.58 AM.png" alt="صورة شاشة النظام 11"></a>
+      <a href="Screenshot 2025-05-15 at 2.32.06 AM.png" class="glightbox" data-gallery="screens"><img src="Screenshot 2025-05-15 at 2.32.06 AM.png" alt="صورة شاشة النظام 12"></a>
+      <a href="Screenshot 2025-05-15 at 2.32.13 AM.png" class="glightbox" data-gallery="screens"><img src="Screenshot 2025-05-15 at 2.32.13 AM.png" alt="صورة شاشة النظام 13"></a>
+      <a href="Screenshot 2025-05-15 at 2.32.21 AM.png" class="glightbox" data-gallery="screens"><img src="Screenshot 2025-05-15 at 2.32.21 AM.png" alt="صورة شاشة النظام 14"></a>
+      <a href="Screenshot 2025-05-15 at 2.32.31 AM.png" class="glightbox" data-gallery="screens"><img src="Screenshot 2025-05-15 at 2.32.31 AM.png" alt="صورة شاشة النظام 15"></a>
+      <a href="Screenshot 2025-05-15 at 2.32.39 AM.png" class="glightbox" data-gallery="screens"><img src="Screenshot 2025-05-15 at 2.32.39 AM.png" alt="صورة شاشة النظام 16"></a>
+      <a href="Screenshot 2025-05-15 at 2.32.52 AM.png" class="glightbox" data-gallery="screens"><img src="Screenshot 2025-05-15 at 2.32.52 AM.png" alt="صورة شاشة النظام 17"></a>
+      <a href="Screenshot 2025-05-15 at 2.33.03 AM.png" class="glightbox" data-gallery="screens"><img src="Screenshot 2025-05-15 at 2.33.03 AM.png" alt="صورة شاشة النظام 18"></a>
+      <a href="Screenshot 2025-05-15 at 2.33.10 AM.png" class="glightbox" data-gallery="screens"><img src="Screenshot 2025-05-15 at 2.33.10 AM.png" alt="صورة شاشة النظام 19"></a>
+      <a href="Screenshot 2025-05-15 at 2.33.18 AM.png" class="glightbox" data-gallery="screens"><img src="Screenshot 2025-05-15 at 2.33.18 AM.png" alt="صورة شاشة النظام 20"></a>
+      <a href="Screenshot 2025-05-15 at 2.33.47 AM.png" class="glightbox" data-gallery="screens"><img src="Screenshot 2025-05-15 at 2.33.47 AM.png" alt="صورة شاشة النظام 21"></a>
+      <a href="Screenshot 2025-05-15 at 2.33.56 AM.png" class="glightbox" data-gallery="screens"><img src="Screenshot 2025-05-15 at 2.33.56 AM.png" alt="صورة شاشة النظام 22"></a>
+      <a href="Screenshot 2025-05-15 at 2.34.04 AM.png" class="glightbox" data-gallery="screens"><img src="Screenshot 2025-05-15 at 2.34.04 AM.png" alt="صورة شاشة النظام 23"></a>
+      <a href="Screenshot 2025-05-15 at 2.34.13 AM.png" class="glightbox" data-gallery="screens"><img src="Screenshot 2025-05-15 at 2.34.13 AM.png" alt="صورة شاشة النظام 24"></a>
+      <a href="Screenshot 2025-05-15 at 2.34.20 AM.png" class="glightbox" data-gallery="screens"><img src="Screenshot 2025-05-15 at 2.34.20 AM.png" alt="صورة شاشة النظام 25"></a>
+      <a href="Screenshot 2025-05-15 at 2.34.40 AM.png" class="glightbox" data-gallery="screens"><img src="Screenshot 2025-05-15 at 2.34.40 AM.png" alt="صورة شاشة النظام 26"></a>
+      <a href="Screenshot 2025-05-15 at 2.35.03 AM.png" class="glightbox" data-gallery="screens"><img src="Screenshot 2025-05-15 at 2.35.03 AM.png" alt="صورة شاشة النظام 27"></a>
+      <a href="Screenshot 2025-05-15 at 2.35.10 AM.png" class="glightbox" data-gallery="screens"><img src="Screenshot 2025-05-15 at 2.35.10 AM.png" alt="صورة شاشة النظام 28"></a>
+      <a href="Screenshot 2025-05-15 at 2.35.22 AM.png" class="glightbox" data-gallery="screens"><img src="Screenshot 2025-05-15 at 2.35.22 AM.png" alt="صورة شاشة النظام 29"></a>
+      <a href="Screenshot 2025-05-15 at 2.35.37 AM.png" class="glightbox" data-gallery="screens"><img src="Screenshot 2025-05-15 at 2.35.37 AM.png" alt="صورة شاشة النظام 30"></a>
+      <a href="Screenshot 2025-05-15 at 2.35.44 AM.png" class="glightbox" data-gallery="screens"><img src="Screenshot 2025-05-15 at 2.35.44 AM.png" alt="صورة شاشة النظام 31"></a>
+      <a href="Screenshot 2025-05-15 at 2.36.02 AM.png" class="glightbox" data-gallery="screens"><img src="Screenshot 2025-05-15 at 2.36.02 AM.png" alt="صورة شاشة النظام 32"></a>
+      <a href="Screenshot 2025-05-15 at 2.36.09 AM.png" class="glightbox" data-gallery="screens"><img src="Screenshot 2025-05-15 at 2.36.09 AM.png" alt="صورة شاشة النظام 33"></a>
+      <a href="Screenshot 2025-05-15 at 2.36.27 AM.png" class="glightbox" data-gallery="screens"><img src="Screenshot 2025-05-15 at 2.36.27 AM.png" alt="صورة شاشة النظام 34"></a>
+      <a href="Screenshot 2025-05-15 at 2.36.36 AM.png" class="glightbox" data-gallery="screens"><img src="Screenshot 2025-05-15 at 2.36.36 AM.png" alt="صورة شاشة النظام 35"></a>
+      <a href="Screenshot 2025-05-15 at 2.37.00 AM.png" class="glightbox" data-gallery="screens"><img src="Screenshot 2025-05-15 at 2.37.00 AM.png" alt="صورة شاشة النظام 36"></a>
+      <a href="Screenshot 2025-05-15 at 2.37.08 AM.png" class="glightbox" data-gallery="screens"><img src="Screenshot 2025-05-15 at 2.37.08 AM.png" alt="صورة شاشة النظام 37"></a>
+      <a href="Screenshot 2025-05-15 at 2.37.18 AM.png" class="glightbox" data-gallery="screens"><img src="Screenshot 2025-05-15 at 2.37.18 AM.png" alt="صورة شاشة النظام 38"></a>
+      <a href="Screenshot 2025-05-15 at 2.37.26 AM.png" class="glightbox" data-gallery="screens"><img src="Screenshot 2025-05-15 at 2.37.26 AM.png" alt="صورة شاشة النظام 39"></a>
+      <a href="Screenshot 2025-05-15 at 2.37.34 AM.png" class="glightbox" data-gallery="screens"><img src="Screenshot 2025-05-15 at 2.37.34 AM.png" alt="صورة شاشة النظام 40"></a>
+      <a href="Screenshot 2025-05-15 at 2.37.43 AM.png" class="glightbox" data-gallery="screens"><img src="Screenshot 2025-05-15 at 2.37.43 AM.png" alt="صورة شاشة النظام 41"></a>
+      <a href="Screenshot 2025-05-15 at 2.37.59 AM.png" class="glightbox" data-gallery="screens"><img src="Screenshot 2025-05-15 at 2.37.59 AM.png" alt="صورة شاشة النظام 42"></a>
+    </div>
+    <div class="contact">
+      <div>للمزيد من المعلومات أو الدعم الفني:</div>
+      <div style="margin:10px 0;">
+        <a href="https://aursuite.com" target="_blank"><i class="fa-solid fa-globe"></i> aursuite.com</a>
+        |
+        <a href="mailto:support@aursuite.com"><i class="fa-solid fa-envelope"></i> support@aursuite.com</a>
+      </div>
+      <div>فريق Aur Suite دائمًا في خدمتك!</div>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/glightbox/dist/js/glightbox.min.js"></script>
+  <script>
+    const lightbox = GLightbox({ selector: '.glightbox' });
+  </script>
+</body>
+</html> 
