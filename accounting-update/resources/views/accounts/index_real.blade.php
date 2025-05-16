@@ -1,3 +1,8 @@
+@php
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
+@endphp
+
 @extends('layouts.app')
 
 @section('content')
@@ -22,12 +27,12 @@
 
 <div class="content">
     <div class="container-fluid">
-        <!-- إحصائيات الحسابات - تعرض الإجمالي للكل وليس فقط للصفحة الحالية -->
+        <!-- إحصائيات الحسابات -->
         <div class="row">
             <div class="col-lg-3 col-6">
                 <div class="small-box bg-gradient-success">
                     <div class="inner">
-                        <h3>{{ \App\Models\Account::where('type', 'asset')->where('is_group', 0)->count() }}</h3>
+                        <h3>{{ $accounts->where('type', 'asset')->count() }}</h3>
                         <p>@lang('messages.type_asset')</p>
                     </div>
                     <div class="icon">
@@ -38,7 +43,7 @@
             <div class="col-lg-3 col-6">
                 <div class="small-box bg-gradient-danger">
                     <div class="inner">
-                        <h3>{{ \App\Models\Account::where('type', 'liability')->where('is_group', 0)->count() }}</h3>
+                        <h3>{{ $accounts->where('type', 'liability')->count() }}</h3>
                         <p>@lang('messages.type_liability')</p>
                     </div>
                     <div class="icon">
@@ -49,7 +54,7 @@
             <div class="col-lg-3 col-6">
                 <div class="small-box bg-gradient-warning">
                     <div class="inner">
-                        <h3>{{ \App\Models\Account::where('is_cash_box', true)->where('is_group', 0)->count() }}</h3>
+                        <h3>{{ $accounts->where('is_cash_box', true)->count() }}</h3>
                         <p>@lang('messages.is_cash_box')</p>
                     </div>
                     <div class="icon">
@@ -60,7 +65,7 @@
             <div class="col-lg-3 col-6">
                 <div class="small-box bg-gradient-info">
                     <div class="inner">
-                        <h3>{{ \App\Models\Account::where('is_group', 0)->count() }}</h3>
+                        <h3>{{ $accounts->count() }}</h3>
                         <p>@lang('messages.total_accounts')</p>
                     </div>
                     <div class="icon">
@@ -128,7 +133,7 @@
                                     <label>@lang('messages.currency')</label>
                                     <select id="filter-currency" class="form-control">
                                         <option value="">@lang('messages.all')</option>
-                                        @foreach(\App\Models\Account::where('is_group', 0)->pluck('currency')->unique()->filter() as $currency)
+                                        @foreach($accounts->pluck('currency')->unique()->filter() as $currency)
                                             <option value="{{ $currency }}">{{ $currency }}</option>
                                         @endforeach
                                     </select>
@@ -277,7 +282,7 @@
             </div>
         </div>
 
-        <!-- صناديق النقد والبنوك - للكل بدلاً من صفحة فقط -->
+        <!-- صناديق النقد والبنوك -->
         <div class="row mt-4">
             <div class="col-12">
                 <div class="card card-success card-outline shadow-sm">
@@ -294,10 +299,7 @@
                     <div class="card-body">
                         <div class="row">
                             @php
-                                // استخدام جميع الصناديق النقدية وليس فقط الصفحة الحالية
-                                $allCashBoxes = \App\Models\Account::where('is_cash_box', true)->get();
-                                // أخذ أول 8 فقط للعرض
-                                $cashBoxes = $allCashBoxes->take(8);
+                                $cashBoxes = $accounts->where('is_cash_box', true)->take(8);
                             @endphp
                             
                             @forelse($cashBoxes as $cashBox)
@@ -308,24 +310,59 @@
                                             <span class="info-box-text">{{ $cashBox->name }}</span>
                                             <span class="info-box-number">
                                                 @php
-                                                // حساب الرصيد الفعلي من قاعدة البيانات
-                                                $balance = $cashBox->journalEntryLines()
-                                                        ->where('currency', $cashBox->currency)
-                                                        ->selectRaw('SUM(debit) - SUM(credit) as balance')
-                                                        ->first()->balance ?? 0;
+                                                try {
+                                                    // إضافة فحص للتأكد من وجود الجداول وقاعدة البيانات
+                                                    if (Schema::hasTable('journal_entry_lines')) {
+                                                        // حساب الرصيد الفعلي من قاعدة البيانات مع فحص أفضل
+                                                        $linesQuery = $cashBox->journalEntryLines()
+                                                                ->where('currency', $cashBox->currency);
+                                                        
+                                                        $totalLines = $linesQuery->count();
+                                                        
+                                                        if ($totalLines > 0) {
+                                                            $balance = $linesQuery->selectRaw('SUM(debit) - SUM(credit) as balance')
+                                                                    ->first()->balance ?? 0;
+                                                        } else {
+                                                            $balance = 0;
+                                                        }
+                                                    } else {
+                                                        $balance = 0;
+                                                    }
+                                                } catch (\Exception $e) {
+                                                    $balance = 0;
+                                                    // يمكن إضافة تسجيل الأخطاء هنا لمعرفة المشكلة بالضبط
+                                                    // Log::error('حدث خطأ في حساب الرصيد: ' . $e->getMessage());
+                                                }
                                                 @endphp
                                                 {{ number_format($balance, 2) }} {{ $cashBox->currency ?? 'IQD' }}
                                             </span>
                                             <div class="progress">
                                                 @php
-                                                // حساب نسبة استخدام الصندوق (للاستخدام في progress bar)
-                                                $maxBalance = $allCashBoxes->max(function($account) {
-                                                    return abs($account->journalEntryLines()
-                                                        ->where('currency', $account->currency)
-                                                        ->selectRaw('SUM(debit) - SUM(credit) as balance')
-                                                        ->first()->balance ?? 0);
-                                                }) ?: 1; // تجنب القسمة على صفر
-                                                $percentage = min(100, round((abs($balance) / $maxBalance) * 100));
+                                                try {
+                                                    // حساب نسبة استخدام الصندوق (للاستخدام في progress bar)
+                                                    if (isset($allCashBoxes) && $allCashBoxes->count() > 0) {
+                                                        $maxBalance = 1; // قيمة افتراضية لتجنب القسمة على صفر
+                                                        
+                                                        foreach ($allCashBoxes as $acc) {
+                                                            if (Schema::hasTable('journal_entry_lines')) {
+                                                                $accBalance = abs($acc->journalEntryLines()
+                                                                    ->where('currency', $acc->currency)
+                                                                    ->selectRaw('SUM(debit) - SUM(credit) as balance')
+                                                                    ->first()->balance ?? 0);
+                                                                
+                                                                if ($accBalance > $maxBalance) {
+                                                                    $maxBalance = $accBalance;
+                                                                }
+                                                            }
+                                                        }
+                                                        
+                                                        $percentage = min(100, round((abs($balance) / $maxBalance) * 100));
+                                                    } else {
+                                                        $percentage = 10; // قيمة افتراضية
+                                                    }
+                                                } catch (\Exception $e) {
+                                                    $percentage = 10; // قيمة افتراضية في حالة الخطأ
+                                                }
                                                 @endphp
                                                 <div class="progress-bar" style="width: {{ $percentage }}%"></div>
                                             </div>
@@ -493,4 +530,5 @@ $(function(){
     font-weight: 500;
     font-size: 85%;
 }
-</style> 
+</style>
+@endpush

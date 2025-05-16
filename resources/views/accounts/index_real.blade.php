@@ -1,3 +1,8 @@
+@php
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
+@endphp
+
 @extends('layouts.app')
 
 @section('content')
@@ -304,13 +309,62 @@
                                         <div class="info-box-content">
                                             <span class="info-box-text">{{ $cashBox->name }}</span>
                                             <span class="info-box-number">
-                                                {{-- تم إيقاف عرض الأرصدة العشوائية مؤقتاً --}}
-                                                {{-- {{ number_format(rand(1000, 50000), 2) }} {{ $cashBox->currency ?? 'IQD' }} --}}
-                                                <small class="text-white">غير متوفر حالياً</small>
+                                                @php
+                                                try {
+                                                    // إضافة فحص للتأكد من وجود الجداول وقاعدة البيانات
+                                                    if (Schema::hasTable('journal_entry_lines')) {
+                                                        // حساب الرصيد الفعلي من قاعدة البيانات مع فحص أفضل
+                                                        $linesQuery = $cashBox->journalEntryLines()
+                                                                ->where('currency', $cashBox->currency);
+                                                        
+                                                        $totalLines = $linesQuery->count();
+                                                        
+                                                        if ($totalLines > 0) {
+                                                            $balance = $linesQuery->selectRaw('SUM(debit) - SUM(credit) as balance')
+                                                                    ->first()->balance ?? 0;
+                                                        } else {
+                                                            $balance = 0;
+                                                        }
+                                                    } else {
+                                                        $balance = 0;
+                                                    }
+                                                } catch (\Exception $e) {
+                                                    $balance = 0;
+                                                    // يمكن إضافة تسجيل الأخطاء هنا لمعرفة المشكلة بالضبط
+                                                    // Log::error('حدث خطأ في حساب الرصيد: ' . $e->getMessage());
+                                                }
+                                                @endphp
+                                                {{ number_format($balance, 2) }} {{ $cashBox->currency ?? 'IQD' }}
                                             </span>
                                             <div class="progress">
-                                                {{-- <div class="progress-bar" style="width: {{ rand(10, 100) }}%"></div> --}}
-                                                <div class="progress-bar" style="width: 10%"></div>
+                                                @php
+                                                try {
+                                                    // حساب نسبة استخدام الصندوق (للاستخدام في progress bar)
+                                                    if (isset($allCashBoxes) && $allCashBoxes->count() > 0) {
+                                                        $maxBalance = 1; // قيمة افتراضية لتجنب القسمة على صفر
+                                                        
+                                                        foreach ($allCashBoxes as $acc) {
+                                                            if (Schema::hasTable('journal_entry_lines')) {
+                                                                $accBalance = abs($acc->journalEntryLines()
+                                                                    ->where('currency', $acc->currency)
+                                                                    ->selectRaw('SUM(debit) - SUM(credit) as balance')
+                                                                    ->first()->balance ?? 0);
+                                                                
+                                                                if ($accBalance > $maxBalance) {
+                                                                    $maxBalance = $accBalance;
+                                                                }
+                                                            }
+                                                        }
+                                                        
+                                                        $percentage = min(100, round((abs($balance) / $maxBalance) * 100));
+                                                    } else {
+                                                        $percentage = 10; // قيمة افتراضية
+                                                    }
+                                                } catch (\Exception $e) {
+                                                    $percentage = 10; // قيمة افتراضية في حالة الخطأ
+                                                }
+                                                @endphp
+                                                <div class="progress-bar" style="width: {{ $percentage }}%"></div>
                                             </div>
                                             <a href="{{ route('accounts.show', $cashBox) }}" class="small-box-footer">
                                                 @lang('messages.details') <i class="fas fa-arrow-circle-right"></i>
