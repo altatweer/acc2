@@ -108,9 +108,8 @@ class SalaryBatchController extends Controller
         $payments = \App\Models\SalaryPayment::where('salary_batch_id', $salaryBatch->id)->get();
         $byCurrency = $payments->groupBy(function($p) { return $p->employee->currency; });
         foreach ($byCurrency as $currency => $rows) {
-            $settings = \App\Models\AccountingSetting::where('currency', $currency)->first();
-            $expenseAccountId = $settings?->expenses_account_id;
-            $liabilityAccountId = $settings?->liabilities_account_id;
+            $expenseAccountId = \App\Models\AccountingSetting::get('salary_expense_account', $currency);
+            $liabilityAccountId = \App\Models\AccountingSetting::get('employee_payables_account', $currency);
             if (!$expenseAccountId || !$liabilityAccountId) continue;
             $totalGross = $rows->sum('gross_salary');
             $totalAllowances = $rows->sum('total_allowances');

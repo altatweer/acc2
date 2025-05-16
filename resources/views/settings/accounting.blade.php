@@ -39,7 +39,7 @@
                                                 <option value="">@lang('messages.select')</option>
                                                 @foreach($accounts as $acc)
                                                     @if($acc->currency == $currency->code)
-                                                        <option value="{{ $acc->id }}" {{ (isset($settings[$currency->code]) && $settings[$currency->code]->sales_account_id == $acc->id) ? 'selected' : '' }}>{{ $acc->name }} ({{ $acc->code }})</option>
+                                                        <option value="{{ $acc->id }}" {{ (isset($settings[$currency->code]) && $settings[$currency->code]['default_sales_account'] == $acc->id) ? 'selected' : '' }}>{{ $acc->name }} ({{ $acc->code }})</option>
                                                     @endif
                                                 @endforeach
                                             </select>
@@ -49,7 +49,7 @@
                                                 <option value="">@lang('messages.select')</option>
                                                 @foreach($accounts as $acc)
                                                     @if($acc->currency == $currency->code)
-                                                        <option value="{{ $acc->id }}" {{ (isset($settings[$currency->code]) && $settings[$currency->code]->purchases_account_id == $acc->id) ? 'selected' : '' }}>{{ $acc->name }} ({{ $acc->code }})</option>
+                                                        <option value="{{ $acc->id }}" {{ (isset($settings[$currency->code]) && $settings[$currency->code]['default_purchases_account'] == $acc->id) ? 'selected' : '' }}>{{ $acc->name }} ({{ $acc->code }})</option>
                                                     @endif
                                                 @endforeach
                                             </select>
@@ -59,7 +59,7 @@
                                                 <option value="">@lang('messages.select')</option>
                                                 @foreach($accounts as $acc)
                                                     @if($acc->currency == $currency->code)
-                                                        <option value="{{ $acc->id }}" {{ (isset($settings[$currency->code]) && $settings[$currency->code]->receivables_account_id == $acc->id) ? 'selected' : '' }}>{{ $acc->name }} ({{ $acc->code }})</option>
+                                                        <option value="{{ $acc->id }}" {{ (isset($settings[$currency->code]) && $settings[$currency->code]['default_customers_account'] == $acc->id) ? 'selected' : '' }}>{{ $acc->name }} ({{ $acc->code }})</option>
                                                     @endif
                                                 @endforeach
                                             </select>
@@ -69,7 +69,7 @@
                                                 <option value="">@lang('messages.select')</option>
                                                 @foreach($accounts as $acc)
                                                     @if($acc->currency == $currency->code)
-                                                        <option value="{{ $acc->id }}" {{ (isset($settings[$currency->code]) && $settings[$currency->code]->payables_account_id == $acc->id) ? 'selected' : '' }}>{{ $acc->name }} ({{ $acc->code }})</option>
+                                                        <option value="{{ $acc->id }}" {{ (isset($settings[$currency->code]) && $settings[$currency->code]['default_suppliers_account'] == $acc->id) ? 'selected' : '' }}>{{ $acc->name }} ({{ $acc->code }})</option>
                                                     @endif
                                                 @endforeach
                                             </select>
@@ -79,7 +79,7 @@
                                                 <option value="">@lang('messages.select')</option>
                                                 @foreach($accounts as $acc)
                                                     @if($acc->currency == $currency->code)
-                                                        <option value="{{ $acc->id }}" {{ (isset($settings[$currency->code]) && $settings[$currency->code]->expenses_account_id == $acc->id) ? 'selected' : '' }}>{{ $acc->name }} ({{ $acc->code }})</option>
+                                                        <option value="{{ $acc->id }}" {{ (isset($settings[$currency->code]) && $settings[$currency->code]['salary_expense_account'] == $acc->id) ? 'selected' : '' }}>{{ $acc->name }} ({{ $acc->code }})</option>
                                                     @endif
                                                 @endforeach
                                             </select>
@@ -89,7 +89,7 @@
                                                 <option value="">@lang('messages.select')</option>
                                                 @foreach($accounts as $acc)
                                                     @if($acc->currency == $currency->code)
-                                                        <option value="{{ $acc->id }}" {{ (isset($settings[$currency->code]) && $settings[$currency->code]->liabilities_account_id == $acc->id) ? 'selected' : '' }}>{{ $acc->name }} ({{ $acc->code }})</option>
+                                                        <option value="{{ $acc->id }}" {{ (isset($settings[$currency->code]) && $settings[$currency->code]['employee_payables_account'] == $acc->id) ? 'selected' : '' }}>{{ $acc->name }} ({{ $acc->code }})</option>
                                                     @endif
                                                 @endforeach
                                             </select>
@@ -99,7 +99,7 @@
                                                 <option value="">@lang('messages.select')</option>
                                                 @foreach($accounts as $acc)
                                                     @if($acc->currency == $currency->code)
-                                                        <option value="{{ $acc->id }}" {{ (isset($settings[$currency->code]) && $settings[$currency->code]->deductions_account_id == $acc->id) ? 'selected' : '' }}>{{ $acc->name }} ({{ $acc->code }})</option>
+                                                        <option value="{{ $acc->id }}" {{ (isset($settings[$currency->code]) && $settings[$currency->code]['deductions_account'] == $acc->id) ? 'selected' : '' }}>{{ $acc->name }} ({{ $acc->code }})</option>
                                                     @endif
                                                 @endforeach
                                             </select>

@@ -121,8 +121,7 @@ class SalaryPaymentController extends Controller
             ]);
 
             // إنشاء القيد المحاسبي
-            $settings = \App\Models\AccountingSetting::where('currency', $employee->currency)->first();
-            $liabilityAccountId = $settings?->liabilities_account_id;
+            $liabilityAccountId = \App\Models\AccountingSetting::get('employee_payables_account', $employee->currency);
             if (!$liabilityAccountId) {
                 throw new \Exception('لم يتم العثور على حساب الذمم المستحقة للموظفين بعملة الموظف.');
             }

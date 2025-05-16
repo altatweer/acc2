@@ -72,8 +72,7 @@ class InvoicePaymentController extends Controller
             ]);
             $amount = $validated['payment_amount'];
             // إنشاء قيد محاسبي مالي (مدين: الصندوق/البنك، دائن: حساب العملاء الافتراضي حسب عملة الفاتورة)
-            $settings = \App\Models\AccountingSetting::where('currency', $invoice->currency)->first();
-            $receivablesAccountId = $settings?->receivables_account_id;
+            $receivablesAccountId = \App\Models\AccountingSetting::get('default_customers_account', $invoice->currency);
             $lines = [
                 [
                     'account_id' => $cashAccount->id,

@@ -173,11 +173,12 @@ class InvoiceController extends Controller
             $invoice->status = 'unpaid';
             $invoice->save();
             // إنشاء قيد محاسبي آجل (مدين: حساب العملاء الافتراضي حسب العملة، دائن: حساب المبيعات الافتراضي حسب العملة)
-            $settings = \App\Models\AccountingSetting::where('currency', $invoice->currency)->first();
-            if ($settings && $settings->receivables_account_id && $settings->sales_account_id) {
+            $receivablesAccountId = \App\Models\AccountingSetting::get('default_customers_account', $invoice->currency);
+            $salesAccountId = \App\Models\AccountingSetting::get('default_sales_account', $invoice->currency);
+            if ($receivablesAccountId && $salesAccountId) {
                 $lines = [
                     [
-                        'account_id' => $settings->receivables_account_id,
+                        'account_id' => $receivablesAccountId,
                         'description' => 'استحقاق فاتورة ' . $invoice->invoice_number,
                         'debit' => $invoice->total,
                         'credit' => 0,
@@ -185,7 +186,7 @@ class InvoiceController extends Controller
                         'exchange_rate' => $invoice->exchange_rate,
                     ],
                     [
-                        'account_id' => $settings->sales_account_id,
+                        'account_id' => $salesAccountId,
                         'description' => 'إيراد فاتورة ' . $invoice->invoice_number,
                         'debit' => 0,
                         'credit' => $invoice->total,

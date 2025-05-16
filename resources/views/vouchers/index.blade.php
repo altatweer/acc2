@@ -116,9 +116,7 @@
                                     </td>
                                 </tr>
                             @empty
-                                <tr>
-                                    <td colspan="8" class="py-4">@lang('messages.no_vouchers')</td>
-                                </tr>
+                                {{-- لا تعرض أي صف عند عدم وجود بيانات، DataTables سيعرض رسالة فارغة تلقائيًا --}}
                             @endforelse
                         </tbody>
                     </table>
@@ -141,7 +139,8 @@
 $(function(){
     $('#vouchersTable').DataTable({
         language: {
-            url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/{{ app()->getLocale() == "ar" ? "ar" : "en" }}.json'
+            url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/{{ app()->getLocale() == "ar" ? "ar" : "en" }}.json',
+            emptyTable: "{{ __('messages.no_vouchers') }}"
         },
         order: [[3, 'desc']],
         pageLength: 25,

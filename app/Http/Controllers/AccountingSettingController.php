@@ -14,8 +14,26 @@ class AccountingSettingController extends Controller
             abort(403);
         }
         $currencies = \App\Models\Currency::all();
-        $settings = \App\Models\AccountingSetting::all()->keyBy('currency');
         $accounts = \App\Models\Account::where('is_group', 0)->get();
+        // جلب القيم الافتراضية من key/value/currency
+        $settings = [];
+        $keys = [
+            'default_sales_account',
+            'default_purchases_account',
+            'default_customers_account',
+            'default_suppliers_account',
+            'salary_expense_account',
+            'employee_payables_account',
+            'deductions_account',
+        ];
+        foreach ($currencies as $currency) {
+            $row = [];
+            foreach ($keys as $key) {
+                $setting = \App\Models\AccountingSetting::where('key', $key)->where('currency', $currency->code)->first();
+                $row[$key] = $setting ? $setting->value : null;
+            }
+            $settings[$currency->code] = $row;
+        }
         return view('settings.accounting', compact('settings', 'accounts', 'currencies'));
     }
 

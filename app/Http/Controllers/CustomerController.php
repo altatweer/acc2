@@ -45,10 +45,9 @@ class CustomerController extends Controller
             'phone'      => 'nullable|string|max:50',
             'address'    => 'nullable|string',
         ]);
-        // جلب حساب العملاء الافتراضي حسب العملة الافتراضية للنظام
         $defaultCurrency = \App\Models\Currency::where('is_default', true)->first();
-        $setting = \App\Models\AccountingSetting::where('currency', $defaultCurrency->code)->first();
-        $validated['account_id'] = $setting?->receivables_account_id;
+        $accountId = \App\Models\AccountingSetting::get('default_customers_account', $defaultCurrency->code);
+        $validated['account_id'] = $accountId;
         Customer::create($validated);
         return redirect()->route('customers.index')->with('success', __('messages.created_success'));
     }
