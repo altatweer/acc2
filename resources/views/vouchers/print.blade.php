@@ -1,84 +1,112 @@
 @extends('layouts.print')
 
 @section('print-content')
-<div class="alert alert-warning">
-    @lang('messages.transactions_count') {{ $transactions->count() }}
+<div class="no-print print-actions text-center mb-3">
+    <button onclick="window.print()" class="btn btn-primary">
+        <i class="fas fa-print"></i> @lang('messages.print')
+    </button>
 </div>
-<div class="no-print text-center mb-3">
-    <button onclick="window.print()" class="btn btn-primary px-4">@lang('messages.print')</button>
+
+<div class="document-title">
+    <h3>@lang('messages.financial_voucher_number', ['number' => $voucher->voucher_number])</h3>
 </div>
-<div class="row justify-content-center">
-    <div class="col-md-8">
-        <div class="card shadow-sm border-0 mb-4">
-            <div class="card-body">
-                <h4 class="mb-4 text-center text-primary">@lang('messages.financial_voucher_number', ['number' => $voucher->voucher_number])</h4>
-                <table class="table table-bordered mb-4">
-                    <tr>
-                        <th>@lang('messages.voucher_type')</th>
-                        <td>
-                            @if($voucher->type == 'receipt')
-                                @lang('messages.receipt')
-                            @elseif($voucher->type == 'payment')
-                                @lang('messages.payment')
-                            @else
-                                @lang('messages.transfer')
-                            @endif
-                        </td>
-                        <th>@lang('messages.voucher_date')</th>
-                        <td>{{ $voucher->date ? \Illuminate\Support\Carbon::parse($voucher->date)->format('Y-m-d H:i') : '-' }}</td>
-                    </tr>
-                    <tr>
-                        <th>@lang('messages.accountant')</th>
-                        <td>{{ $voucher->user->name ?? '-' }}</td>
-                        <th>@lang('messages.recipient_payer')</th>
-                        <td>{{ $voucher->recipient_name }}</td>
-                    </tr>
-                    <tr>
-                        <th>@lang('messages.description')</th>
-                        <td colspan="3">{{ $voucher->description }}</td>
-                    </tr>
-                </table>
-                <h5 class="mb-3">@lang('messages.related_financial_transactions')</h5>
-                <table class="table table-bordered table-striped text-center">
-                    <thead class="thead-light">
-                        <tr>
-                            <th>@lang('messages.account')</th>
-                            <th>@lang('messages.debit')</th>
-                            <th>@lang('messages.credit')</th>
-                            <th>@lang('messages.currency')</th>
-                            <th>@lang('messages.description')</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @if($voucher->journalEntry && $voucher->journalEntry->lines && $voucher->journalEntry->lines->count())
-                            @foreach($voucher->journalEntry->lines as $line)
-                                <tr>
-                                    <td>{{ $line->account->name ?? '-' }}</td>
-                                    <td>{{ number_format($line->debit, 2) }}</td>
-                                    <td>{{ number_format($line->credit, 2) }}</td>
-                                    <td>{{ $line->currency }}</td>
-                                    <td>{{ $line->description }}</td>
-                                </tr>
-                            @endforeach
-                        @else
-                            <tr>
-                                <td colspan="5" class="text-center">@lang('messages.no_financial_transactions')</td>
-                            </tr>
-                        @endif
-                    </tbody>
-                </table>
-                <div class="mt-5 row">
-                    <div class="col text-center">
-                        <span class="d-inline-block border-top pt-2 px-4">@lang('messages.accountant_signature')</span>
-                    </div>
-                    <div class="col text-center">
-                        <span class="d-inline-block border-top pt-2 px-4">@lang('messages.recipient_signature')</span>
-                    </div>
-                </div>
-            </div>
+
+<div class="document-info p-3 mb-4">
+    <div class="row mb-2">
+        <div class="col-6">
+            <strong>@lang('messages.voucher_type'):</strong>
+            <span class="badge badge-{{ $voucher->type == 'receipt' ? 'success' : ($voucher->type == 'payment' ? 'danger' : 'info') }} ml-2">
+                @if($voucher->type == 'receipt')
+                    @lang('messages.receipt')
+                @elseif($voucher->type == 'payment')
+                    @lang('messages.payment')
+                @else
+                    @lang('messages.transfer')
+                @endif
+            </span>
+        </div>
+        <div class="col-6">
+            <strong>@lang('messages.voucher_date'):</strong>
+            <span>{{ $voucher->date ? \Illuminate\Support\Carbon::parse($voucher->date)->format('Y-m-d H:i') : '-' }}</span>
+        </div>
+    </div>
+    <div class="row mb-2">
+        <div class="col-6">
+            <strong>@lang('messages.accountant'):</strong>
+            <span>{{ $voucher->user->name ?? '-' }}</span>
+        </div>
+        <div class="col-6">
+            <strong>@lang('messages.recipient_payer'):</strong>
+            <span>{{ $voucher->recipient_name }}</span>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <strong>@lang('messages.description'):</strong>
+            <span>{{ $voucher->description }}</span>
         </div>
     </div>
 </div>
+
+<div class="transactions-section mb-4">
+    <h4 class="section-title">@lang('messages.related_financial_transactions')</h4>
+    <div class="table-responsive">
+        <table class="table table-bordered table-striped">
+            <thead class="table-header">
+                <tr>
+                    <th>@lang('messages.account')</th>
+                    <th>@lang('messages.debit')</th>
+                    <th>@lang('messages.credit')</th>
+                    <th>@lang('messages.currency')</th>
+                    <th>@lang('messages.description')</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if($voucher->journalEntry && $voucher->journalEntry->lines && $voucher->journalEntry->lines->count())
+                    @php 
+                        $totalDebit = 0;
+                        $totalCredit = 0;
+                    @endphp
+                    @foreach($voucher->journalEntry->lines as $line)
+                        @php 
+                            $totalDebit += $line->debit;
+                            $totalCredit += $line->credit;
+                        @endphp
+                        <tr>
+                            <td>{{ $line->account->name ?? '-' }}</td>
+                            <td class="text-right">{{ number_format($line->debit, 2) }}</td>
+                            <td class="text-right">{{ number_format($line->credit, 2) }}</td>
+                            <td>{{ $line->currency }}</td>
+                            <td>{{ $line->description }}</td>
+                        </tr>
+                    @endforeach
+                    <tr class="table-total">
+                        <td><strong>@lang('messages.total')</strong></td>
+                        <td class="text-right"><strong>{{ number_format($totalDebit, 2) }}</strong></td>
+                        <td class="text-right"><strong>{{ number_format($totalCredit, 2) }}</strong></td>
+                        <td colspan="2"></td>
+                    </tr>
+                @else
+                    <tr>
+                        <td colspan="5" class="text-center">@lang('messages.no_financial_transactions')</td>
+                    </tr>
+                @endif
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="signature-section">
+    <div class="signature-box">
+        <div class="signature-line"></div>
+        <div class="signature-title">@lang('messages.accountant_signature')</div>
+    </div>
+    <div class="signature-box">
+        <div class="signature-line"></div>
+        <div class="signature-title">@lang('messages.recipient_signature')</div>
+    </div>
+</div>
+
 <script>
     window.onload = function() {
         setTimeout(function() { window.print(); }, 500);
