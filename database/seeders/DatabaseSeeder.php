@@ -23,16 +23,16 @@ class DatabaseSeeder extends Seeder
 
         // استدعاء Seeder الصلاحيات والأدوار أولاً
         $this->call(PermissionSeeder::class);
-        $this->call(AdminUserSeeder::class);
-        $this->call(CurrencySeeder::class);
-        $this->call(AccountsTableSeeder::class);
+        // $this->call(AdminUserSeeder::class); // تم التعليق لأن الملف غير موجود
+        // $this->call(CurrencySeeder::class); // تم التعليق لأن الملف غير موجود
+        // $this->call(AccountsTableSeeder::class); // تم التعليق لأن الملف غير موجود
 
-        // إنشاء سوبر أدمن
-        $super = User::firstOrCreate([
+        // إنشاء مستخدم super admin افتراضي إذا لم يكن موجودًا
+        $super = \App\Models\User::firstOrCreate([
             'email' => 'admin@example.com',
         ], [
             'name' => 'Super Admin',
-            'password' => Hash::make('admin12345'),
+            'password' => bcrypt('admin12345'),
         ]);
 
         // صلاحيات شاملة لكل الأقسام

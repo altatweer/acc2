@@ -43,8 +43,10 @@
             color: #fff !important;
         }
         .main-sidebar {
-            background: linear-gradient(180deg, #23272b 0%, #343a40 100%);
-            box-shadow: 2px 0 8px rgba(0,0,0,0.04);
+            background: #181f2a;
+            width: 260px !important;
+            border-right: 1px solid #232b3b;
+            transition: width 0.2s;
         }
         .brand-link {
             background: #fff;
@@ -60,18 +62,113 @@
             color: #007bff;
             font-size: 1.3rem;
         }
-        .nav-sidebar .nav-link.active {
-            background: linear-gradient(90deg, #007bff 0%, #0056b3 100%);
-            color: #fff !important;
-            border-radius: 6px;
+        .sidebar {
+            padding-top: 1.2rem;
         }
         .nav-sidebar .nav-link {
-            color: #c2c7d0;
-            transition: background 0.2s, color 0.2s;
+            color: #b8c2cc;
+            font-size: 0.96rem;
+            padding: 0.48rem 1rem;
+            margin-bottom: 3px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+            font-family: 'Roboto', 'Tajawal', sans-serif;
+            font-weight: 500;
+            letter-spacing: 0.1px;
+            position: relative;
+        }
+        .nav-sidebar .nav-link i.nav-icon {
+            font-size: 1.13rem;
+            margin-{{ app()->getLocale() == 'ar' ? 'left' : 'right' }}: 0.7rem;
+            color: #6ea8fe !important;
+            background: transparent;
+            border-radius: 50%;
+            min-width: 26px;
+            min-height: 26px;
+            text-align: center;
+            transition: background 0.18s, color 0.18s;
+        }
+        .nav-sidebar .nav-link.active {
+            background: linear-gradient(90deg, #1e3a8a 0%, #0a2540 100%);
+            color: #fff !important;
+            font-weight: bold;
+            box-shadow: 0 2px 12px #1e3a8a22;
+        }
+        .nav-sidebar .nav-link.active i.nav-icon {
+            color: #fff !important;
         }
         .nav-sidebar .nav-link:hover {
-            background: #007bff22;
-            color: #007bff;
+            background: #232b3b;
+            color: #6ea8fe;
+            box-shadow: 0 2px 8px #1e3a8a11;
+        }
+        .nav-sidebar .nav-link:hover i.nav-icon {
+            color: #6ea8fe !important;
+        }
+        /* فاصل لوني واضح بين الأقسام */
+        .nav-section-divider {
+            border-top: 1.5px solid #232b3b;
+            margin: 0.7rem 0 0.7rem 0;
+        }
+        /* توحيد لون أيقونات العناصر السفلية (التقارير) */
+        .nav-sidebar .nav-link .fa-balance-scale,
+        .nav-sidebar .nav-link .fa-file-invoice-dollar,
+        .nav-sidebar .nav-link .fa-chart-line,
+        .nav-sidebar .nav-link .fa-money-check-alt,
+        .nav-sidebar .nav-link .fa-receipt {
+            color: #6ea8fe !important;
+        }
+        .nav-header {
+            color: #6ea8fe;
+            font-size: 0.89rem;
+            font-weight: 600;
+            margin: 1.1rem 0 0.3rem 0;
+            letter-spacing: 0.3px;
+            padding-left: 0.7rem;
+            padding-right: 0.7rem;
+            border-bottom: 1px solid #232b3b;
+            padding-bottom: 0.3rem;
+        }
+        .nav-sidebar .nav-item {
+            border-bottom: none;
+        }
+        .sidebar-collapse .main-sidebar { width: 60px !important; }
+        .sidebar-collapse .nav-sidebar .nav-link span, .sidebar-collapse .nav-header { display: none !important; }
+        .sidebar-collapse .nav-sidebar .nav-link i.nav-icon {
+            margin: 0 auto;
+            display: block;
+        }
+        .sidebar-collapse .nav-sidebar .nav-link {
+            justify-content: center;
+        }
+        @media (max-width: 900px) {
+            .main-sidebar { width: 60px !important; }
+            .nav-sidebar .nav-link span, .nav-header { display: none !important; }
+            .nav-sidebar .nav-link i.nav-icon {
+                margin: 0 auto;
+                display: block;
+            }
+            .nav-sidebar .nav-link {
+                justify-content: center;
+            }
+        }
+        /* Tooltip عند التصغير */
+        .sidebar-collapse .nav-sidebar .nav-link[title]:hover:after {
+            content: attr(title);
+            position: absolute;
+            left: 60px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #232b3b;
+            color: #fff;
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            white-space: nowrap;
+            z-index: 9999;
+            box-shadow: 0 2px 8px #0002;
         }
         .main-footer {
             background: #fff;
@@ -109,19 +206,48 @@
         /* RTL specific styles */
         .sidebar { right: 0; left: auto; }
         .main-sidebar { right: 0; left: auto; }
-        .content-wrapper, .main-footer, .main-header {
-            margin-right: 250px;
+        .content-wrapper, .main-footer {
+            margin-right: 260px;
             margin-left: 0;
+        }
+        .main-header {
+            margin: 0 !important;
+        }
+        body, .wrapper, .content-wrapper {
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            margin-left: 0 !important;
         }
         @else
         /* LTR specific styles */
         .sidebar { left: 0; right: auto; }
         .main-sidebar { left: 0; right: auto; }
-        .content-wrapper, .main-footer, .main-header {
-            margin-left: 250px;
+        .content-wrapper, .main-footer {
+            margin-left: 260px;
             margin-right: 0;
         }
+        .main-header {
+            margin: 0 !important;
+        }
         @endif
+        /* تخصيص صفحة تسجيل الدخول فقط */
+        @if (request()->routeIs('login'))
+        .wrapper {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #0a2540 0%, #1e3a8a 100%) !important;
+        }
+        @endif
+        /* توحيد لون جميع الأيقونات في الـ Sidebar */
+        .nav-sidebar .nav-link i {
+            color: #6ea8fe !important;
+            transition: color 0.18s;
+        }
+        .nav-sidebar .nav-link.active i {
+            color: #fff !important;
+        }
     </style>
 </head>
 
@@ -161,11 +287,6 @@
 <!-- Sidebar -->
 <aside class="main-sidebar sidebar-dark-primary elevation-4">
     <a href="{{ route('dashboard') }}" class="brand-link text-center">
-        @if($companyLogo)
-            <img src="{{ asset('storage/'.$companyLogo) }}" alt="AurSuite" class="mb-2">
-        @else
-            <img src="{{ asset('assets/dist/img/logo4.png') }}" alt="AurSuite" class="mb-2">
-        @endif
         <span class="brand-text font-weight-light">{{ $systemName }}</span>
     </a>
 
@@ -528,9 +649,11 @@
 </div>
 
 <!-- Footer -->
+@if (!request()->routeIs('login'))
 <footer class="main-footer text-center">
     <strong>{{ $systemName }} © {{ date('Y') }}</strong> | <span>{{ $companyName }}</span>
 </footer>
+@endif
 
 </div>
 
