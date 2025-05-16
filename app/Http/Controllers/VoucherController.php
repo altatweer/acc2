@@ -542,6 +542,11 @@ class VoucherController extends Controller
            $amountTo = $exchangeRate ? $amountFrom / $exchangeRate : $amountFrom;
        }
 
+       // التحقق من وجود رصيد كافٍ في الحساب المصدر
+       if (!$from->canWithdraw($amountFrom)) {
+           return back()->withErrors(['amount' => 'لا يوجد رصيد كافٍ في الصندوق المصدر لإجراء التحويل. الرصيد الحالي: ' . $from->balance()]);
+       }
+
        \DB::transaction(function () use ($validated, $from, $to, $fromCurrency, $toCurrency, $amountFrom, $amountTo, $exchangeRate) {
            $voucher = new \App\Models\Voucher();
            $voucher->voucher_number = $this->generateVoucherNumber();

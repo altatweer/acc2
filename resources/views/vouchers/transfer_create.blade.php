@@ -95,12 +95,87 @@
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/i18n/ar.js"></script>
 <!-- كود التحويل بين العملات -->
 <script>
-@php
-    $allCashAccounts = $cashAccountsFrom->merge($cashAccountsTo)->unique('id');
-@endphp
-$(function(){
-    const cashAccounts = @json($allCashAccounts->map(function($a){return ['id' => $a->id, 'currency' => $a->currency, 'name' => $a->name];}));
-    const exchangeRates = @json($exchangeRates);
+$(document).ready(function(){
+    // Obtener los balances de los cashboxes
+    let cashAccounts = @json($cashAccountsFrom->concat($cashAccountsTo));
+    let exchangeRates = @json($exchangeRates);
+    
+    // Agregar información de saldo a los cashAccounts
+    cashAccounts = cashAccounts.map(account => {
+        // Esta información se cargará a través de Ajax
+        account.balance = 0;
+        return account;
+    });
+    
+    // Función para cargar el saldo de la cuenta seleccionada
+    function loadAccountBalance(accountId) {
+        if (!accountId) return;
+        
+        $.ajax({
+            url: '/api/accounts/' + accountId + '/balance',
+            method: 'GET',
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            success: function(response) {
+                const account = cashAccounts.find(a => a.id == accountId);
+                if (account) {
+                    account.balance = response.balance;
+                    // Actualizar la UI si es necesario
+                    if ($('#from-account').val() == accountId) {
+                        updateBalanceDisplay();
+                        validateAmount();
+                    }
+                }
+            }
+        });
+    }
+    
+    // Mostrar el saldo actual de la cuenta origen
+    function updateBalanceDisplay() {
+        const fromVal = $('#from-account').val();
+        const account = cashAccounts.find(a => a.id == fromVal);
+        
+        if (account) {
+            // Eliminar mensaje anterior si existe
+            $('#current-balance-info').remove();
+            
+            // Agregar información de saldo
+            const balanceInfo = $('<div id="current-balance-info" class="alert alert-info mt-2">' + 
+                'الرصيد الحالي: ' + account.balance + ' ' + account.currency + 
+                '</div>');
+            $('#amount_from_group').after(balanceInfo);
+        }
+    }
+    
+    // Validar si el monto excede el saldo disponible
+    function validateAmount() {
+        const fromVal = $('#from-account').val();
+        const account = cashAccounts.find(a => a.id == fromVal);
+        const amount = parseFloat($('#amount_from').val()) || 0;
+        
+        if (account && amount > account.balance) {
+            // Mostrar alerta
+            $('#insufficient-balance-alert').remove();
+            const alert = $('<div id="insufficient-balance-alert" class="alert alert-danger mt-2">' + 
+                'تنبيه: المبلغ المطلوب تحويله يتجاوز الرصيد المتاح في الصندوق.' + 
+                '</div>');
+            $('#amount_from_group').after(alert);
+            
+            // Deshabilitar botón de guardar
+            $('#save-btn').prop('disabled', true);
+        } else {
+            // Eliminar alerta si existe
+            $('#insufficient-balance-alert').remove();
+            
+            // Habilitar botón de guardar si no hay otros problemas
+            if ($('#from-account').val() && $('#to-account').val() && 
+                $('#from-account').val() !== $('#to-account').val()) {
+                $('#save-btn').prop('disabled', false);
+            }
+        }
+    }
+
     function filterTargetAccounts() {
         console.log('filterTargetAccounts', cashAccounts);
         const fromVal = $('#from-account').val();
@@ -135,41 +210,31 @@ $(function(){
             saveBtn.prop('disabled', false);
             sameAlert.hide();
         }
+        
+        // Si hay una cuenta de origen seleccionada, cargar su saldo
+        if (fromVal) {
+            loadAccountBalance(fromVal);
+        }
+        
         // إذا العملة مختلفة: أظهر سعر الصرف والمبلغ المستلم
         if (fromCurrency && toCurrency && fromCurrency !== toCurrency) {
             let key = fromCurrency + '_' + toCurrency;
             if (exchangeRates[key]) {
-                rateInput.val(exchangeRates[key]);
+                const rate = exchangeRates[key];
+                rateInput.val(rate.toFixed(4));
+                rateGroup.show();
+                amountToGroup.show();
             } else {
-                rateInput.val(1);
-            }
-            rateInput.prop('readonly', true);
-            rateGroup.show();
-            amountToGroup.show();
-            // رسالة تنبيه إذا لم يوجد سعر صرف تلقائي
-            let rateAlert = $('#exchange-rate-alert');
-            if (!rateAlert.length) {
-                rateAlert = $('<div id="exchange-rate-alert" class="alert alert-warning mt-2"></div>');
-                rateInput.parent().append(rateAlert);
-            }
-            if (!exchangeRates[key]) {
-                rateAlert.text('@lang('messages.exchange_rate_missing_alert')').show();
-            } else {
-                rateAlert.hide();
+                rateGroup.hide();
+                amountToGroup.hide();
             }
         } else {
-            rateInput.val('');
+            // نفس العملة: أخفِ سعر الصرف
             rateGroup.hide();
             amountToGroup.hide();
-            $('#exchange-rate-alert').hide();
-        }
-        // رسالة إذا لا يوجد صناديق أخرى
-        if (!hasMatch && fromVal) {
-            noBoxAlert.show().text('@lang('messages.no_other_accounts_alert')');
-        } else {
-            noBoxAlert.hide();
         }
     }
+
     function updateAmountTo() {
         const fromVal = $('#from-account').val();
         const toVal = $('#to-account').val();
@@ -187,7 +252,11 @@ $(function(){
             }
         }
         $('#amount_to').val(amountTo ? amountTo.toFixed(2) : '');
+        
+        // Validar monto
+        validateAmount();
     }
+    
     // تهيئة select2
     $('#from-account, #to-account').select2({
         width: '100%',
@@ -196,9 +265,18 @@ $(function(){
         placeholder: '@lang('messages.choose_account')',
         allowClear: true
     });
+    
     // ربط الأحداث بعد تهيئة select2
-    $('#from-account, #to-account').on('change', function(){ filterTargetAccounts(); updateAmountTo(); });
-    $('#amount_from').on('input', updateAmountTo);
+    $('#from-account, #to-account').on('change', function(){ 
+        filterTargetAccounts();
+        updateAmountTo();
+    });
+    
+    $('#amount_from').on('input', function() {
+        updateAmountTo();
+        validateAmount();
+    });
+    
     // تنفيذ أولي
     filterTargetAccounts();
     updateAmountTo();
