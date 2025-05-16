@@ -84,7 +84,7 @@
                 <div class="progress-bar bg-danger" style="width: 100%"></div>
               </div>
             </div>
-            <a href="{{ Route::localizedRoute('vouchers.index') }}" class="stretched-link"></a>
+            <a href="{{ route('vouchers.index') }}" class="stretched-link"></a>
           </div>
         </div>
       </div>
@@ -108,7 +108,7 @@
                       <p style="color: #4338ca;">@lang('messages.receipt_vouchers_count')</p>
                       <i class="fas fa-receipt" style="font-size: 2rem; color: #6366f1; opacity: 0.2; position: absolute; bottom: 0; right: 10px;"></i>
                     </div>
-                    <a href="{{ Route::localizedRoute('vouchers.index', ['type' => 'receipt']) }}" class="small-box-footer" style="padding: 8px; background: #4f46e5; color: white; border-bottom-left-radius: 10px; border-bottom-right-radius: 10px;">
+                    <a href="{{ route('vouchers.index', ['type' => 'receipt']) }}" class="small-box-footer" style="padding: 8px; background: #4f46e5; color: white; border-bottom-left-radius: 10px; border-bottom-right-radius: 10px;">
                       @lang('messages.view_more') <i class="fas fa-arrow-circle-right ml-1"></i>
                     </a>
                   </div>
@@ -121,7 +121,7 @@
                       <p style="color: #15803d;">@lang('messages.payment_vouchers_count')</p>
                       <i class="fas fa-money-bill" style="font-size: 2rem; color: #22c55e; opacity: 0.2; position: absolute; bottom: 0; right: 10px;"></i>
                     </div>
-                    <a href="{{ Route::localizedRoute('vouchers.index', ['type' => 'payment']) }}" class="small-box-footer" style="padding: 8px; background: #16a34a; color: white; border-bottom-left-radius: 10px; border-bottom-right-radius: 10px;">
+                    <a href="{{ route('vouchers.index', ['type' => 'payment']) }}" class="small-box-footer" style="padding: 8px; background: #16a34a; color: white; border-bottom-left-radius: 10px; border-bottom-right-radius: 10px;">
                       @lang('messages.view_more') <i class="fas fa-arrow-circle-right ml-1"></i>
                     </a>
                   </div>
@@ -134,7 +134,7 @@
                       <p style="color: #1d4ed8;">@lang('messages.transfer_vouchers_count')</p>
                       <i class="fas fa-exchange-alt" style="font-size: 2rem; color: #3b82f6; opacity: 0.2; position: absolute; bottom: 0; right: 10px;"></i>
                     </div>
-                    <a href="{{ Route::localizedRoute('vouchers.index', ['type' => 'transfer']) }}" class="small-box-footer" style="padding: 8px; background: #2563eb; color: white; border-bottom-left-radius: 10px; border-bottom-right-radius: 10px;">
+                    <a href="{{ route('vouchers.index', ['type' => 'transfer']) }}" class="small-box-footer" style="padding: 8px; background: #2563eb; color: white; border-bottom-left-radius: 10px; border-bottom-right-radius: 10px;">
                       @lang('messages.view_more') <i class="fas fa-arrow-circle-right ml-1"></i>
                     </a>
                   </div>
@@ -147,7 +147,7 @@
                       <p style="color: #c2410c;">@lang('messages.deposits_count')</p>
                       <i class="fas fa-piggy-bank" style="font-size: 2rem; color: #f97316; opacity: 0.2; position: absolute; bottom: 0; right: 10px;"></i>
                     </div>
-                    <a href="{{ Route::localizedRoute('vouchers.index', ['type' => 'deposit']) }}" class="small-box-footer" style="padding: 8px; background: #ea580c; color: white; border-bottom-left-radius: 10px; border-bottom-right-radius: 10px;">
+                    <a href="{{ route('vouchers.index', ['type' => 'deposit']) }}" class="small-box-footer" style="padding: 8px; background: #ea580c; color: white; border-bottom-left-radius: 10px; border-bottom-right-radius: 10px;">
                       @lang('messages.view_more') <i class="fas fa-arrow-circle-right ml-1"></i>
                     </a>
                   </div>
@@ -160,7 +160,7 @@
                       <p style="color: #b91c1c;">@lang('messages.withdrawals_count')</p>
                       <i class="fas fa-money-bill-wave" style="font-size: 2rem; color: #ef4444; opacity: 0.2; position: absolute; bottom: 0; right: 10px;"></i>
                     </div>
-                    <a href="{{ Route::localizedRoute('vouchers.index', ['type' => 'withdraw']) }}" class="small-box-footer" style="padding: 8px; background: #dc2626; color: white; border-bottom-left-radius: 10px; border-bottom-right-radius: 10px;">
+                    <a href="{{ route('vouchers.index', ['type' => 'withdraw']) }}" class="small-box-footer" style="padding: 8px; background: #dc2626; color: white; border-bottom-left-radius: 10px; border-bottom-right-radius: 10px;">
                       @lang('messages.view_more') <i class="fas fa-arrow-circle-right ml-1"></i>
                     </a>
                   </div>
@@ -207,10 +207,10 @@
                     </div>
                     <div class="card-footer bg-light p-0" style="border-top: none;">
                       <div class="btn-group w-100">
-                        <a href="{{ Route::localizedRoute('vouchers.create') }}?account_id={{ $box['id'] }}&type=receipt" class="btn btn-sm btn-light py-2" style="border-radius: 0;">
+                        <a href="{{ route('vouchers.create') }}?account_id={{ $box['id'] }}&type=receipt" class="btn btn-sm btn-light py-2" style="border-radius: 0;">
                           <i class="fas fa-plus-circle text-success"></i> @lang('messages.receipt')
                         </a>
-                        <a href="{{ Route::localizedRoute('vouchers.create') }}?account_id={{ $box['id'] }}&type=payment" class="btn btn-sm btn-light py-2" style="border-radius: 0;">
+                        <a href="{{ route('vouchers.create') }}?account_id={{ $box['id'] }}&type=payment" class="btn btn-sm btn-light py-2" style="border-radius: 0;">
                           <i class="fas fa-minus-circle text-danger"></i> @lang('messages.payment')
                         </a>
                       </div>

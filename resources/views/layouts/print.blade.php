@@ -53,8 +53,32 @@
     }
     
     .navbar, .nav-link, .main-sidebar, .main-header, .main-footer,
-    .btn-primary, .mode-toggle, .no-print {
+    .btn-primary, .mode-toggle, .no-print, .content-header,
+    h1:first-of-type, .page-header, .app-header, #app > header {
         display: none !important;
+    }
+
+    /* Ocultar encabezados de página al imprimir */
+    @page {
+        margin-top: 0;
+        margin-header: 0;
+        margin-footer: 0;
+    }
+    
+    /* Eliminar encabezados generados por el navegador */
+    html, body { 
+        height: auto; 
+    }
+    
+    /* Ocultar elementos específicos en la parte superior */
+    body::before, 
+    #app::before, 
+    .content-wrapper::before,
+    .app-title,
+    .page-title {
+        display: none !important;
+        height: 0 !important;
+        visibility: hidden !important;
     }
     
     .content-wrapper {
@@ -155,7 +179,7 @@
 /* Signature section */
 .signature-section {
     display: flex;
-    justify-content: space-around;
+    justify-content: space-between;
     margin-top: 50px;
     margin-bottom: 30px;
 }

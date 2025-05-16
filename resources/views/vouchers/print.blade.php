@@ -107,8 +107,52 @@
     </div>
 </div>
 
+<style>
+@media print {
+    /* Ocultar específicamente el encabezado "تطوير" y otros elementos no deseados en la impresión */
+    h1:first-child, 
+    h1:first-of-type, 
+    .header-content, 
+    .page-title,
+    .app-header,
+    .app-page-header,
+    .navbar-brand {
+        display: none !important;
+    }
+    
+    /* Ocultar específicamente "AurSuite" y la fecha en la parte superior */
+    #print-header,
+    .print-page-title,
+    body > div:first-child > h1,
+    body > div:first-child > div:first-child,
+    div:contains('AurSuite'),
+    div:contains('messages.print_date'),
+    header, 
+    .pdf-header {
+        display: none !important;
+        height: 0 !important;
+        visibility: hidden !important;
+    }
+    
+    /* Configuración de página para eliminar encabezados y pies de página */
+    @page {
+        size: auto;
+        margin: 0mm;
+        margin-top: 0;
+        margin-header: 0 !important;
+        margin-footer: 0 !important;
+    }
+}
+</style>
+
 <script>
     window.onload = function() {
+        // Ocultar encabezados antes de imprimir
+        var elementsToHide = document.querySelectorAll('h1, header, .header');
+        elementsToHide.forEach(function(element) {
+            element.style.display = 'none';
+        });
+        
         setTimeout(function() { window.print(); }, 500);
     };
 </script>

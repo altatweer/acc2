@@ -144,11 +144,11 @@
 <div class="signature-section">
     <div class="signature-box">
         <div class="signature-line"></div>
-        <div class="signature-title">@lang('messages.customer_signature')</div>
+        <div class="signature-title">@lang('messages.accountant_signature')</div>
     </div>
     <div class="signature-box">
         <div class="signature-line"></div>
-        <div class="signature-title">@lang('messages.accountant_signature')</div>
+        <div class="signature-title">@lang('messages.customer_signature')</div>
     </div>
 </div>
 
