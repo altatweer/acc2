@@ -83,12 +83,25 @@ $(function(){
     function filterAccountsByCurrency(currency) {
         $('select[name^="lines"]').each(function(){
             let selected = $(this).val();
+            
+            // Destroy Select2 if it's initialized
+            if ($.fn.select2 && $(this).hasClass('select2-hidden-accessible')) {
+                $(this).select2('destroy');
+            }
+            
             $(this).empty();
             accounts.forEach(function(acc){
                 if(acc.currency === currency) {
                     $(this).append(`<option value="${acc.id}" ${selected == acc.id ? 'selected' : ''}>${acc.name}</option>`);
                 }
             }.bind(this));
+            
+            // Reinitialize Select2 if needed
+            if ($.fn.select2) {
+                $(this).select2({
+                    placeholder: '@lang("messages.choose_account")'
+                });
+            }
         });
         // تحديث حقول العملة وسعر الصرف في كل سطر
         $('.line-currency').val(currency);

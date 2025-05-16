@@ -186,8 +186,12 @@ $(document).ready(function(){
             alert('@lang('messages.currency_alert')');
         }
         let hasMatch = false;
+        
+        // Destroy and rebuild to-account Select2
+        $('#to-account').select2('destroy');
+        
         $('#to-account option').each(function(){
-            if (!$(this).val()) return;
+            if (!$(this).val()) return; // Skip placeholder
             if ($(this).val() === fromVal) {
                 $(this).prop('disabled', true).hide();
             } else {
@@ -195,6 +199,22 @@ $(document).ready(function(){
                 hasMatch = true;
             }
         });
+        
+        // Reinitialize select2 with updated options
+        $('#to-account').select2({
+            width: '100%',
+            dir: 'rtl',
+            language: 'ar',
+            placeholder: '@lang('messages.choose_account')',
+            allowClear: true
+        });
+        
+        // If the previously selected "to" account is now disabled (same as "from"), clear the selection
+        if (toVal === fromVal) {
+            $('#to-account').val('').trigger('change');
+            toVal = '';
+        }
+        
         // تحديث واجهة التحويل
         toCurrency = cashAccounts.find(a => a.id == toVal)?.currency;
         const rateInput = $('#exchange_rate');

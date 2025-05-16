@@ -94,12 +94,21 @@
 $(function(){
     let accounts = @json($accounts);
     let lineIdx = $('#linesTable tbody tr').length;
+    
+    // Initialize Select2 for account dropdowns if available
+    if ($.fn.select2) {
+        $('.account-select').select2({
+            placeholder: '@lang("messages.choose_account")'
+        });
+    }
+    
     function updateCurrency(row) {
         let accountId = $(`select.account-select[data-row='${row}']`).val();
         let acc = accounts.find(a => a.id == accountId);
         let currency = acc ? acc.currency : 'IQD';
         $(`input.currency-input[data-row='${row}']`).val(currency);
     }
+    
     function updateConverted(row) {
         let currency = $(`input.currency-input[data-row='${row}']`).val();
         let debit = parseFloat($(`input.debit[data-row='${row}']`).val())||0;
@@ -109,6 +118,7 @@ $(function(){
         let converted = (currency === 'IQD') ? amount : amount * rate;
         $(`input.converted-amount[data-row='${row}']`).val(converted.toFixed(2));
     }
+    
     $('#addLine').on('click', function(){
         let row = `<tr>
             <td><select name="lines[${lineIdx}][account_id]" class="form-control account-select" data-row="${lineIdx}" required>`;
@@ -124,21 +134,36 @@ $(function(){
             <td><input type="text" class="form-control converted-amount" value="0" readonly data-row="${lineIdx}"></td>
             <td><button type="button" class="btn btn-danger btn-sm remove-line">✖</button></td>
         </tr>`;
+        
         $('#linesTable tbody').append(row);
+        
+        // Initialize Select2 on the newly added row if Select2 is available
+        if ($.fn.select2) {
+            $(`select.account-select[data-row="${lineIdx}"]`).select2({
+                placeholder: '@lang("messages.choose_account")'
+            });
+        }
+        
+        updateCurrency(lineIdx);
+        updateConverted(lineIdx);
         lineIdx++;
     });
+    
     $(document).on('change', 'select.account-select', function(){
         let row = $(this).data('row');
         updateCurrency(row);
         updateConverted(row);
     });
+    
     $(document).on('input', '.amount-input, .exchange-rate-input', function(){
         let row = $(this).data('row');
         updateConverted(row);
     });
+    
     $(document).on('click', '.remove-line', function(){
         $(this).closest('tr').remove();
     });
+    
     // تحقق من توازن القيد بعد التحويل
     $('#journalForm').on('submit', function(){
         let totalDebit = 0, totalCredit = 0;
@@ -158,7 +183,25 @@ $(function(){
             alert("{{ __('messages.debit_credit_must_equal_after_conversion') }}");
             return false;
         }
+        
+        // Check for duplicate accounts
+        let selectedAccounts = [];
+        let hasDuplicate = false;
+        
+        $('.account-select').each(function() {
+            let accountId = $(this).val();
+            if (selectedAccounts.includes(accountId)) {
+                hasDuplicate = true;
+            }
+            selectedAccounts.push(accountId);
+        });
+        
+        if (hasDuplicate) {
+            alert("لا يمكن استخدام نفس الحساب أكثر من مرة في القيد الواحد.");
+            return false;
+        }
     });
+    
     // تهيئة القيم الافتراضية عند التحميل
     $('#linesTable tbody tr').each(function(){
         let row = $(this).find('select.account-select').data('row');

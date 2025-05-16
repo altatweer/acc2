@@ -143,6 +143,10 @@ $(function(){
                 const $row = $(this);
                 const $cashSel = $row.find('select[name$="[account_id]"]');
                 const $tgtSel  = $row.find('select[name$="[target_account_id]"]');
+                
+                // Properly destroy Select2 before emptying and rebuilding
+                $cashSel.select2('destroy');
+                $tgtSel.select2('destroy');
 
                 $cashSel.empty().append($('<option>').val('').text('@lang('messages.choose_cash_account')'));
                 data.cashAccounts.forEach(acc => {
@@ -154,7 +158,9 @@ $(function(){
                     $tgtSel.append($('<option>').val(acc.id).text(acc.code + ' - ' + acc.name));
                 });
 
-                $row.find('select.select2').select2({ theme: 'bootstrap4' });
+                // Reinitialize Select2 after populating options
+                $cashSel.select2({ theme: 'bootstrap4' });
+                $tgtSel.select2({ theme: 'bootstrap4' });
             });
         });
     };
