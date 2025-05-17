@@ -329,6 +329,7 @@
             padding-top: 10px;
             scrollbar-width: thin;
             scrollbar-color: rgba(255,255,255,0.1) transparent;
+            position: relative;
         }
         
         .sidebar::-webkit-scrollbar {
@@ -997,6 +998,64 @@
             color: white;
         }
         @endif
+
+        /* تصميم زر تسجيل الخروج الثابت في أسفل القائمة */
+        .sidebar-logout {
+            position: sticky;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 10px;
+            background: rgba(220, 53, 69, 0.8);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 10;
+            margin-top: 20px;
+        }
+
+        .sidebar-logout a {
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+            border-radius: 5px;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+
+        .sidebar-logout a:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .sidebar-logout i {
+            margin-right: 10px;
+            font-size: 1.2em;
+        }
+
+        /* RTL adjustments for logout button */
+        html[dir="rtl"] .sidebar-logout i {
+            margin-right: 0;
+            margin-left: 10px;
+        }
+
+        /* تخصيص شكل الزر عند طي القائمة */
+        .sidebar-collapse .sidebar-logout span {
+            display: none;
+        }
+
+        .sidebar-collapse .sidebar-logout {
+            padding: 5px;
+        }
+
+        .sidebar-collapse .sidebar-logout a {
+            justify-content: center;
+        }
+
+        .sidebar-collapse .sidebar-logout i {
+            margin-right: 0;
+            margin-left: 0;
+        }
     </style>
 </head>
 
@@ -1064,7 +1123,7 @@
                 </a>
                 <div class="dropdown-divider"></div>
                 <a href="#" class="dropdown-item" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-                    <i class="fas fa-sign-out-alt mr-2"></i> @lang('sidebar.logout')
+                    <i class="fas fa-sign-out-alt {{ app()->getLocale() == 'ar' ? 'ml-2' : 'mr-2' }}"></i> @lang('sidebar.logout')
                 </a>
             </div>
         </li>
@@ -1442,6 +1501,14 @@
 
             </ul>
         </nav>
+
+        {{-- إضافة زر تسجيل الخروج الثابت في أسفل القائمة --}}
+        <div class="sidebar-logout">
+            <a href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>@lang('sidebar.logout')</span>
+            </a>
+        </div>
     </div>
 </aside>
 @endauth
