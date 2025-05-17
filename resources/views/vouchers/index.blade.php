@@ -60,6 +60,14 @@
                     <div class="input-group input-group-sm mr-2">
                         <input type="text" name="recipient_name" value="{{ request('recipient_name') }}" class="form-control" placeholder="@lang('messages.recipient_payer_placeholder')">
                     </div>
+                    <div class="input-group input-group-sm mr-2">
+                        <select name="currency" class="form-control">
+                            <option value="">-- @lang('messages.currency') --</option>
+                            @foreach($currencies ?? [] as $currencyCode)
+                                <option value="{{ $currencyCode }}" {{ request('currency') == $currencyCode ? 'selected' : '' }}>{{ $currencyCode }}</option>
+                            @endforeach
+                        </select>
+                    </div>
                     <button type="submit" class="btn btn-sm btn-info mr-2">@lang('messages.search_button')</button>
                     <a href="{{ Route::localizedRoute('vouchers.index') }}" class="btn btn-sm btn-secondary">@lang('messages.reset_button')</a>
                 </form>
@@ -74,6 +82,8 @@
                                 <th>@lang('messages.date')</th>
                                 <th>@lang('messages.accountant')</th>
                                 <th>@lang('messages.recipient_payer')</th>
+                                <th>@lang('messages.currency')</th>
+                                <th>@lang('messages.amount')</th>
                                 <th>@lang('messages.status')</th>
                                 <th style="width:160px;">@lang('messages.actions')</th>
                             </tr>
@@ -95,6 +105,32 @@
                                     <td>{{ \Illuminate\Support\Carbon::parse($voucher->date)->format('Y-m-d H:i:s') }}</td>
                                     <td>{{ $voucher->user->name ?? '-' }}</td>
                                     <td>{{ $voucher->recipient_name ?? '-' }}</td>
+                                    <td>
+                                        @if($voucher->journalEntry && $voucher->journalEntry->lines && $voucher->journalEntry->lines->count())
+                                            @if($voucher->type == 'transfer')
+                                                @foreach($voucher->journalEntry->lines->groupBy('currency') as $currency => $lines)
+                                                    <span class="badge badge-light">{{ $currency }}</span>
+                                                @endforeach
+                                            @else
+                                                <span class="badge badge-light">{{ $voucher->journalEntry->lines->first()->currency ?? '-' }}</span>
+                                            @endif
+                                        @else
+                                            -
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if($voucher->journalEntry && $voucher->journalEntry->lines && $voucher->journalEntry->lines->count())
+                                            @if($voucher->type == 'transfer')
+                                                @foreach($voucher->journalEntry->lines->groupBy('currency') as $currency => $lines)
+                                                    <div>{{ number_format($lines->sum('debit'), 2) }} {{ $currency }}</div>
+                                                @endforeach
+                                            @else
+                                                {{ number_format($voucher->journalEntry->lines->sum('debit'), 2) }}
+                                            @endif
+                                        @else
+                                            -
+                                        @endif
+                                    </td>
                                     <td>
                                         @if($voucher->status == 'active')
                                             <span class="badge badge-success">@lang('messages.active')</span>

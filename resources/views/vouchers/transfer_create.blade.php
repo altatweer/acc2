@@ -32,11 +32,11 @@
                     <div class="form-row">
                         <div class="form-group col-md-6">
                             <label>@lang('messages.source_account')</label>
-                            <select name="account_id" class="form-control" required id="from-account">
+                            <select name="account_id" class="form-control account-select" required id="from-account">
                                 <option value="">@lang('messages.choose_account')</option>
                                 @foreach($cashAccountsFrom as $acc)
-                                    <option value="{{ $acc->id }}" data-currency="{{ $acc->currency ?? '' }}">
-                                        {{ $acc->name }} @if($acc->currency) ({{ $acc->currency }}) @endif
+                                    <option value="{{ $acc->id }}" data-currency="{{ $acc->currency ?? '' }}" data-code="{{ $acc->code ?? '' }}">
+                                        {{ $acc->code ? $acc->code.' - ' : '' }}{{ $acc->name }} @if($acc->currency) ({{ $acc->currency }}) @endif
                                     </option>
                                 @endforeach
                             </select>
@@ -44,11 +44,11 @@
                         </div>
                         <div class="form-group col-md-6">
                             <label>@lang('messages.target_account')</label>
-                            <select name="target_account_id" class="form-control" required id="to-account">
+                            <select name="target_account_id" class="form-control account-select" required id="to-account">
                                 <option value="">@lang('messages.choose_account')</option>
                                 @foreach($cashAccountsTo as $acc)
-                                    <option value="{{ $acc->id }}" data-currency="{{ $acc->currency ?? '' }}">
-                                        {{ $acc->name }} @if($acc->currency) ({{ $acc->currency }}) @endif
+                                    <option value="{{ $acc->id }}" data-currency="{{ $acc->currency ?? '' }}" data-code="{{ $acc->code ?? '' }}">
+                                        {{ $acc->code ? $acc->code.' - ' : '' }}{{ $acc->name }} @if($acc->currency) ({{ $acc->currency }}) @endif
                                     </option>
                                 @endforeach
                             </select>
@@ -93,6 +93,50 @@
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/i18n/ar.js"></script>
+
+<style>
+.select2-container .select2-selection--single {
+    height: 38px !important;
+    padding: 6px;
+}
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: 36px;
+}
+.select2-container--default .select2-results__option--highlighted[aria-selected] {
+    background-color: #007bff;
+}
+.select2-results__option {
+    padding: 8px 12px;
+    border-bottom: 1px solid #f2f2f2;
+}
+.select2-search--dropdown .select2-search__field {
+    padding: 8px;
+    font-size: 16px;
+    border-radius: 4px;
+    margin-bottom: 8px;
+}
+.select2-search--dropdown .select2-search__field:focus {
+    border-color: #80bdff;
+    outline: 0;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+.select2-container .select2-selection {
+    line-height: 24px;
+}
+.select2-dropdown {
+    z-index: 9999;
+}
+.select2-search--dropdown {
+    padding: 10px;
+}
+.badge {
+    font-size: 85%;
+    font-weight: 600;
+    padding: 4px 8px;
+    margin-left: 5px;
+}
+</style>
+
 <!-- كود التحويل بين العملات -->
 <script>
 $(document).ready(function(){
@@ -177,18 +221,19 @@ $(document).ready(function(){
     }
 
     function filterTargetAccounts() {
-        console.log('filterTargetAccounts', cashAccounts);
         const fromVal = $('#from-account').val();
         const toVal = $('#to-account').val();
         const fromCurrency = cashAccounts.find(a => a.id == fromVal)?.currency;
         let toCurrency = cashAccounts.find(a => a.id == toVal)?.currency;
         if (!fromCurrency || !toCurrency) {
-            alert('@lang('messages.currency_alert')');
+            // Silenciosamente continuar
         }
         let hasMatch = false;
         
         // Destroy and rebuild to-account Select2
-        $('#to-account').select2('destroy');
+        if ($('#to-account').hasClass('select2-hidden-accessible')) {
+            $('#to-account').select2('destroy');
+        }
         
         $('#to-account option').each(function(){
             if (!$(this).val()) return; // Skip placeholder
@@ -201,13 +246,7 @@ $(document).ready(function(){
         });
         
         // Reinitialize select2 with updated options
-        $('#to-account').select2({
-            width: '100%',
-            dir: 'rtl',
-            language: 'ar',
-            placeholder: '@lang('messages.choose_account')',
-            allowClear: true
-        });
+        initializeAccountSelect('#to-account');
         
         // If the previously selected "to" account is now disabled (same as "from"), clear the selection
         if (toVal === fromVal) {
@@ -277,14 +316,87 @@ $(document).ready(function(){
         validateAmount();
     }
     
-    // تهيئة select2
-    $('#from-account, #to-account').select2({
-        width: '100%',
-        dir: 'rtl',
-        language: 'ar',
-        placeholder: '@lang('messages.choose_account')',
-        allowClear: true
-    });
+    // Function to format account options 
+    function formatAccountOption(account) {
+        if (!account.id) return account.text;
+        
+        // Verificar si hay datos de moneda
+        const currency = $(account.element).data('currency');
+        const code = $(account.element).data('code');
+        
+        // Construir la representación HTML
+        let html = '<div class="account-option">';
+        
+        // Si tiene código, mostrarlo en negrita
+        if (code) {
+            html += `<strong>${code}</strong> - `;
+        }
+        
+        // Nombre de la cuenta
+        html += `<span>${account.text}</span>`;
+        
+        // Mostrar la moneda como un badge si está disponible
+        if (currency) {
+            html += ` <span class="badge badge-light">${currency}</span>`;
+        }
+        
+        html += '</div>';
+        
+        return $(html);
+    }
+    
+    // Function to initialize account selects with enhanced search
+    function initializeAccountSelect(selector) {
+        $(selector).select2({
+            width: '100%',
+            dir: 'rtl',
+            language: 'ar',
+            placeholder: '@lang('messages.choose_account')',
+            allowClear: true,
+            templateResult: formatAccountOption,
+            escapeMarkup: function(markup) {
+                return markup;
+            },
+            matcher: function(params, data) {
+                // Si no hay término de búsqueda, mostrar todos
+                if ($.trim(params.term) === '') {
+                    return data;
+                }
+                
+                // Si no hay texto en los datos, no hay coincidencia
+                if (typeof data.text === 'undefined') {
+                    return null;
+                }
+                
+                // El término de búsqueda en minúsculas
+                const term = params.term.toLowerCase();
+                
+                // Textos a buscar
+                const text = data.text.toLowerCase();
+                const code = $(data.element).data('code') ? $(data.element).data('code').toString().toLowerCase() : '';
+                
+                // Buscar en texto completo, código o partes separadas
+                if (text.indexOf(term) > -1 || code.indexOf(term) > -1) {
+                    return data;
+                }
+                
+                // Buscar por palabras individuales
+                const words = text.split(/\s+/);
+                for (let i = 0; i < words.length; i++) {
+                    if (words[i].indexOf(term) > -1) {
+                        return data;
+                    }
+                }
+                
+                // Sin coincidencia
+                return null;
+            }
+        });
+    }
+    
+    // تهيئة select2 مع خيارات محسنة للبحث
+    initializeAccountSelect('#from-account');
+    initializeAccountSelect('#to-account');
     
     // ربط الأحداث بعد تهيئة select2
     $('#from-account, #to-account').on('change', function(){ 

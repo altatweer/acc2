@@ -234,6 +234,14 @@ return [
     
     // Chart of accounts
     'account_chart_title' => 'Chart of Accounts (Interactive Tree)',
+    'account_info' => 'Account Information',
+    'account_structure' => 'Account Structure',
+    'expand_all' => 'Expand All',
+    'collapse_all' => 'Collapse All',
+    'search' => 'Search',
+    'all' => 'All',
+    'manage_accounts' => 'Manage Accounts',
+    'view_details' => 'View Details',
     
     // Account groups management
     'account_groups_management_title' => 'Categories Management',
@@ -805,4 +813,15 @@ return [
     'users_and_roles_list' => 'Users and Roles List',
     'user_name' => 'User Name',
     'edit_roles' => 'Edit Roles',
+    
+    // Additions for categories page
+    'has_accounts' => 'Has Accounts',
+    'main_categories' => 'Main Categories',
+    'sub_categories' => 'Sub Categories',
+    'view_children' => 'View Children',
+    'accounts' => 'Accounts',
+    'hierarchy_depth' => 'Hierarchy Depth',
+    'levels' => 'Levels',
+    'chart_of_accounts' => 'Chart of Accounts',
+    'accounts_count' => 'Accounts Count',
 ]; 

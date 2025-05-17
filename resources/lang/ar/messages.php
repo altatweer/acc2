@@ -239,7 +239,15 @@ return [
     'total_accounts' => 'إجمالي الحسابات:',
     
     // Chart of accounts
-    'account_chart_title' => 'دليل الحسابات (شجرة تفاعلية)',
+    'account_chart_title' => 'شجرة الحسابات (عرض تفاعلي)',
+    'account_info' => 'معلومات الحساب',
+    'account_structure' => 'هيكل الحسابات',
+    'expand_all' => 'توسيع الكل',
+    'collapse_all' => 'طي الكل',
+    'search' => 'بحث',
+    'all' => 'الكل',
+    'manage_accounts' => 'إدارة الحسابات',
+    'view_details' => 'عرض التفاصيل',
     
     // Account groups management
     'account_groups_management_title' => 'إدارة الفئات الرئيسية',
@@ -492,4 +500,16 @@ return [
     'users_and_roles_list' => 'قائمة المستخدمين والأدوار',
     'user_name' => 'اسم المستخدم',
     'edit_roles' => 'تعديل الأدوار',
+    // Additions for categories page
+    'has_accounts' => 'تحتوي على حسابات',
+    'main_categories' => 'الفئات الرئيسية',
+    'sub_categories' => 'الفئات الفرعية',
+    'view_children' => 'عرض الفروع',
+    'accounts' => 'الحسابات',
+    'hierarchy_depth' => 'عمق الهيكل التنظيمي',
+    'levels' => 'مستويات',
+    'chart_of_accounts' => 'شجرة الحسابات',
+    'accounts_count' => 'عدد الحسابات',
+    'click_account_for_details' => 'انقر على أي حساب في الشجرة لعرض معلوماته المفصلة',
+    'select_account_in_tree' => 'اختر حساب من الشجرة',
 ]; 

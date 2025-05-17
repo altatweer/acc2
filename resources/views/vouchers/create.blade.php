@@ -95,7 +95,7 @@
                             <tbody id="transactions_body">
                                 <tr>
                                     <td>
-                                        <select name="transactions[0][account_id]" class="form-control select2" required>
+                                        <select name="transactions[0][account_id]" class="form-control select2-cash-accounts" required>
                                             <option value="">@lang('messages.choose_cash_account')</option>
                                             @foreach($cashAccounts as $acc)
                                                 <option value="{{ $acc->id }}">{{ $acc->code }} - {{ $acc->name }}</option>
@@ -103,7 +103,7 @@
                                         </select>
                                     </td>
                                     <td>
-                                        <select name="transactions[0][target_account_id]" class="form-control select2">
+                                        <select name="transactions[0][target_account_id]" class="form-control select2-target-accounts">
                                             <option value="">@lang('messages.choose_account')</option>
                                             @foreach($targetAccounts as $acc)
                                                 <option value="{{ $acc->id }}">{{ $acc->code }} - {{ $acc->name }}</option>
@@ -133,47 +133,184 @@
 @push('scripts')
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<style>
+.select2-container--bootstrap4 .select2-results__option--highlighted[aria-selected] {
+    background-color: #007bff;
+    color: white;
+}
+.select2-container--bootstrap4 .select2-results__option {
+    padding: 8px;
+    border-bottom: 1px solid #f4f4f4;
+}
+.select2-container--bootstrap4 .select2-selection--single {
+    height: calc(2.25rem + 2px) !important;
+}
+.select2-container--bootstrap4 .select2-dropdown {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+.select2-container .select2-selection {
+    line-height: 24px;
+}
+.select2-dropdown {
+    z-index: 9999;
+}
+.select2-search--dropdown {
+    padding: 10px;
+}
+</style>
+
 <script>
 $(function(){
+    const initializeSelect2 = () => {
+        // Configuración de Select2 para tipos de voucher y moneda
+        $('#voucher_type, #voucher_currency').select2({
+            theme: 'bootstrap4',
+            width: '100%'
+        });
+        
+        // Configuración mejorada para cuentas de efectivo
+        $('.select2-cash-accounts').select2({
+            theme: 'bootstrap4',
+            width: '100%',
+            placeholder: '@lang('messages.choose_cash_account')',
+            allowClear: true,
+            minimumInputLength: 0
+        });
+        
+        // Configuración mejorada para cuentas objetivo con búsqueda avanzada
+        $('.select2-target-accounts').select2({
+            theme: 'bootstrap4',
+            width: '100%',
+            placeholder: '@lang('messages.choose_account')',
+            allowClear: true,
+            minimumInputLength: 0,
+            language: {
+                inputTooShort: function() {
+                    return "الرجاء إدخال حرف واحد على الأقل للبحث...";
+                },
+                searching: function() {
+                    return "جاري البحث...";
+                },
+                noResults: function() {
+                    return "لا توجد نتائج مطابقة";
+                }
+            },
+            templateResult: formatAccountOption,
+            escapeMarkup: function(markup) {
+                return markup;
+            },
+            matcher: customMatcher
+        });
+    };
+    
+    // Función para formatear las opciones de cuentas
+    function formatAccountOption(account) {
+        if (!account.id) return account.text;
+        
+        // Si el texto contiene un guión, dividir el código y el nombre
+        if (account.text.includes(' - ')) {
+            const parts = account.text.split(' - ');
+            return `<div>
+                <strong>${parts[0]}</strong> - 
+                <span>${parts[1]}</span>
+            </div>`;
+        }
+        
+        return account.text;
+    }
+    
+    // Función personalizada de coincidencia para la búsqueda
+    function customMatcher(params, data) {
+        // Si no hay término de búsqueda, mostrar todos
+        if ($.trim(params.term) === '') {
+            return data;
+        }
+        
+        // Si no hay texto en los datos, no hay coincidencia
+        if (typeof data.text === 'undefined') {
+            return null;
+        }
+        
+        // Convertir ambos a minúsculas para comparación sin distinguir mayúsculas/minúsculas
+        const term = params.term.toLowerCase();
+        const text = data.text.toLowerCase();
+        
+        // Búsqueda simple: si el texto contiene el término en cualquier posición
+        if (text.indexOf(term) > -1) {
+            return data;
+        }
+        
+        // Buscar en partes separadas por guiones
+        if (text.includes(' - ')) {
+            const parts = text.split(' - ');
+            const code = parts[0];
+            const name = parts[1];
+            
+            if (code.indexOf(term) > -1 || name.indexOf(term) > -1) {
+                return data;
+            }
+        }
+        
+        // Buscar por palabras separadas
+        const words = text.split(/\s+/);
+        for (let i = 0; i < words.length; i++) {
+            if (words[i].indexOf(term) > -1) {
+                return data;
+            }
+        }
+        
+        // Sin coincidencia
+        return null;
+    }
+
     const loadAccounts = (currency) => {
         if(!currency) return;
         $.getJSON('/accounts/by-currency/' + currency, function(data){
-            // populate each row's selects
+            // Populate each row's selects
             $('#transactions_body tr').each(function(){
                 const $row = $(this);
                 const $cashSel = $row.find('select[name$="[account_id]"]');
                 const $tgtSel  = $row.find('select[name$="[target_account_id]"]');
                 
                 // Properly destroy Select2 before emptying and rebuilding
-                $cashSel.select2('destroy');
-                $tgtSel.select2('destroy');
+                if ($cashSel.hasClass('select2-hidden-accessible')) {
+                    $cashSel.select2('destroy');
+                }
+                if ($tgtSel.hasClass('select2-hidden-accessible')) {
+                    $tgtSel.select2('destroy');
+                }
 
                 $cashSel.empty().append($('<option>').val('').text('@lang('messages.choose_cash_account')'));
                 data.cashAccounts.forEach(acc => {
-                    $cashSel.append($('<option>').val(acc.id).text(acc.code + ' - ' + acc.name));
+                    $cashSel.append($('<option>').val(acc.id).text(`${acc.code} - ${acc.name}`));
                 });
 
                 $tgtSel.empty().append($('<option>').val('').text('@lang('messages.choose_account')'));
                 data.targetAccounts.forEach(acc => {
-                    $tgtSel.append($('<option>').val(acc.id).text(acc.code + ' - ' + acc.name));
+                    $tgtSel.append($('<option>').val(acc.id).text(`${acc.code} - ${acc.name}`));
                 });
 
-                // Reinitialize Select2 after populating options
-                $cashSel.select2({ theme: 'bootstrap4' });
-                $tgtSel.select2({ theme: 'bootstrap4' });
+                // Reaplicar la clase CSS necesaria para Select2
+                $cashSel.addClass('select2-cash-accounts');
+                $tgtSel.addClass('select2-target-accounts');
+                
+                // Reinicializar Select2 después de rellenar opciones
+                initializeSelect2();
             });
         });
     };
 
-    // initialize Select2 on currency
-    $('#voucher_currency').select2({ theme: 'bootstrap4' })
-        // bind change handler before triggering initial load
-        .on('change', function(){
-            loadAccounts($(this).val());
-        })
-        // set default value and trigger change to load accounts
-        .val('{{ old('currency', $defaultCurrency->code) }}')
-        .trigger('change');
+    // Inicializar Select2
+    initializeSelect2();
+
+    // Manejar cambios en la moneda
+    $('#voucher_currency').on('change', function(){
+        loadAccounts($(this).val());
+    })
+    .val('{{ old('currency', $defaultCurrency->code) }}')
+    .trigger('change');
 
     // Template row for adding
     let idx = 1;
@@ -189,12 +326,17 @@ $(function(){
             }
         });
         $('#transactions_body').append($new);
+        initializeSelect2();
         loadAccounts($('#voucher_currency').val());
         idx++;
     });
 
     $(document).on('click', '.remove-transaction', function(){
-        $(this).closest('tr').remove();
+        if ($('#transactions_body tr').length > 1) {
+            $(this).closest('tr').remove();
+        } else {
+            alert('يجب أن يكون هناك حركة مالية واحدة على الأقل');
+        }
     });
 });
 </script>

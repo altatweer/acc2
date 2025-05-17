@@ -74,18 +74,41 @@
                         @endphp
                         <tr>
                             <td>{{ $line->account->name ?? '-' }}</td>
-                            <td class="text-right">{{ number_format($line->debit, 2) }}</td>
-                            <td class="text-right">{{ number_format($line->credit, 2) }}</td>
+                            <td class="text-right">{{ $line->debit > 0 ? number_format($line->debit, 2) : '-' }}</td>
+                            <td class="text-right">{{ $line->credit > 0 ? number_format($line->credit, 2) : '-' }}</td>
                             <td>{{ $line->currency }}</td>
                             <td>{{ $line->description }}</td>
                         </tr>
                     @endforeach
+                    
+                    @if($voucher->type == 'transfer')
+                    <!-- عرض الإجماليات لسند التحويل: إظهار كل مبلغ على حدة -->
+                    <tr class="table-info">
+                        <td colspan="5" class="text-center font-weight-bold border-bottom">@lang('messages.totals')</td>
+                    </tr>
+                    @foreach($voucher->journalEntry->lines->groupBy('currency') as $currency => $lines)
+                        @php
+                            $currDebit = $lines->sum('debit');
+                            $currCredit = $lines->sum('credit');
+                        @endphp
+                        <tr class="table-total">
+                            <td><strong>{{ $currency }} @lang('messages.total')</strong></td>
+                            <td class="text-right"><strong>{{ number_format($currDebit, 2) }}</strong></td>
+                            <td class="text-right"><strong>{{ number_format($currCredit, 2) }}</strong></td>
+                            <td>{{ $currency }}</td>
+                            <td></td>
+                        </tr>
+                    @endforeach
+                    @else
+                    <!-- عرض الإجماليات لسندات القبض والصرف: مبلغ واحد فقط -->
                     <tr class="table-total">
                         <td><strong>@lang('messages.total')</strong></td>
-                        <td class="text-right"><strong>{{ number_format($totalDebit, 2) }}</strong></td>
-                        <td class="text-right"><strong>{{ number_format($totalCredit, 2) }}</strong></td>
+                        <td colspan="2" class="text-center font-weight-bold">
+                            {{ number_format($totalDebit, 2) }} {{ $voucher->journalEntry->lines->first()->currency ?? '-' }}
+                        </td>
                         <td colspan="2"></td>
                     </tr>
+                    @endif
                 @else
                     <tr>
                         <td colspan="5" class="text-center">@lang('messages.no_financial_transactions')</td>
@@ -108,6 +131,11 @@
 </div>
 
 <style>
+/* تحسين مظهر الطباعة */
+.table-total { background-color: #f8f9fa; }
+.table-info { background-color: #e3f2fd; }
+.badge { font-size: 90%; padding: 5px 10px; }
+
 @media print {
     /* Ocultar específicamente el encabezado "تطوير" y otros elementos no deseados en la impresión */
     h1:first-child, 
@@ -134,6 +162,12 @@
         visibility: hidden !important;
     }
     
+    /* تحسين مظهر الطباعة */
+    .table { border-collapse: collapse; width: 100%; }
+    .table th, .table td { border: 1px solid #ddd; }
+    .table-total { background-color: #f8f9fa !important; -webkit-print-color-adjust: exact; }
+    .table-info { background-color: #e3f2fd !important; -webkit-print-color-adjust: exact; }
+    
     /* Configuración de página para eliminar encabezados y pies de página */
     @page {
         size: auto;
@@ -156,4 +190,4 @@
         setTimeout(function() { window.print(); }, 500);
     };
 </script>
-@endsection
+@endsection 

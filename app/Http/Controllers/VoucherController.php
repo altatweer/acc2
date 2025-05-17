@@ -35,8 +35,29 @@ class VoucherController extends Controller
        if ($request->filled('recipient_name')) {
            $query->where('recipient_name', 'like', '%' . $request->recipient_name . '%');
        }
+       
+       // Load journal entry relationships for later filtering and display
+       $query->with(['journalEntry.lines.account', 'user']);
+       
+       // Filter by currency if provided
+       if ($request->filled('currency')) {
+           $currency = $request->currency;
+           // Filter vouchers that have journal entries with this currency
+           $query->whereHas('journalEntry.lines', function($q) use ($currency) {
+               $q->where('currency', $currency);
+           });
+       }
+       
        $vouchers = $query->latest()->paginate(20);
-       return view('vouchers.index', compact('vouchers'));
+       
+       // Get all unique currencies used in journal entries for the dropdown
+       $currencies = DB::table('journal_entry_lines')
+           ->select('currency')
+           ->distinct()
+           ->pluck('currency')
+           ->toArray();
+       
+       return view('vouchers.index', compact('vouchers', 'currencies'));
    }
 
    public function create(Request $request)
