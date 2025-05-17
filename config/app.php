@@ -129,6 +129,22 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Multi-Tenancy Configuration
+    |--------------------------------------------------------------------------
+    |
+    | This setting controls whether the application operates in multi-tenant mode.
+    | When set to true, all Eloquent models that use the BelongsToTenant trait
+    | will automatically filter queries by tenant_id.
+    |
+    | This should be set to false during development and when running as a single
+    | tenant application, and true when integrated with the SaaS platform.
+    |
+    */
+
+    'multi_tenancy_enabled' => env('MULTI_TENANCY_ENABLED', false),
+
+    /*
+    |--------------------------------------------------------------------------
     | Maintenance Mode Driver
     |--------------------------------------------------------------------------
     |
@@ -181,6 +197,7 @@ return [
          */
         App\Providers\AppServiceProvider::class,
         App\Providers\AuthServiceProvider::class,
+        App\Providers\MultiTenancyServiceProvider::class,
     ],
 
 ];

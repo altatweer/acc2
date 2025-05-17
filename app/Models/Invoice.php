@@ -5,9 +5,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Voucher;
 use App\Models\Transaction;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Traits\BelongsToTenant;
 
 class Invoice extends Model
 {
+    use HasFactory, BelongsToTenant;
+
     protected $fillable = [
         'invoice_number',
         'customer_id',
