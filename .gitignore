@@ -21,3 +21,10 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+# تجاهل الملفات المضغوطة الكبيرة
+tmp_exports/*.zip
+tmp_exports_final/*.zip
+tmp_exports_new/*.zip
+*.zip
+# ملفات النظام
+.DS_Store

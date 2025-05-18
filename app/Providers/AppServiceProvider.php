@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\App;
 use Illuminate\Routing\Redirector;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Database\Eloquent\Model;
 use App\Services\LanguageService;
 use App\Models\Setting;
 
@@ -22,7 +23,32 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // زيادة حد الذاكرة إذا كان أقل من 512 ميجابايت
+        $memoryLimit = ini_get('memory_limit');
+        $memoryLimitInBytes = $this->getMemoryLimitInBytes($memoryLimit);
+        if ($memoryLimitInBytes < 536870912) { // 512MB in bytes
+            ini_set('memory_limit', '512M');
+        }
+    }
+
+    /**
+     * تحويل حد الذاكرة إلى بايت
+     */
+    private function getMemoryLimitInBytes($memoryLimit)
+    {
+        $unit = strtolower(substr($memoryLimit, -1));
+        $value = (int) substr($memoryLimit, 0, -1);
+        
+        switch ($unit) {
+            case 'g':
+                return $value * 1024 * 1024 * 1024;
+            case 'm':
+                return $value * 1024 * 1024;
+            case 'k':
+                return $value * 1024;
+            default:
+                return (int) $memoryLimit;
+        }
     }
 
     /**
@@ -30,6 +56,19 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // إضافة tenant_id افتراضي عند تفعيل نظام تعدد المستأجرين
+        if (config('app.multi_tenancy_enabled', false)) {
+            app()->instance('tenant_id', 1);
+        }
+        
+        // تعطيل تتبع التغييرات في Eloquent للتحسين
+        Model::preventLazyLoading(!app()->isProduction());
+        
+        // تجنب التشغيل الكامل عند تنفيذ الأوامر من CLI لتوفير الذاكرة
+        if ($this->app->runningInConsole()) {
+            return;
+        }
+        
         // استخدام bootstrap للترقيم
         Paginator::useBootstrap();
         

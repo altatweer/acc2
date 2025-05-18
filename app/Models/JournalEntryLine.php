@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\BelongsToTenant;
 
 class JournalEntryLine extends Model
 {
-    use HasFactory;
+    use HasFactory, BelongsToTenant;
 
     protected $fillable = [
         'journal_entry_id',
@@ -17,6 +18,7 @@ class JournalEntryLine extends Model
         'credit',
         'currency',
         'exchange_rate',
+        'tenant_id',
     ];
 
     public function journalEntry()

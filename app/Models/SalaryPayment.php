@@ -1,16 +1,19 @@
 <?php
 namespace App\Models;
 
+use App\Traits\BelongsToTenant;
+
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class SalaryPayment extends Model
 {
-    use HasFactory;
+    use HasFactory, BelongsToTenant;
 
     protected $fillable = [
         'salary_batch_id',
-        'employee_id', 'salary_month', 'gross_salary', 'total_allowances', 'total_deductions', 'net_salary', 'payment_date', 'status', 'journal_entry_id', 'voucher_id'
+        'employee_id', 'salary_month', 'gross_salary', 'total_allowances', 'total_deductions', 'net_salary', 'payment_date', 'status', 'journal_entry_id', 'voucher_id',
+        'tenant_id',
     ];
 
     public function employee()

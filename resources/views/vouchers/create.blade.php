@@ -73,8 +73,11 @@
                             <label for="voucher_currency">@lang('messages.currency')</label>
                             <select name="currency" id="voucher_currency" class="form-control select2" required>
                                 @foreach($currencies as $cur)
-                                    <option value="{{ $cur->code }}" {{ old('currency', $defaultCurrency->code) == $cur->code ? 'selected' : '' }}>{{ $cur->code }} - {{ $cur->name }}</option>
+                                    <option value="{{ $cur->code ?? '' }}" {{ old('currency', $defaultCurrency->code ?? '') == ($cur->code ?? '') ? 'selected' : '' }}>{{ $cur->code ?? 'N/A' }} - {{ $cur->name ?? 'Unknown' }}</option>
                                 @endforeach
+                                @if($currencies->isEmpty())
+                                    <option value="USD">USD - US Dollar</option>
+                                @endif
                             </select>
                         </div>
                     </div>
@@ -309,7 +312,7 @@ $(function(){
     $('#voucher_currency').on('change', function(){
         loadAccounts($(this).val());
     })
-    .val('{{ old('currency', $defaultCurrency->code) }}')
+    .val('{{ old('currency', $defaultCurrency->code ?? 'USD') }}')
     .trigger('change');
 
     // Template row for adding

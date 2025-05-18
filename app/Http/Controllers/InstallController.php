@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Session;
 
 class InstallController extends Controller
 {
@@ -130,12 +133,42 @@ class InstallController extends Controller
             return redirect()->route('install.migrate')->with('migrate_error', 'Could not check database tables: ' . $e->getMessage());
         }
         try {
-            \Artisan::call('migrate', ['--force' => true]);
+            \Artisan::call('migrate:fresh', ['--force' => true]);
+            
+            // إضافة تهيئة المستأجر الافتراضي
+            if (config('app.multi_tenancy_enabled', false)) {
+                // إنشاء مستأجر افتراضي إذا لم يكن موجودًا
+                if (Schema::hasTable('tenants')) {
+                    DB::table('tenants')->updateOrInsert(
+                        ['id' => 1],
+                        [
+                            'name' => 'Default Tenant',
+                            'domain' => 'default',
+                            'subdomain' => 'default',
+                            'contact_email' => 'admin@aursuite.com',
+                            'is_active' => true,
+                            'created_at' => now(),
+                            'updated_at' => now()
+                        ]
+                    );
+                    
+                    // تحديث جميع السجلات لتكون مرتبطة بالمستأجر الافتراضي
+                    $tables = DB::select('SHOW TABLES');
+                    foreach ($tables as $table) {
+                        $tableName = reset($table);
+                        if (Schema::hasColumn($tableName, 'tenant_id')) {
+                            DB::table($tableName)->whereNull('tenant_id')->update(['tenant_id' => 1]);
+                        }
+                    }
+                }
+            }
+            
+            // وضع رسالة نجاح في الجلسة
+            Session::flash('success', 'تم ترحيل قاعدة البيانات بنجاح.');
+            return redirect()->route('install.admin');
         } catch (\Exception $e) {
             return redirect()->route('install.migrate')->with('migrate_error', $e->getMessage());
         }
-        // Proceed to next step (admin creation)
-        return redirect()->route('install.admin');
     }
 
     public function saveDatabase(Request $request)
@@ -199,23 +232,41 @@ class InstallController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|confirmed|min:6',
+            'email' => 'required|string|email|max:255',
+            'password' => 'required|string|min:6|confirmed',
         ]);
 
-        try {
-            $user = new \App\Models\User();
-            $user->name = $request->name;
-            $user->email = $request->email;
-            $user->password = bcrypt($request->password);
-            $user->is_super_admin = true;
-            $user->save();
-            // إذا كان هناك علاقة roles أو صلاحيات، أضفها هنا
-            // مثال: $user->assignRole('super-admin');
-        } catch (\Exception $e) {
-            return back()->withInput()->with('admin_error', 'فشل إنشاء السوبر أدمن: ' . $e->getMessage());
+        // Check if there are any users already
+        if (\App\Models\User::count() > 0) {
+            return redirect()->route('install.admin')
+                ->with('error', 'يوجد بالفعل مستخدمين في النظام!');
         }
-        // انتقل مباشرة إلى صفحة العملات
+
+        // Create the admin user
+        $user = new \App\Models\User();
+        $user->name = $request->name;
+        $user->email = $request->email;
+        $user->password = bcrypt($request->password);
+        
+        // تعيين tenant_id للمستخدم المدير
+        if (config('app.multi_tenancy_enabled', false) && Schema::hasColumn('users', 'tenant_id')) {
+            $user->tenant_id = 1; // المستأجر الافتراضي
+        }
+        
+        $user->save();
+
+        // Assign super-admin role (or create it if it doesn't exist)
+        $adminRole = \Spatie\Permission\Models\Role::firstOrCreate(
+            ['name' => 'super-admin'],
+            [
+                'guard_name' => 'web',
+                'tenant_id' => config('app.multi_tenancy_enabled', false) ? 1 : null
+            ]
+        );
+        
+        $user->assignRole($adminRole);
+
+        // Redirect to next step
         return redirect()->route('install.currencies');
     }
 

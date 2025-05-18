@@ -1,61 +1,95 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# نظام AurSuite للمحاسبة
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+نظام المحاسبة AurSuite هو نظام محاسبي متكامل مصمم للمؤسسات والشركات من مختلف الأحجام. يوفر النظام مجموعة شاملة من الأدوات لإدارة الحسابات، السندات، الفواتير، الرواتب، وغيرها من العمليات المالية.
 
-## About Laravel
+## المميزات الأساسية
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- **إدارة الحسابات**: إنشاء وإدارة شجرة الحسابات وتتبع الأرصدة بعملات متعددة
+- **السندات**: إدارة سندات القبض والصرف مع دعم العملات المتعددة
+- **الفواتير**: إصدار وإدارة الفواتير مع حساب الضرائب وخصومات تلقائي
+- **الرواتب**: إدارة رواتب الموظفين وإصدار كشوف الرواتب
+- **الفروع**: دعم إدارة فروع متعددة للمؤسسة
+- **العملات**: دعم كامل للتعامل مع عملات متعددة وأسعار صرف
+- **التقارير**: تقارير مالية شاملة بما في ذلك تقارير الأرباح والخسائر والميزانية العمومية
+- **الصلاحيات**: نظام متكامل لإدارة المستخدمين والصلاحيات
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## دعم تعدد المستأجرين (Multi-Tenancy)
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+تم تجهيز نظام AurSuite بالكامل للعمل كمنصة SaaS (Software as a Service) مع دعم لتعدد المستأجرين، مما يسمح للنظام بخدمة العديد من الشركات من خلال قاعدة بيانات واحدة مع الحفاظ على استقلالية البيانات الكاملة.
 
-## Learning Laravel
+### ميزات تعدد المستأجرين
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+- **عزل البيانات**: بيانات كل مستأجر معزولة تماماً عن المستأجرين الآخرين
+- **إدارة مركزية**: إدارة جميع المستأجرين من لوحة تحكم واحدة
+- **تخصيص الميزات**: تخصيص الميزات المتاحة لكل مستأجر حسب خطة الاشتراك
+- **توسع سهل**: إضافة مستأجرين جدد بسهولة دون الحاجة لإعداد قواعد بيانات منفصلة
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+لمزيد من المعلومات حول تعدد المستأجرين، يرجى الاطلاع على [دليل تعدد المستأجرين](MULTI_TENANCY.md).
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## متطلبات النظام
 
-## Laravel Sponsors
+- PHP 8.1 أو أحدث
+- MySQL 8.0 أو أحدث
+- Laravel 10.x
+- Composer
+- Node.js & NPM (للواجهة الأمامية)
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+## التثبيت
 
-### Premium Partners
+1. استنساخ المستودع:
+   ```bash
+   git clone https://github.com/yourusername/aursuite.git
+   cd aursuite
+   ```
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development/)**
-- **[Active Logic](https://activelogic.com)**
+2. تثبيت التبعيات:
+   ```bash
+   composer install
+   npm install
+   ```
 
-## Contributing
+3. إعداد ملف البيئة:
+   ```bash
+   cp .env.example .env
+   php artisan key:generate
+   ```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+4. تهيئة قاعدة البيانات:
+   ```bash
+   php artisan migrate --seed
+   ```
 
-## Code of Conduct
+5. تشغيل الخادم المحلي:
+   ```bash
+   php artisan serve
+   npm run dev
+   ```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+للحصول على تعليمات أكثر تفصيلاً، يرجى الاطلاع على [دليل التثبيت](INSTALL.md).
 
-## Security Vulnerabilities
+## الاستخدام
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+بعد تثبيت النظام، يمكنك تسجيل الدخول باستخدام بيانات الاعتماد الافتراضية:
 
-## License
+- **البريد الإلكتروني**: admin@example.com
+- **كلمة المرور**: admin12345
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+يرجى تغيير كلمة المرور بعد أول تسجيل دخول.
+
+## الوثائق
+
+للحصول على معلومات أكثر تفصيلاً حول استخدام النظام، يرجى الاطلاع على [دليل المستخدم](USER_GUIDE.md).
+
+## المساهمة
+
+نرحب بالمساهمات من المجتمع! إذا كنت ترغب في المساهمة، يرجى اتباع الخطوات التالية:
+
+1. قم بعمل Fork للمشروع
+2. قم بإنشاء فرع لميزتك (`git checkout -b feature/amazing-feature`)
+3. قم بتنفيذ تغييراتك (`git commit -m 'Add some amazing feature'`)
+4. ادفع إلى الفرع (`git push origin feature/amazing-feature`)
+5. افتح طلب سحب (Pull Request)
+
+## الترخيص
+
+هذا المشروع مرخص تحت [رخصة MIT](LICENSE).

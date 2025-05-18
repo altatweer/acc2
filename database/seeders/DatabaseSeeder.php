@@ -7,6 +7,7 @@ use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 
 class DatabaseSeeder extends Seeder
 {
@@ -39,7 +40,7 @@ class DatabaseSeeder extends Seeder
         $entities = [
             'users', 'roles', 'permissions', 'accounts', 'invoices', 'vouchers', 'transactions',
             'customers', 'items', 'employees', 'salaries', 'salary-payments', 'salary-batches',
-            'currencies', 'branches', 'settings', 'journal-entries'
+            'currencies', 'branches', 'settings', 'journal-entries', 'tenants', 'subscription-plans'
         ];
         $actions = ['view', 'create', 'edit', 'delete'];
         $permissions = [];
@@ -55,6 +56,11 @@ class DatabaseSeeder extends Seeder
         $permissions[] = 'view_all_journal_entries';
         $permissions[] = 'cancel_vouchers';
         $permissions[] = 'cancel_journal_entries';
+        // إضافة صلاحيات متعلقة بالمستأجرين
+        $permissions[] = 'manage_tenants';
+        $permissions[] = 'manage_subscriptions';
+        $permissions[] = 'manage_tenant_features';
+        
         foreach ($permissions as $perm) {
             Permission::findOrCreate($perm);
         }
@@ -63,5 +69,24 @@ class DatabaseSeeder extends Seeder
         $role = Role::firstOrCreate(['name' => 'super-admin']);
         $role->syncPermissions($permissions);
         $super->assignRole($role);
+        
+        // بعد إنشاء المستخدم والأدوار والصلاحيات، نقوم بإنشاء المستأجر الافتراضي
+        $this->call(TenantSeeder::class);
+
+        // Create default tenant if multi-tenancy is enabled
+        if (config('app.multi_tenancy_enabled', false) && Schema::hasTable('tenants')) {
+            \App\Models\Tenant::firstOrCreate(
+                ['id' => 1],
+                [
+                    'name' => 'Default Tenant',
+                    'domain' => 'default',
+                    'subdomain' => 'default',
+                    'contact_email' => 'admin@aursuite.com',
+                    'is_active' => true,
+                    'created_at' => now(),
+                    'updated_at' => now()
+                ]
+            );
+        }
     }
 }

@@ -757,8 +757,8 @@
             .main-footer,
             .main-header {
                 margin-right: 0 !important;
-                margin-left: 0 !important;
-            }
+            margin-left: 0 !important;
+        }
         }
         
         @else

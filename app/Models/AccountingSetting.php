@@ -2,14 +2,19 @@
 
 namespace App\Models;
 
+use App\Traits\BelongsToTenant;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class AccountingSetting extends Model
 {
+    use HasFactory, BelongsToTenant;
+    
     protected $fillable = [
         'key',
         'value',
         'currency',
+        'tenant_id',
     ];
 
     public static function get($key, $currency = null)

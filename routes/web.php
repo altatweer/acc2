@@ -25,6 +25,7 @@ use App\Http\Controllers\LanguageController;
 use App\Http\Controllers\TestLanguageController;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\DB;
 
 // Default root route redirects to login or dashboard
 Route::get('/', function () {
@@ -270,4 +271,103 @@ Route::group(['middleware' => ['web'], 'prefix' => 'install'], function () {
     Route::post('/chart/import', [\App\Http\Controllers\InstallController::class, 'importChart'])->name('install.importChart');
     Route::post('/chart/skip', [\App\Http\Controllers\InstallController::class, 'skipChart'])->name('install.skipChart');
     Route::get('/finish', [\App\Http\Controllers\InstallController::class, 'finish'])->name('install.finish');
+});
+
+// إضافة مسار اختبار في نهاية الملف
+Route::get('/testpage', function () {
+    try {
+        // التحقق من صحة اتصال قاعدة البيانات
+        $users = DB::table('users')->count();
+        $tenants = DB::table('tenants')->count();
+        $accounts = DB::table('accounts')->count();
+        
+        return response()->json([
+            'status' => 'success',
+            'data' => [
+                'php_version' => PHP_VERSION,
+                'laravel_version' => app()->version(),
+                'app_name' => config('app.name'),
+                'debug' => config('app.debug'),
+                'multi_tenancy_enabled' => config('app.multi_tenancy_enabled'),
+                'users_count' => $users,
+                'tenants_count' => $tenants,
+                'accounts_count' => $accounts,
+                'memory_limit' => ini_get('memory_limit')
+            ]
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'error',
+            'message' => $e->getMessage(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine(),
+            'trace' => explode("\n", $e->getTraceAsString())
+        ], 500);
+    }
+});
+
+// إضافة مسار اختبار في نهاية الملف
+Route::get('/debug-tenant', function () {
+    try {
+        // جمع معلومات التشخيص
+        $debug = [
+            'status' => 'success',
+            'data' => [
+                'tenant_id' => app('tenant_id'),
+                'tenant_exists' => \Illuminate\Support\Facades\Schema::hasTable('tenants'),
+                'subscription_plans_exists' => \Illuminate\Support\Facades\Schema::hasTable('subscription_plans'),
+                'tenant_features_exists' => \Illuminate\Support\Facades\Schema::hasTable('tenant_features'),
+                'tenant_usage_stats_exists' => \Illuminate\Support\Facades\Schema::hasTable('tenant_usage_stats'),
+                'permissions_has_tenant_id' => \Illuminate\Support\Facades\Schema::hasColumn('permissions', 'tenant_id'),
+                'users_has_tenant_id' => \Illuminate\Support\Facades\Schema::hasColumn('users', 'tenant_id'),
+                'accounts_has_tenant_id' => \Illuminate\Support\Facades\Schema::hasColumn('accounts', 'tenant_id'),
+            ]
+        ];
+        
+        // جلب عدد السجلات في كل جدول
+        $tables = [
+            'tenants', 'subscription_plans', 'tenant_features', 'tenant_usage_stats',
+            'users', 'roles', 'permissions', 'accounts', 'vouchers', 'transactions'
+        ];
+        
+        foreach ($tables as $table) {
+            if (\Illuminate\Support\Facades\Schema::hasTable($table)) {
+                $debug['data']["counts_{$table}"] = \Illuminate\Support\Facades\DB::table($table)->count();
+            } else {
+                $debug['data']["counts_{$table}"] = null;
+            }
+        }
+        
+        // جلب معلومات عن المستأجر إذا كان موجودًا
+        if (\Illuminate\Support\Facades\Schema::hasTable('tenants')) {
+            $tenant = \Illuminate\Support\Facades\DB::table('tenants')->first();
+            if ($tenant) {
+                $debug['data']['default_tenant'] = [
+                    'id' => $tenant->id,
+                    'name' => $tenant->name,
+                    'subdomain' => $tenant->subdomain,
+                    'is_active' => $tenant->is_active,
+                    'subscription_plan_id' => $tenant->subscription_plan_id,
+                ];
+            }
+        }
+        
+        // جلب سجل وقت التنفيذ
+        $debug['data']['runtime_config'] = [
+            'multi_tenancy_enabled' => config('app.multi_tenancy_enabled', false),
+            'memory_limit' => ini_get('memory_limit'),
+            'php_version' => PHP_VERSION,
+            'now' => now()->format('Y-m-d H:i:s'),
+        ];
+        
+        return response()->json($debug);
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'error',
+            'error' => $e->getMessage(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine(),
+            'trace' => explode("\n", $e->getTraceAsString())
+        ], 500);
+    }
 });

@@ -62,25 +62,88 @@ class VoucherController extends Controller
 
    public function create(Request $request)
    {
-       $defaultCurrency = Currency::where('is_default', true)->first();
-       $currencies = Currency::all();
-       $user = auth()->user();
-       $currency = $request->input('currency', old('currency', $defaultCurrency->code ?? null));
-       if ($user->isSuperAdmin() || $user->hasRole('admin')) {
-           $cashAccounts = Account::where('is_cash_box', 1)
+       try {
+           // محاولة الحصول على العملة الافتراضية مع التعامل مع إمكانية null بسبب تعدد المستأجرين
+           $defaultCurrency = Currency::where('is_default', true)->first();
+           
+           // إذا لم يتم العثور على عملة افتراضية، حاول الحصول على أي عملة
+           if (!$defaultCurrency && Currency::count() > 0) {
+               $defaultCurrency = Currency::first();
+           }
+           
+           // إذا لم يتم العثور على أي عملة، قم بإنشاء كائن افتراضي
+           if (!$defaultCurrency) {
+               $defaultCurrency = new \stdClass();
+               $defaultCurrency->code = 'USD';
+               $defaultCurrency->name = 'US Dollar';
+               $defaultCurrency->is_default = true;
+               $defaultCurrency->exchange_rate = 1;
+               $defaultCurrency->id = 0;
+           }
+           
+           // الحصول على جميع العملات
+           $currencies = Currency::all();
+           
+           // إذا لم يتم العثور على أي عملات، قم بإنشاء مصفوفة فارغة
+           if ($currencies->isEmpty()) {
+               $currencies = collect([$defaultCurrency]);
+           }
+           
+           $user = auth()->user();
+           
+           // استخدام العملة من الطلب أو القيمة القديمة أو العملة الافتراضية
+           $currency = $request->input('currency', old('currency', $defaultCurrency->code ?? 'USD'));
+           
+           // تحسين استعلام الحسابات النقدية
+           try {
+               $isAdmin = $user->isSuperAdmin() || $user->hasRole('admin');
+           } catch (\Exception $e) {
+               $isAdmin = false;
+           }
+           
+           $cashAccountsQuery = $isAdmin 
+               ? Account::where('is_cash_box', 1) 
+               : $user->cashBoxes()->where('is_cash_box', 1);
+               
+           $cashAccounts = $cashAccountsQuery
                ->when($currency, fn($q) => $q->where('currency', $currency))
                ->get();
-       } else {
-           $cashAccounts = $user->cashBoxes()
-               ->where('is_cash_box', 1)
+           
+           // الحصول على الحسابات المستهدفة
+           $targetAccounts = Account::where('is_group', 0)
+               ->where('is_cash_box', 0)
                ->when($currency, fn($q) => $q->where('currency', $currency))
                ->get();
+           
+           // التحقق من وجود حسابات، وإذا لم تكن موجودة، إنشاء مصفوفات فارغة
+           if ($cashAccounts->isEmpty()) {
+               $cashAccounts = collect([]);
+           }
+           
+           if ($targetAccounts->isEmpty()) {
+               $targetAccounts = collect([]);
+           }
+               
+           return view('vouchers.create', compact('currencies', 'defaultCurrency', 'cashAccounts', 'targetAccounts'));
+       } catch (\Exception $e) {
+           // تسجيل الخطأ
+           \Log::error('Error in VoucherController@create: ' . $e->getMessage());
+           \Log::error($e->getTraceAsString());
+           
+           // إنشاء كائنات افتراضية في حالة الخطأ
+           $defaultCurrency = new \stdClass();
+           $defaultCurrency->code = 'USD';
+           $defaultCurrency->name = 'US Dollar';
+           $defaultCurrency->is_default = true;
+           $defaultCurrency->exchange_rate = 1;
+           $defaultCurrency->id = 0;
+           
+           $currencies = collect([$defaultCurrency]);
+           $cashAccounts = collect([]);
+           $targetAccounts = collect([]);
+           
+           return view('vouchers.create', compact('currencies', 'defaultCurrency', 'cashAccounts', 'targetAccounts'));
        }
-       $targetAccounts = Account::where('is_group', 0)
-           ->where('is_cash_box', 0)
-           ->when($currency, fn($q) => $q->where('currency', $currency))
-           ->get();
-       return view('vouchers.create', compact('currencies', 'defaultCurrency', 'cashAccounts', 'targetAccounts'));
    }
 
    public function store(Request $request)

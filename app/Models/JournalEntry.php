@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\BelongsToTenant;
 
 class JournalEntry extends Model
 {
-    use HasFactory;
+    use HasFactory, BelongsToTenant;
 
     protected $fillable = [
         'date',
@@ -20,6 +21,7 @@ class JournalEntry extends Model
         'total_debit',
         'total_credit',
         'status',
+        'tenant_id',
     ];
 
     public function lines()
