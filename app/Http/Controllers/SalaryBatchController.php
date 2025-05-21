@@ -105,7 +105,7 @@ class SalaryBatchController extends Controller
         ]);
         // عند الاعتماد: توليد قيد الاستحقاق
         // تجميع الرواتب حسب العملة
-        $payments = \App\Models\SalaryPayment::where('salary_batch_id', $salaryBatch->id)->get();
+        $payments = \App\Models\SalaryPayment::where('salary_batch_id', $salaryBatch->id)->with('employee')->get();
         $byCurrency = $payments->groupBy(function($p) { return $p->employee->currency; });
         foreach ($byCurrency as $currency => $rows) {
             $expenseAccountId = \App\Models\AccountingSetting::get('salary_expense_account', $currency);
