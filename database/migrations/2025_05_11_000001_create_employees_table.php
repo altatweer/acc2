@@ -15,6 +15,7 @@ return new class extends Migration {
             $table->date('hire_date')->nullable();
             $table->enum('status', ['active','inactive','terminated'])->default('active');
             $table->string('currency', 3); // IQD, USD, ...
+            $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
         });
     }

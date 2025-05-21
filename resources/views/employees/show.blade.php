@@ -37,13 +37,11 @@
                             <th>@lang('messages.status')</th>
                             <td>
                                 @if($employee->status == 'active')
-                                    @lang('messages.status_active')
+                                    <span class="badge badge-success">@lang('messages.status_active')</span>
                                 @elseif($employee->status == 'inactive')
-                                    @lang('messages.status_inactive')
+                                    <span class="badge badge-warning">@lang('messages.status_inactive')</span>
                                 @elseif($employee->status == 'terminated')
-                                    @lang('messages.status_terminated')
-                                @else
-                                    {{ $employee->status }}
+                                    <span class="badge badge-danger">@lang('messages.status_terminated')</span>
                                 @endif
                             </td>
                         </tr>

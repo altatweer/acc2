@@ -65,6 +65,7 @@ return [
     'created_success' => 'تمت الإضافة بنجاح',
     'updated_success' => 'تم التحديث بنجاح',
     'deleted_success' => 'تم الحذف بنجاح',
+    'duplicate_submission' => 'تم تقديم النموذج بالفعل. لا يمكن تقديمه مرة أخرى.',
     'error_general' => 'حدث خطأ أثناء العملية',
     
     // صفحة الحركات المالية

@@ -25,6 +25,9 @@ class Account extends Model
         'is_group'    => 'boolean',
         'is_cash_box' => 'boolean',
     ];
+    
+    // تمكين التحميل الكسول للعلاقات
+    protected $with = ['parent'];
 
     public function children()
     {
@@ -75,16 +78,22 @@ class Account extends Model
 
     public function balance()
     {
-        // مجموع المدين والدائن
-        $debit = $this->journalEntryLines()->sum('debit');
-        $credit = $this->journalEntryLines()->sum('credit');
-        // إذا كانت طبيعة الحساب مدين: الرصيد = المدين - الدائن
-        // إذا كانت طبيعة الحساب دائن: الرصيد = الدائن - المدين
-        if ($this->nature === 'مدين' || $this->nature === 'debit') {
-            return $debit - $credit;
-        } else {
-            return $credit - $debit;
-        }
+        // استخدام التخزين المؤقت لتجنب تكرار الاستعلامات
+        $cacheKey = 'account_balance_' . $this->id;
+        
+        return \Cache::remember($cacheKey, 60, function () {
+            // مجموع المدين والدائن
+            $debit = $this->journalEntryLines()->sum('debit');
+            $credit = $this->journalEntryLines()->sum('credit');
+            
+            // إذا كانت طبيعة الحساب مدين: الرصيد = المدين - الدائن
+            // إذا كانت طبيعة الحساب دائن: الرصيد = الدائن - المدين
+            if ($this->nature === 'مدين' || $this->nature === 'debit') {
+                return $debit - $credit;
+            } else {
+                return $credit - $debit;
+            }
+        });
     }
 
     public function canWithdraw($amount)

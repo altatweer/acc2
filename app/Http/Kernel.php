@@ -40,6 +40,8 @@ class Kernel extends HttpKernel
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
             \App\Http\Middleware\SetLocale::class,
             \App\Http\Middleware\SetTenantId::class,
+            \Illuminate\Routing\Middleware\ThrottleRequests::class.':api',
+            'throttle:submission',
         ],
 
         'api' => [
@@ -64,10 +66,12 @@ class Kernel extends HttpKernel
         'can' => \Illuminate\Auth\Middleware\Authorize::class,
         'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class,
         'password.confirm' => \Illuminate\Auth\Middleware\RequirePassword::class,
-        'signed' => \Illuminate\Routing\Middleware\ValidateSignature::class,
+        'precognitive' => \Illuminate\Foundation\Http\Middleware\HandlePrecognitiveRequests::class,
+        'signed' => \App\Http\Middleware\ValidateSignature::class,
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'force.english' => \App\Http\Middleware\ForceEnglish::class,
         'setapp_locale' => \App\Http\Middleware\SetLocale::class,
+        'submission' => \App\Http\Middleware\PreventDuplicateSubmission::class,
     ];
 } 

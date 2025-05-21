@@ -47,21 +47,20 @@ class SalaryPaymentController extends Controller
                 ->first();
             if ($salaryPayment) {
                 $salary = $salaryPayment;
-                // جلب الصناديق المصرح بها للموظف فقط أو جميعها للسوبر أدمن
+                // جلب الصناديق المصرح بها للمستخدم الحالي
                 $currency = $salaryPayment->employee->currency;
-                $user = $salaryPayment->employee->user;
+                
                 if (auth()->user()->isSuperAdmin()) {
                     // السوبر أدمن يرى كل الصناديق النقدية بعملة الموظف
                     $cashAccounts = \App\Models\Account::where('is_cash_box', 1)
                         ->where('currency', $currency)
                         ->get();
-                } elseif ($user && method_exists($user, 'cashBoxes')) {
-                    $cashAccounts = $user->cashBoxes()
+                } else {
+                    // المستخدم العادي يرى الصناديق المرتبطة به فقط بعملة الموظف
+                    $cashAccounts = auth()->user()->cashBoxes()
                         ->where('is_cash_box', 1)
                         ->where('currency', $currency)
                         ->get();
-                } else {
-                    $cashAccounts = collect();
                 }
             }
         }
@@ -203,7 +202,9 @@ class SalaryPaymentController extends Controller
     // دالة توليد رقم سند الصرف
     private function generateVoucherNumber()
     {
-        $lastId = \App\Models\Voucher::max('id') ?? 0;
-        return 'VCH-' . str_pad($lastId + 1, 5, '0', STR_PAD_LEFT);
+        $lastVoucher = \App\Models\Voucher::where('type', 'payment')->latest()->first();
+        $lastNumber = $lastVoucher ? intval(substr($lastVoucher->voucher_number, 3)) : 0;
+        $newNumber = $lastNumber + 1;
+        return 'PAY' . str_pad($newNumber, 6, '0', STR_PAD_LEFT);
     }
 } 

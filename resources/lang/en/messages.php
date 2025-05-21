@@ -62,10 +62,11 @@ return [
     // Success and error messages
     'success' => 'Operation completed successfully',
     'error' => 'An error occurred during the operation',
-    'created_success' => 'Added successfully',
+    'created_success' => 'Created successfully',
     'updated_success' => 'Updated successfully',
     'deleted_success' => 'Deleted successfully',
     'error_general' => 'An error occurred during the operation',
+    'duplicate_submission' => 'Form has already been submitted. Cannot submit it again.',
     
     // Financial Transactions Page
     'financial_transactions' => 'Financial Transactions',

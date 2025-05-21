@@ -10,17 +10,20 @@
     </div>
     <section class="content">
         <div class="container-fluid">
-            @if($errors->any())
-                <div class="alert alert-danger">
-                    <ul>
-                        @foreach($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
             <div class="card mt-3">
+                <div class="card-header">
+                    <h3 class="card-title">@lang('messages.employee_details')</h3>
+                </div>
                 <div class="card-body">
+                    @if ($errors->any())
+                        <div class="alert alert-danger">
+                            <ul>
+                                @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
                     <form action="{{ Route::localizedRoute('employees.update', ['employee' => $employee->id, ]) }}" method="POST">
                         @csrf
                         @method('PUT')
@@ -47,20 +50,20 @@
                         <div class="form-group">
                             <label>@lang('messages.status')</label>
                             <select name="status" class="form-control" required>
-                                <option value="active" {{ old('status', $employee->status)=='active' ? 'selected' : '' }}>@lang('messages.status_active')</option>
-                                <option value="inactive" {{ old('status', $employee->status)=='inactive' ? 'selected' : '' }}>@lang('messages.status_inactive')</option>
-                                <option value="terminated" {{ old('status', $employee->status)=='terminated' ? 'selected' : '' }}>@lang('messages.status_terminated')</option>
+                                <option value="active" {{ old('status', $employee->status) == 'active' ? 'selected' : '' }}>@lang('messages.status_active')</option>
+                                <option value="inactive" {{ old('status', $employee->status) == 'inactive' ? 'selected' : '' }}>@lang('messages.status_inactive')</option>
+                                <option value="terminated" {{ old('status', $employee->status) == 'terminated' ? 'selected' : '' }}>@lang('messages.status_terminated')</option>
                             </select>
                         </div>
                         <div class="form-group">
                             <label>@lang('messages.currency')</label>
                             <select name="currency" class="form-control" required>
-                                @foreach($currencies as $cur)
-                                    <option value="{{ $cur->code }}" {{ old('currency', $employee->currency)==$cur->code ? 'selected' : '' }}>{{ $cur->code }} - {{ $cur->name }}</option>
+                                @foreach($currencies as $currency)
+                                    <option value="{{ $currency->code }}" {{ old('currency', $employee->currency) == $currency->code ? 'selected' : '' }}>{{ $currency->code }} - {{ $currency->name }}</option>
                                 @endforeach
                             </select>
                         </div>
-                        <button type="submit" class="btn btn-success">@lang('messages.update')</button>
+                        <button type="submit" class="btn btn-primary">@lang('messages.save')</button>
                     </form>
                 </div>
             </div>

@@ -12,7 +12,7 @@ class Employee extends Model
 
     protected $fillable = [
         'name', 'employee_number', 'department', 'job_title', 'hire_date', 'status', 'currency',
-        'tenant_id',
+        'tenant_id', 'user_id',
     ];
 
     public function salaries()
@@ -23,5 +23,10 @@ class Employee extends Model
     public function salaryPayments()
     {
         return $this->hasMany(SalaryPayment::class);
+    }
+    
+    public function user()
+    {
+        return $this->belongsTo(User::class);
     }
 } 

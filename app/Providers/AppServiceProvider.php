@@ -142,5 +142,25 @@ class AppServiceProvider extends ServiceProvider
             App::setLocale($defaultLang);
             Config::set('app.locale', $defaultLang);
         }
+
+        // تحسين أداء استعلامات قاعدة البيانات
+        \Illuminate\Database\Eloquent\Model::preventLazyLoading(! app()->isProduction());
+        
+        // إضافة مراقبة الاستعلامات الثقيلة في بيئة التطوير
+        if (app()->isLocal()) {
+            \DB::listen(function ($query) {
+                if ($query->time > 100) {  // أكثر من 100 مللي ثانية
+                    \Log::warning('Slow DB Query: ' . $query->sql, [
+                        'time' => $query->time,
+                        'bindings' => $query->bindings,
+                    ]);
+                }
+            });
+        }
+        
+        // استخدام التخزين المؤقت للبيانات التي يتم استعلامها بشكل متكرر
+        \Cache::remember('currencies', 60*24, function () {
+            return \App\Models\Currency::all();
+        });
     }
 }
