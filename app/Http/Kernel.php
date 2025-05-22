@@ -41,7 +41,6 @@ class Kernel extends HttpKernel
             \App\Http\Middleware\SetLocale::class,
             \App\Http\Middleware\SetTenantId::class,
             \Illuminate\Routing\Middleware\ThrottleRequests::class.':api',
-            'throttle:submission',
         ],
 
         'api' => [
