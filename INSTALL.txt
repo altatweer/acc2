@@ -1,0 +1,29 @@
+Installation Instructions for AurSuite Accounting:
+
+1. Upload the files to your web server
+2. Rename .env.example to .env
+3. Configure your database settings in the .env file:
+   - DB_HOST: Your database host (usually localhost)
+   - DB_DATABASE: Your database name
+   - DB_USERNAME: Your database username
+   - DB_PASSWORD: Your database password
+   - MULTI_TENANCY_ENABLED: Make sure this is set to true
+
+4. Set proper directory permissions:
+   chmod -R 755 storage bootstrap/cache
+
+5. Generate application key:
+   php artisan key:generate
+
+6. Run the database migrations:
+   php artisan migrate
+
+7. Run the seeders:
+   php artisan db:seed
+
+8. Clear the cache:
+   php artisan optimize:clear
+
+9. Access your system through the browser
+
+For support, please contact us via email. 
