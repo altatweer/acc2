@@ -32,6 +32,7 @@
                             <tr>
                                 <th>#</th>
                                 <th>@lang('messages.employee')</th>
+                                <th>@lang('messages.currency')</th>
                                 <th>@lang('messages.basic_salary')</th>
                                 <th>@lang('messages.allowances')</th>
                                 <th>@lang('messages.deductions')</th>
@@ -43,49 +44,60 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @php
-                                $sum_gross = 0;
-                                $sum_allow = 0;
-                                $sum_deduct = 0;
-                                $sum_net = 0;
-                            @endphp
-                            @foreach($salaryBatch->salaryPayments as $i => $pay)
-                                @php
-                                    $sum_gross += $pay->gross_salary;
-                                    $sum_allow += $pay->total_allowances;
-                                    $sum_deduct += $pay->total_deductions;
-                                    $sum_net += $pay->net_salary;
-                                @endphp
-                                <tr>
-                                    <td>{{ $i+1 }}</td>
-                                    <td>{{ $pay->employee->name ?? '-' }}</td>
-                                    <td>{{ number_format($pay->gross_salary, 2) }}</td>
-                                    <td>{{ number_format($pay->total_allowances, 2) }}</td>
-                                    <td>{{ number_format($pay->total_deductions, 2) }}</td>
-                                    <td>{{ number_format($pay->net_salary, 2) }}</td>
-                                    <td>
-                                        @if($pay->status=='pending')<span class="badge badge-warning">@lang('messages.status_pending')</span>@endif
-                                        @if($pay->status=='paid')<span class="badge badge-success">@lang('messages.status_paid')</span>@endif
-                                        @if($pay->status=='cancelled')<span class="badge badge-danger">@lang('messages.status_cancelled')</span>@endif
+                            @foreach($paymentsByCurrency as $currency => $payments)
+                                <!-- Currency header -->
+                                <tr style="background-color: #f0f0f0;">
+                                    <td colspan="{{ $salaryBatch->status=='pending' ? 9 : 8 }}">
+                                        <strong>{{ $currency }}</strong>
                                     </td>
-                                    @if($salaryBatch->status=='pending')
-                                    <td>
-                                        <button type="button" class="btn btn-sm btn-primary" data-toggle="modal" data-target="#editModal" data-id="{{ $pay->id }}" data-allowances="{{ $pay->total_allowances }}" data-deductions="{{ $pay->total_deductions }}">@lang('messages.edit')</button>
-                                    </td>
-                                    @endif
+                                </tr>
+                                
+                                <!-- Employee rows for this currency -->
+                                @foreach($payments as $i => $pay)
+                                    <tr>
+                                        <td>{{ $i+1 }}</td>
+                                        <td>{{ $pay->employee->name ?? '-' }}</td>
+                                        <td>{{ $pay->employee->currency }}</td>
+                                        <td>{{ number_format($pay->gross_salary, 2) }}</td>
+                                        <td>{{ number_format($pay->total_allowances, 2) }}</td>
+                                        <td>{{ number_format($pay->total_deductions, 2) }}</td>
+                                        <td>{{ number_format($pay->net_salary, 2) }}</td>
+                                        <td>
+                                            @if($pay->status=='pending')<span class="badge badge-warning">@lang('messages.status_pending')</span>@endif
+                                            @if($pay->status=='paid')<span class="badge badge-success">@lang('messages.status_paid')</span>@endif
+                                            @if($pay->status=='cancelled')<span class="badge badge-danger">@lang('messages.status_cancelled')</span>@endif
+                                        </td>
+                                        @if($salaryBatch->status=='pending')
+                                        <td>
+                                            <button type="button" class="btn btn-sm btn-primary" data-toggle="modal" data-target="#editModal" data-id="{{ $pay->id }}" data-allowances="{{ $pay->total_allowances }}" data-deductions="{{ $pay->total_deductions }}">@lang('messages.edit')</button>
+                                        </td>
+                                        @endif
+                                    </tr>
+                                @endforeach
+                                
+                                <!-- Subtotal for this currency -->
+                                <tr style="font-weight:bold; background:#e9ecef;">
+                                    <td colspan="3">{{ __('messages.subtotal') }} ({{ $currency }})</td>
+                                    <td>{{ number_format($totalsByCurrency[$currency]['gross'], 2) }}</td>
+                                    <td>{{ number_format($totalsByCurrency[$currency]['allowances'], 2) }}</td>
+                                    <td>{{ number_format($totalsByCurrency[$currency]['deductions'], 2) }}</td>
+                                    <td>{{ number_format($totalsByCurrency[$currency]['net'], 2) }}</td>
+                                    <td colspan="{{ $salaryBatch->status=='pending' ? 2 : 1 }}"></td>
                                 </tr>
                             @endforeach
+                                
                             @if($salaryBatch->salaryPayments->count() == 0)
-                                <tr><td colspan="{{ $salaryBatch->status=='pending' ? 8 : 7 }}" class="text-center">@lang('messages.no_payments_yet')</td></tr>
+                                <tr><td colspan="{{ $salaryBatch->status=='pending' ? 9 : 8 }}" class="text-center">@lang('messages.no_payments_yet')</td></tr>
                             @endif
                         </tbody>
                         <tfoot>
-                            <tr style="font-weight:bold; background:#f9f9f9;">
-                                <td colspan="2">@lang('messages.total')</td>
-                                <td>{{ number_format($sum_gross, 2) }}</td>
-                                <td>{{ number_format($sum_allow, 2) }}</td>
-                                <td>{{ number_format($sum_deduct, 2) }}</td>
-                                <td>{{ number_format($sum_net, 2) }}</td>
+                            <!-- Grand total converted to default currency -->
+                            <tr style="font-weight:bold; background:#d4edda; color:#155724;">
+                                <td colspan="3">@lang('messages.grand_total') ({{ $defaultCurrency }})</td>
+                                <td>{{ number_format($grandTotalInDefaultCurrency['gross'], 2) }}</td>
+                                <td>{{ number_format($grandTotalInDefaultCurrency['allowances'], 2) }}</td>
+                                <td>{{ number_format($grandTotalInDefaultCurrency['deductions'], 2) }}</td>
+                                <td>{{ number_format($grandTotalInDefaultCurrency['net'], 2) }}</td>
                                 <td colspan="{{ $salaryBatch->status=='pending' ? 2 : 1 }}"></td>
                             </tr>
                         </tfoot>

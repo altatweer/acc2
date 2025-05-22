@@ -90,7 +90,72 @@ class SalaryBatchController extends Controller
     public function show(SalaryBatch $salaryBatch)
     {
         $salaryBatch->load(['salaryPayments.employee']);
-        return view('salary_batches.show', compact('salaryBatch'));
+        
+        // Group payments by currency
+        $paymentsByCurrency = $salaryBatch->salaryPayments->groupBy(function($payment) {
+            return $payment->employee->currency;
+        });
+        
+        // Calculate totals by currency
+        $totalsByCurrency = [];
+        $grandTotalInDefaultCurrency = [
+            'gross' => 0,
+            'allowances' => 0,
+            'deductions' => 0,
+            'net' => 0,
+        ];
+        
+        $defaultCurrency = \App\Models\Currency::getDefaultCode();
+        
+        foreach ($paymentsByCurrency as $currency => $payments) {
+            $totalsByCurrency[$currency] = [
+                'gross' => $payments->sum('gross_salary'),
+                'allowances' => $payments->sum('total_allowances'),
+                'deductions' => $payments->sum('total_deductions'),
+                'net' => $payments->sum('net_salary'),
+            ];
+            
+            // Convert to default currency for grand total
+            if ($currency != $defaultCurrency) {
+                $grandTotalInDefaultCurrency['gross'] += \App\Helpers\CurrencyHelper::convert(
+                    $totalsByCurrency[$currency]['gross'], 
+                    $currency, 
+                    $defaultCurrency
+                );
+                $grandTotalInDefaultCurrency['allowances'] += \App\Helpers\CurrencyHelper::convert(
+                    $totalsByCurrency[$currency]['allowances'], 
+                    $currency, 
+                    $defaultCurrency
+                );
+                $grandTotalInDefaultCurrency['deductions'] += \App\Helpers\CurrencyHelper::convert(
+                    $totalsByCurrency[$currency]['deductions'], 
+                    $currency, 
+                    $defaultCurrency
+                );
+                $grandTotalInDefaultCurrency['net'] += \App\Helpers\CurrencyHelper::convert(
+                    $totalsByCurrency[$currency]['net'], 
+                    $currency, 
+                    $defaultCurrency
+                );
+            } else {
+                $grandTotalInDefaultCurrency['gross'] += $totalsByCurrency[$currency]['gross'];
+                $grandTotalInDefaultCurrency['allowances'] += $totalsByCurrency[$currency]['allowances'];
+                $grandTotalInDefaultCurrency['deductions'] += $totalsByCurrency[$currency]['deductions'];
+                $grandTotalInDefaultCurrency['net'] += $totalsByCurrency[$currency]['net'];
+            }
+        }
+        
+        // Load all currencies for the view
+        $currencies = \App\Models\Currency::all();
+        
+        return view('salary_batches.show', compact(
+            'salaryBatch', 
+            'paymentsByCurrency', 
+            'totalsByCurrency', 
+            'grandTotalInDefaultCurrency', 
+            'defaultCurrency',
+            'currencies'
+        ));
     }
 
     public function approve(SalaryBatch $salaryBatch)
@@ -98,71 +163,120 @@ class SalaryBatchController extends Controller
         if ($salaryBatch->status !== 'pending') {
             return back()->withErrors(['لا يمكن اعتماد كشف تم اعتماده أو إغلاقه مسبقًا.']);
         }
+        
         $salaryBatch->update([
             'status' => 'approved',
             'approved_by' => auth()->id(),
             'approved_at' => now(),
         ]);
-        // عند الاعتماد: توليد قيد الاستحقاق
-        // تجميع الرواتب حسب العملة
-        $payments = \App\Models\SalaryPayment::where('salary_batch_id', $salaryBatch->id)->with('employee')->get();
-        $byCurrency = $payments->groupBy(function($p) { return $p->employee->currency; });
+        
+        // Get default currency and load all currencies
+        $defaultCurrency = \App\Models\Currency::getDefaultCode();
+        $currencies = \App\Models\Currency::all()->keyBy('code');
+        
+        // Get payments and group by currency
+        $payments = \App\Models\SalaryPayment::where('salary_batch_id', $salaryBatch->id)
+            ->with('employee')
+            ->get();
+        
+        $byCurrency = $payments->groupBy(function($p) { 
+            return $p->employee->currency; 
+        });
+        
+        // Create a single multi-currency journal entry
+        $journalDate = Carbon::createFromFormat('Y-m', $salaryBatch->month)
+            ->endOfMonth()
+            ->toDateString();
+        
+        $journalDescription = 'قيد استحقاق رواتب شهر ' . $salaryBatch->month;
+        
+        // Create journal entry with the default currency
+        $journal = \App\Models\JournalEntry::create([
+            'date' => $journalDate,
+            'description' => $journalDescription,
+            'source_type' => \App\Models\SalaryBatch::class,
+            'source_id' => $salaryBatch->id,
+            'created_by' => auth()->id(),
+            'currency' => $defaultCurrency,
+            'exchange_rate' => 1,
+            'is_multi_currency' => true,
+            'total_debit' => 0, // Will calculate after adding lines
+            'total_credit' => 0, // Will calculate after adding lines
+        ]);
+        
+        $totalDebitInDefaultCurrency = 0;
+        $totalCreditInDefaultCurrency = 0;
+        
+        // Add journal entry lines for each currency
         foreach ($byCurrency as $currency => $rows) {
             $expenseAccountId = \App\Models\AccountingSetting::get('salary_expense_account', $currency);
             $liabilityAccountId = \App\Models\AccountingSetting::get('employee_payables_account', $currency);
-            if (!$expenseAccountId || !$liabilityAccountId) continue;
+            
+            if (!$expenseAccountId || !$liabilityAccountId) {
+                continue;
+            }
+            
             $totalGross = $rows->sum('gross_salary');
             $totalAllowances = $rows->sum('total_allowances');
             $totalDeductions = $rows->sum('total_deductions');
             $totalNet = $rows->sum('net_salary');
-            $lines = [
-                [
-                    'account_id' => $expenseAccountId,
-                    'description' => 'استحقاق رواتب شهر ' . $salaryBatch->month,
-                    'debit' => $totalGross + $totalAllowances,
-                    'credit' => 0,
-                    'currency' => $currency,
-                    'exchange_rate' => 1,
-                ],
-                [
-                    'account_id' => $liabilityAccountId,
-                    'description' => 'ذمم مستحقة للموظفين عن رواتب شهر ' . $salaryBatch->month,
-                    'debit' => 0,
-                    'credit' => $totalNet,
-                    'currency' => $currency,
-                    'exchange_rate' => 1,
-                ],
-            ];
-            $deductionSum = $rows->sum('total_deductions');
-            if ($deductionSum > 0) {
-                $deductionAccountId = $settings?->deductions_account_id;
+            
+            // Get exchange rate for this currency
+            $exchangeRate = 1;
+            if ($currency !== $defaultCurrency && isset($currencies[$currency])) {
+                $exchangeRate = $currencies[$currency]->exchange_rate;
+            }
+            
+            // Add expense line
+            $expenseAmount = $totalGross + $totalAllowances;
+            $journal->lines()->create([
+                'account_id' => $expenseAccountId,
+                'description' => 'استحقاق رواتب شهر ' . $salaryBatch->month,
+                'debit' => $expenseAmount,
+                'credit' => 0,
+                'currency' => $currency,
+                'exchange_rate' => $exchangeRate,
+            ]);
+            
+            $totalDebitInDefaultCurrency += ($expenseAmount * $exchangeRate);
+            
+            // Add payable line
+            $journal->lines()->create([
+                'account_id' => $liabilityAccountId,
+                'description' => 'ذمم مستحقة للموظفين عن رواتب شهر ' . $salaryBatch->month,
+                'debit' => 0,
+                'credit' => $totalNet,
+                'currency' => $currency,
+                'exchange_rate' => $exchangeRate,
+            ]);
+            
+            $totalCreditInDefaultCurrency += ($totalNet * $exchangeRate);
+            
+            // Add deductions line if needed
+            if ($totalDeductions > 0) {
+                $deductionAccountId = \App\Models\AccountingSetting::get('deductions_account_id', $currency);
                 if ($deductionAccountId) {
-                    $lines[] = [
+                    $journal->lines()->create([
                         'account_id' => $deductionAccountId,
                         'description' => 'خصومات رواتب شهر ' . $salaryBatch->month,
                         'debit' => 0,
-                        'credit' => $deductionSum,
+                        'credit' => $totalDeductions,
                         'currency' => $currency,
-                        'exchange_rate' => 1,
-                    ];
+                        'exchange_rate' => $exchangeRate,
+                    ]);
+                    
+                    $totalCreditInDefaultCurrency += ($totalDeductions * $exchangeRate);
                 }
             }
-            $journal = \App\Models\JournalEntry::create([
-                'date' => Carbon::createFromFormat('Y-m', $salaryBatch->month)->endOfMonth()->toDateString(),
-                'description' => 'قيد استحقاق رواتب شهر ' . $salaryBatch->month,
-                'source_type' => \App\Models\SalaryBatch::class,
-                'source_id' => $salaryBatch->id,
-                'created_by' => auth()->id(),
-                'currency' => $currency,
-                'exchange_rate' => 1,
-                'total_debit' => $totalGross + $totalAllowances,
-                'total_credit' => $totalNet + ($deductionSum > 0 ? $deductionSum : 0),
-            ]);
-            foreach ($lines as $line) {
-                $journal->lines()->create($line);
-            }
         }
-        return back()->with('success', 'تم اعتماد كشف الرواتب بنجاح وتم توليد قيد الاستحقاق.');
+        
+        // Update journal totals
+        $journal->update([
+            'total_debit' => $totalDebitInDefaultCurrency,
+            'total_credit' => $totalCreditInDefaultCurrency,
+        ]);
+        
+        return back()->with('success', 'تم اعتماد كشف الرواتب بنجاح وتم توليد قيد الاستحقاق متعدد العملات.');
     }
 
     public function destroy(SalaryBatch $salaryBatch)

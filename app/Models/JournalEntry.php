@@ -9,6 +9,13 @@ use App\Traits\BelongsToTenant;
 class JournalEntry extends Model
 {
     use HasFactory, BelongsToTenant;
+    
+    protected $casts = [
+        'is_multi_currency' => 'boolean',
+        'exchange_rate' => 'float',
+        'total_debit' => 'float',
+        'total_credit' => 'float',
+    ];
 
     protected $fillable = [
         'date',
@@ -18,6 +25,7 @@ class JournalEntry extends Model
         'created_by',
         'currency',
         'exchange_rate',
+        'is_multi_currency',
         'total_debit',
         'total_credit',
         'status',
