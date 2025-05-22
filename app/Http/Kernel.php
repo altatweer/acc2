@@ -72,6 +72,6 @@ class Kernel extends HttpKernel
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'force.english' => \App\Http\Middleware\ForceEnglish::class,
         'setapp_locale' => \App\Http\Middleware\SetLocale::class,
-        'prevent.duplicate' => \App\Http\Middleware\PreventDuplicateSubmission::class,
+        'prevent_duplicate' => \App\Http\Middleware\PreventDuplicateSubmission::class,
     ];
 } 

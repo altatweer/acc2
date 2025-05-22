@@ -148,9 +148,9 @@ Route::middleware(['auth'])->group(function () {
     // Vouchers
     Route::resource('vouchers', VoucherController::class);
     Route::get('vouchers/{voucher}/print', [VoucherController::class, 'print'])->name('vouchers.print');
-    Route::post('vouchers/{voucher}/cancel', [VoucherController::class, 'cancel'])->middleware('prevent.duplicate')->name('vouchers.cancel');
+    Route::post('vouchers/{voucher}/cancel', [VoucherController::class, 'cancel'])->middleware('prevent_duplicate')->name('vouchers.cancel');
     Route::get('vouchers/transfer/create', [VoucherController::class, 'transferCreate'])->name('vouchers.transfer.create');
-    Route::post('vouchers/transfer/store', [VoucherController::class, 'transferStore'])->middleware('prevent.duplicate')->name('vouchers.transfer.store');
+    Route::post('vouchers/transfer/store', [VoucherController::class, 'transferStore'])->middleware('prevent_duplicate')->name('vouchers.transfer.store');
 
     // Currencies
     Route::resource('currencies', CurrencyController::class);
@@ -163,12 +163,12 @@ Route::middleware(['auth'])->group(function () {
 
     // Invoice payments
     Route::get('invoice-payments/create', [InvoicePaymentController::class, 'create'])->name('invoice-payments.create');
-    Route::post('invoice-payments', [InvoicePaymentController::class, 'store'])->middleware('prevent.duplicate')->name('invoice-payments.store');
+    Route::post('invoice-payments', [InvoicePaymentController::class, 'store'])->middleware('prevent_duplicate')->name('invoice-payments.store');
 
     // Invoices
     Route::resource('invoices', InvoiceController::class);
-    Route::post('invoices/{invoice}/approve', [InvoiceController::class, 'approve'])->middleware('prevent.duplicate')->name('invoices.approve');
-    Route::post('invoices/{invoice}/cancel', [InvoiceController::class, 'cancel'])->middleware('prevent.duplicate')->name('invoices.cancel');
+    Route::post('invoices/{invoice}/approve', [InvoiceController::class, 'approve'])->middleware('prevent_duplicate')->name('invoices.approve');
+    Route::post('invoices/{invoice}/cancel', [InvoiceController::class, 'cancel'])->middleware('prevent_duplicate')->name('invoices.cancel');
     Route::get('invoices/{invoice}/print', [InvoiceController::class, 'print'])->name('invoices.print');
 
     // Journal entries
@@ -177,7 +177,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('journal-entries/{id}/print', [JournalEntryController::class, 'print'])->name('journal-entries.print');
     Route::get('journal-entries/single-currency/create', [JournalEntryController::class, 'createSingleCurrency'])->name('journal-entries.single-currency.create');
     Route::get('journal-entries/multi-currency/create', [JournalEntryController::class, 'createMultiCurrency'])->name('journal-entries.multi-currency.create');
-    Route::post('journal-entries/{journalEntry}/cancel', [JournalEntryController::class, 'cancel'])->middleware('prevent.duplicate')->name('journal-entries.cancel');
+    Route::post('journal-entries/{journalEntry}/cancel', [JournalEntryController::class, 'cancel'])->middleware('prevent_duplicate')->name('journal-entries.cancel');
 
     // Employees
     Route::resource('employees', EmployeeController::class);
@@ -188,11 +188,11 @@ Route::middleware(['auth'])->group(function () {
     // Salary payments
     Route::resource('salary-payments', SalaryPaymentController::class);
     Route::post('salary-payments/update-allowances-deductions', [SalaryPaymentController::class, 'updateAllowancesDeductions'])
-        ->middleware('prevent.duplicate')->name('salary-payments.update-allowances-deductions');
+        ->middleware('prevent_duplicate')->name('salary-payments.update-allowances-deductions');
 
     // Salary batches
     Route::resource('salary-batches', SalaryBatchController::class)->only(['index','create','store','show','destroy']);
-    Route::post('salary-batches/{salaryBatch}/approve', [SalaryBatchController::class, 'approve'])->middleware('prevent.duplicate')->name('salary-batches.approve');
+    Route::post('salary-batches/{salaryBatch}/approve', [SalaryBatchController::class, 'approve'])->middleware('prevent_duplicate')->name('salary-batches.approve');
 
     // Settings
     Route::get('settings/accounting', [AccountingSettingController::class, 'edit'])->name('accounting-settings.edit');
