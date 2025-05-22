@@ -105,7 +105,20 @@ class SalaryBatchController extends Controller
             'net' => 0,
         ];
         
+        // Get all currencies and default currency
         $defaultCurrency = \App\Models\Currency::getDefaultCode();
+        $allCurrencies = \App\Models\Currency::all()->pluck('code')->toArray();
+        
+        // Prepare grand totals structure for all currencies
+        $grandTotalAllCurrencies = [];
+        foreach ($allCurrencies as $currCode) {
+            $grandTotalAllCurrencies[$currCode] = [
+                'gross' => 0,
+                'allowances' => 0,
+                'deductions' => 0,
+                'net' => 0,
+            ];
+        }
         
         foreach ($paymentsByCurrency as $currency => $payments) {
             $totalsByCurrency[$currency] = [
@@ -115,7 +128,40 @@ class SalaryBatchController extends Controller
                 'net' => $payments->sum('net_salary'),
             ];
             
-            // Convert to default currency for grand total
+            // Add to current currency grand total
+            $grandTotalAllCurrencies[$currency]['gross'] += $totalsByCurrency[$currency]['gross'];
+            $grandTotalAllCurrencies[$currency]['allowances'] += $totalsByCurrency[$currency]['allowances'];
+            $grandTotalAllCurrencies[$currency]['deductions'] += $totalsByCurrency[$currency]['deductions'];
+            $grandTotalAllCurrencies[$currency]['net'] += $totalsByCurrency[$currency]['net'];
+            
+            // Convert to all other currencies for grand totals
+            foreach ($allCurrencies as $targetCurr) {
+                if ($targetCurr != $currency) {
+                    // Convert this currency values to target currency
+                    $grandTotalAllCurrencies[$targetCurr]['gross'] += \App\Helpers\CurrencyHelper::convert(
+                        $totalsByCurrency[$currency]['gross'], 
+                        $currency, 
+                        $targetCurr
+                    );
+                    $grandTotalAllCurrencies[$targetCurr]['allowances'] += \App\Helpers\CurrencyHelper::convert(
+                        $totalsByCurrency[$currency]['allowances'], 
+                        $currency, 
+                        $targetCurr
+                    );
+                    $grandTotalAllCurrencies[$targetCurr]['deductions'] += \App\Helpers\CurrencyHelper::convert(
+                        $totalsByCurrency[$currency]['deductions'], 
+                        $currency, 
+                        $targetCurr
+                    );
+                    $grandTotalAllCurrencies[$targetCurr]['net'] += \App\Helpers\CurrencyHelper::convert(
+                        $totalsByCurrency[$currency]['net'], 
+                        $currency, 
+                        $targetCurr
+                    );
+                }
+            }
+            
+            // Also update default currency grand total (for backward compatibility)
             if ($currency != $defaultCurrency) {
                 $grandTotalInDefaultCurrency['gross'] += \App\Helpers\CurrencyHelper::convert(
                     $totalsByCurrency[$currency]['gross'], 
@@ -153,8 +199,10 @@ class SalaryBatchController extends Controller
             'paymentsByCurrency', 
             'totalsByCurrency', 
             'grandTotalInDefaultCurrency', 
+            'grandTotalAllCurrencies',
             'defaultCurrency',
-            'currencies'
+            'currencies',
+            'allCurrencies'
         ));
     }
 

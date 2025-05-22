@@ -91,15 +91,23 @@
                             @endif
                         </tbody>
                         <tfoot>
-                            <!-- Grand total converted to default currency -->
-                            <tr style="font-weight:bold; background:#d4edda; color:#155724;">
-                                <td colspan="3">@lang('messages.grand_total') ({{ $defaultCurrency }})</td>
-                                <td>{{ number_format($grandTotalInDefaultCurrency['gross'], 2) }}</td>
-                                <td>{{ number_format($grandTotalInDefaultCurrency['allowances'], 2) }}</td>
-                                <td>{{ number_format($grandTotalInDefaultCurrency['deductions'], 2) }}</td>
-                                <td>{{ number_format($grandTotalInDefaultCurrency['net'], 2) }}</td>
-                                <td colspan="{{ $salaryBatch->status=='pending' ? 2 : 1 }}"></td>
+                            <!-- Grand totals for all currencies -->
+                            <tr>
+                                <td colspan="{{ $salaryBatch->status=='pending' ? 9 : 8 }}" class="text-center bg-secondary text-white">
+                                    <strong>@lang('messages.grand_total') @lang('messages.in_all_currencies')</strong>
+                                </td>
                             </tr>
+                            
+                            @foreach($allCurrencies as $currCode)
+                                <tr style="font-weight:bold; {{ $currCode == $defaultCurrency ? 'background:#d4edda; color:#155724;' : 'background:#f9f9f9;' }}">
+                                    <td colspan="3">@lang('messages.grand_total') ({{ $currCode }})</td>
+                                    <td>{{ number_format($grandTotalAllCurrencies[$currCode]['gross'], 2) }}</td>
+                                    <td>{{ number_format($grandTotalAllCurrencies[$currCode]['allowances'], 2) }}</td>
+                                    <td>{{ number_format($grandTotalAllCurrencies[$currCode]['deductions'], 2) }}</td>
+                                    <td>{{ number_format($grandTotalAllCurrencies[$currCode]['net'], 2) }}</td>
+                                    <td colspan="{{ $salaryBatch->status=='pending' ? 2 : 1 }}"></td>
+                                </tr>
+                            @endforeach
                         </tfoot>
                     </table>
                 </div>
