@@ -107,6 +107,11 @@ class ReportsController extends Controller
         $to = $request->input('to');
         $type = $request->input('type'); // إيراد أو مصروف أو الكل
         $parent_id = $request->input('parent_id'); // فلتر الفئة الرئيسية
+        $currency = $request->input('currency'); // فلتر العملة
+
+        // جلب العملات المتاحة
+        $currencies = \App\Models\Currency::all();
+        $defaultCurrency = \App\Models\Currency::getDefaultCode();
 
         // جلب الفئات الرئيسية (is_group = true)
         $groups = \App\Models\Account::where('is_group', true)
@@ -128,6 +133,9 @@ class ReportsController extends Controller
             })
             ->when($parent_id, function($q) use ($parent_id) {
                 $q->where('parent_id', $parent_id);
+            })
+            ->when($currency, function($q) use ($currency) {
+                $q->where('currency', $currency);
             })
             ->orderBy('name')->get();
 
@@ -176,27 +184,69 @@ class ReportsController extends Controller
         $totalRevenue = abs($totalRevenue);
         $totalExpense = abs($totalExpense);
         $net = $totalRevenue - $totalExpense;
-        return view('reports.income_statement', compact('rows', 'from', 'to', 'type', 'groups', 'parent_id', 'totalRevenue', 'totalExpense', 'net'));
+        
+        return view('reports.income_statement', compact(
+            'rows', 
+            'from', 
+            'to', 
+            'type', 
+            'groups', 
+            'parent_id', 
+            'totalRevenue', 
+            'totalExpense', 
+            'net',
+            'currencies',
+            'defaultCurrency',
+            'currency'
+        ));
     }
     public function payroll(Request $request)
     {
         $month = $request->input('month');
         $employeeName = $request->input('employee');
+        $currency = $request->input('currency');
+        
+        // استعلام مع علاقة الموظف
         $query = \App\Models\SalaryPayment::with('employee');
+        
         if ($month) {
             $query->where('salary_month', $month);
         }
+        
         if ($employeeName) {
             $query->whereHas('employee', function($q) use ($employeeName) {
                 $q->where('name', 'like', "%$employeeName%");
             });
         }
+        
+        if ($currency) {
+            $query->whereHas('employee', function($q) use ($currency) {
+                $q->where('currency', $currency);
+            });
+        }
+        
         $rows = $query->orderBy('salary_month', 'desc')->get();
+        
+        // جلب العملات المتاحة للفلترة
+        $currencies = \App\Models\Currency::all();
+        
+        // المجاميع القديمة - لا نستخدمها في العرض الجديد، لكن نحتفظ بها للتوافقية
         $totalNet = $rows->sum('net_salary');
         $totalGross = $rows->sum('gross_salary');
         $totalAllowances = $rows->sum('total_allowances');
         $totalDeductions = $rows->sum('total_deductions');
-        return view('reports.payroll', compact('rows', 'month', 'employeeName', 'totalNet', 'totalGross', 'totalAllowances', 'totalDeductions'));
+        
+        return view('reports.payroll', compact(
+            'rows', 
+            'month', 
+            'employeeName', 
+            'totalNet', 
+            'totalGross', 
+            'totalAllowances', 
+            'totalDeductions',
+            'currencies',
+            'currency'
+        ));
     }
     public function expensesRevenues(Request $request)
     {
