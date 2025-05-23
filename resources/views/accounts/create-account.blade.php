@@ -95,13 +95,40 @@ $(function(){
     function refreshAccountCode(){
         let isGroup = 0;
         let parent_id = $('#parent_id').val() || '';
-        $.getJSON("{{ route('accounts.nextCode') }}", { is_group: isGroup, parent_id: parent_id }, function(data){
-            $('#code').val(data.nextCode);
-            $('#codeInput').val(data.nextCode);
-        });
+        
+        // تنفيذ طلب AJAX فقط إذا تم اختيار فئة أب
+        if (parent_id) {
+            // إضافة معلمة عشوائية لمنع التخزين المؤقت
+            $.getJSON("{{ route('accounts.nextCode') }}?_=" + new Date().getTime(), 
+                { is_group: isGroup, parent_id: parent_id }, 
+                function(data){
+                    if (data.nextCode) {
+                        $('#code').val(data.nextCode);
+                        $('#codeInput').val(data.nextCode);
+                        console.log("تم تحديث الكود إلى: " + data.nextCode); // سجل للتصحيح
+                    } else {
+                        console.warn("تم استلام استجابة من الخادم لكن بدون كود"); // سجل للتصحيح
+                    }
+                }
+            ).fail(function(jqXHR, textStatus, errorThrown) {
+                console.error("خطأ في الحصول على الكود: " + textStatus, errorThrown);
+            });
+        } else {
+            // إذا لم يتم اختيار فئة أب، عرض رسالة إرشادية بالعربية
+            $('#code').val("اختر فئة أولاً");
+            $('#codeInput').val("");
+        }
     }
+    
+    // تنفيذ عند تغيير الاختيار
     $('#parent_id').on('change', refreshAccountCode);
-    refreshAccountCode();
+    
+    // التأكد من تحديث الكود عند تحميل الصفحة إذا كانت هناك قيمة محددة مسبقاً
+    setTimeout(function() {
+        if ($('#parent_id').val()) {
+            refreshAccountCode();
+        }
+    }, 500); // تأخير قصير للتأكد من تحميل الصفحة بالكامل
 });
 </script>
 @endpush

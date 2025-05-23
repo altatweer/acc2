@@ -73,13 +73,40 @@ $(function(){
         let isGroup = 1;
         let parentId = $('#parent_id').val() || '';
         let typeVal = $('#type').val() || '';
-        $.getJSON("{{ route('accounts.nextCode') }}", { is_group: isGroup, parent_id: parentId, type: typeVal }, function(data){
-            $('#groupCode').val(data.nextCode);
-            $('#groupCodeInput').val(data.nextCode);
-        });
+        
+        // تنفيذ طلب AJAX فقط إذا تم اختيار نوع الحساب على الأقل
+        if (typeVal) {
+            // إضافة معلمة عشوائية لمنع التخزين المؤقت
+            $.getJSON("{{ route('accounts.nextCode') }}?_=" + new Date().getTime(), 
+                { is_group: isGroup, parent_id: parentId, type: typeVal }, 
+                function(data){
+                    if (data.nextCode) {
+                        $('#groupCode').val(data.nextCode);
+                        $('#groupCodeInput').val(data.nextCode);
+                        console.log("تم تحديث كود الفئة إلى: " + data.nextCode); // سجل للتصحيح
+                    } else {
+                        console.warn("تم استلام استجابة من الخادم لكن بدون كود"); // سجل للتصحيح
+                    }
+                }
+            ).fail(function(jqXHR, textStatus, errorThrown) {
+                console.error("خطأ في الحصول على كود الفئة: " + textStatus, errorThrown);
+            });
+        } else {
+            // إذا لم يتم اختيار نوع، عرض رسالة إرشادية بالعربية
+            $('#groupCode').val("اختر نوع الحساب أولاً");
+            $('#groupCodeInput').val("");
+        }
     }
+    
+    // تنفيذ عند تغيير الاختيارات
     $('#type, #parent_id').on('change', refreshGroupCode);
-    refreshGroupCode();
+    
+    // التأكد من تحديث الكود عند تحميل الصفحة إذا كانت هناك قيم محددة مسبقاً
+    setTimeout(function() {
+        if ($('#type').val()) {
+            refreshGroupCode();
+        }
+    }, 500); // تأخير قصير للتأكد من تحميل الصفحة بالكامل
 });
 </script>
 @endpush

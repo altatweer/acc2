@@ -386,6 +386,104 @@
         });
     }
     
+    // Create main type categories and organize accounts underneath them
+    function buildOrganizedTree(nodes) {
+        // Create main category nodes for each account type
+        const mainCategories = [
+            {
+                id: 'cat-asset',
+                text: '@lang("messages.type_asset")',
+                icon: 'fas fa-money-bill-wave',
+                state: { opened: true },
+                children: [],
+                a_attr: { class: 'account-asset', 'data-type': 'asset' },
+                li_attr: { class: 'account-asset', 'data-type': 'asset' },
+                data: { type: 'asset', is_group: true }
+            },
+            {
+                id: 'cat-liability',
+                text: '@lang("messages.type_liability")',
+                icon: 'fas fa-file-invoice-dollar',
+                state: { opened: true },
+                children: [],
+                a_attr: { class: 'account-liability', 'data-type': 'liability' },
+                li_attr: { class: 'account-liability', 'data-type': 'liability' },
+                data: { type: 'liability', is_group: true }
+            },
+            {
+                id: 'cat-equity',
+                text: '@lang("messages.type_equity")',
+                icon: 'fas fa-balance-scale',
+                state: { opened: true },
+                children: [],
+                a_attr: { class: 'account-equity', 'data-type': 'equity' },
+                li_attr: { class: 'account-equity', 'data-type': 'equity' },
+                data: { type: 'equity', is_group: true }
+            },
+            {
+                id: 'cat-revenue',
+                text: '@lang("messages.type_revenue")',
+                icon: 'fas fa-chart-line',
+                state: { opened: true },
+                children: [],
+                a_attr: { class: 'account-revenue', 'data-type': 'revenue' },
+                li_attr: { class: 'account-revenue', 'data-type': 'revenue' },
+                data: { type: 'revenue', is_group: true }
+            },
+            {
+                id: 'cat-expense',
+                text: '@lang("messages.type_expense")',
+                icon: 'fas fa-shopping-cart',
+                state: { opened: true },
+                children: [],
+                a_attr: { class: 'account-expense', 'data-type': 'expense' },
+                li_attr: { class: 'account-expense', 'data-type': 'expense' },
+                data: { type: 'expense', is_group: true }
+            }
+        ];
+        
+        // Find all nodes of a particular type and add them under the appropriate main category
+        const allNodesFlat = [];
+        // Function to collect all nodes in flat structure
+        function flattenNodes(nodes) {
+            nodes.forEach(node => {
+                allNodesFlat.push(node);
+                if (node.children_recursive && node.children_recursive.length > 0) {
+                    flattenNodes(node.children_recursive);
+                }
+            });
+        }
+        
+        flattenNodes(nodes);
+        
+        // Process the complete tree
+        const processedNodes = buildTree(nodes);
+        
+        // Add each node to its type category
+        processedNodes.forEach(node => {
+            if (node.data.type) {
+                const category = mainCategories.find(cat => cat.data.type === node.data.type);
+                if (category) {
+                    category.children.push(node);
+                }
+            } else {
+                // For nodes without type, try to determine from children
+                if (node.children && node.children.length > 0) {
+                    const firstChild = node.children[0];
+                    if (firstChild.data && firstChild.data.type) {
+                        const category = mainCategories.find(cat => cat.data.type === firstChild.data.type);
+                        if (category) {
+                            category.children.push(node);
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Return only categories that have children
+        return mainCategories.filter(cat => cat.children.length > 0);
+    }
+    
     // Convert account data to jsTree format with added classes for account types
     function buildTree(nodes) {
         return nodes.map(node => {
@@ -426,7 +524,7 @@
         // Initialize the jsTree
         const $tree = $('#accountTree').jstree({
             'core' : {
-                'data' : buildTree(accountsData),
+                'data' : buildOrganizedTree(accountsData),
                 'themes': { 
                     'variant': 'large',
                     'responsive': true 
@@ -449,61 +547,145 @@
         
         // Handle node selection to show account details
         $tree.on('select_node.jstree', function(e, data) {
-            const node = data.node.original.data;
+            // First, let's console log the data to debug
+            console.log('Selected Node Data:', data);
+            
+            // Check if we're dealing with a main category node or a regular account node
+            const nodeId = data.node.id;
+            const isMainCategory = nodeId.startsWith('cat-');
+            
+            // Get the node data - for main categories use original.data, for children nodes check children
+            let node = null;
+            
+            if (isMainCategory) {
+                // Main category - use node data directly
+                node = data.node.original.data;
+                console.log('Main Category Node:', node);
+            } else {
+                // Regular account - data might be in original data or in children
+                if (data.node.original && data.node.original.data) {
+                    node = data.node.original.data;
+                    console.log('Regular Account Node:', node);
+                }
+                // If still no valid data, try to find it in the original accountsData
+                if (!node || !node.name) {
+                    // Try to find the account by ID in our original data
+                    const findAccountById = function(id, nodes) {
+                        for (const n of nodes) {
+                            if (n.id == id) return n;
+                            if (n.children_recursive && n.children_recursive.length > 0) {
+                                const found = findAccountById(id, n.children_recursive);
+                                if (found) return found;
+                            }
+                        }
+                        return null;
+                    };
+                    node = findAccountById(nodeId, accountsData);
+                    console.log('Found node in accountsData:', node);
+                }
+            }
+            
+            // Clear previous details
+            $('#account-name').text('-');
+            $('#account-code').text('-');
+            $('#account-type').text('-');
+            $('#account-nature').text('-');
+            $('#account-currency').text('-');
+            $('#account-is-cash-box').text('-');
+            $('#account-actions').hide();
             
             if (node) {
-                // Update account info panel
-                $('#account-name').text(node.name || '-');
-                $('#account-code').text(node.code || '-');
-                
-                // Set account type correctly with appropriate styling
-                let accountType = '-';
-                let typeClass = 'secondary';
-                
-                if (node.type) {
-                    if (node.type === 'asset') {
+                // If it's a main category, show only basic info
+                if (isMainCategory) {
+                    // Just update the category name and type
+                    $('#account-name').text(data.node.text.replace(/<[^>]*>/g, '').trim());
+                    
+                    // Set the account type
+                    const type = node.type;
+                    let accountType = '-';
+                    let typeClass = 'secondary';
+                    
+                    if (type === 'asset') {
                         accountType = '@lang('messages.type_asset')';
                         typeClass = 'success';
                     }
-                    else if (node.type === 'liability') {
+                    else if (type === 'liability') {
                         accountType = '@lang('messages.type_liability')';
                         typeClass = 'danger';
                     }
-                    else if (node.type === 'equity') {
+                    else if (type === 'equity') {
                         accountType = '@lang('messages.type_equity')';
                         typeClass = 'primary';
                     }
-                    else if (node.type === 'revenue') {
+                    else if (type === 'revenue') {
                         accountType = '@lang('messages.type_revenue')';
                         typeClass = 'warning';
                     }
-                    else if (node.type === 'expense') {
+                    else if (type === 'expense') {
                         accountType = '@lang('messages.type_expense')';
                         typeClass = 'info';
                     }
+                    
                     $('#account-type').html(`<span class="badge badge-${typeClass}">${accountType}</span>`);
-                } else {
-                    $('#account-type').text('-');
-                }
-                
-                // Set account nature with styling
-                if (node.nature) {
-                    const natureClass = node.nature === 'debit' ? 'info' : 'warning';
-                    const natureText = node.nature === 'debit' ? '@lang('messages.debit_nature')' : '@lang('messages.credit_nature')';
-                    $('#account-nature').html(`<span class="badge badge-${natureClass}">${natureText}</span>`);
-                } else {
-                    $('#account-nature').text('-');
-                }
-                
-                // Set currency and cash box status
-                $('#account-currency').text(node.currency || '-');
-                
-                if (node.is_cash_box !== undefined) {
-                    const cashBoxClass = node.is_cash_box ? 'success' : 'secondary';
-                    const cashBoxText = node.is_cash_box ? '@lang('messages.yes')' : '@lang('messages.no')';
-                    $('#account-is-cash-box').html(`<span class="badge badge-${cashBoxClass}">${cashBoxText}</span>`);
-                } else {
-                    $('#account-is-cash-box').text('-');
+                } 
+                // Regular account node - show full details
+                else {
+                    // Update account info panel
+                    $('#account-name').text(node.name || '-');
+                    $('#account-code').text(node.code || '-');
+                    
+                    // Set account type correctly with appropriate styling
+                    let accountType = '-';
+                    let typeClass = 'secondary';
+                    
+                    if (node.type) {
+                        if (node.type === 'asset') {
+                            accountType = '@lang('messages.type_asset')';
+                            typeClass = 'success';
+                        }
+                        else if (node.type === 'liability') {
+                            accountType = '@lang('messages.type_liability')';
+                            typeClass = 'danger';
+                        }
+                        else if (node.type === 'equity') {
+                            accountType = '@lang('messages.type_equity')';
+                            typeClass = 'primary';
+                        }
+                        else if (node.type === 'revenue') {
+                            accountType = '@lang('messages.type_revenue')';
+                            typeClass = 'warning';
+                        }
+                        else if (node.type === 'expense') {
+                            accountType = '@lang('messages.type_expense')';
+                            typeClass = 'info';
+                        }
+                        $('#account-type').html(`<span class="badge badge-${typeClass}">${accountType}</span>`);
+                    }
+                    
+                    // Set account nature with styling
+                    if (node.nature) {
+                        const natureClass = node.nature === 'debit' ? 'info' : 'warning';
+                        const natureText = node.nature === 'debit' ? '@lang('messages.debit_nature')' : '@lang('messages.credit_nature')';
+                        $('#account-nature').html(`<span class="badge badge-${natureClass}">${natureText}</span>`);
+                    }
+                    
+                    // Set currency and cash box status
+                    $('#account-currency').text(node.currency || '-');
+                    
+                    if (node.is_cash_box !== undefined) {
+                        const cashBoxClass = node.is_cash_box ? 'success' : 'secondary';
+                        const cashBoxText = node.is_cash_box ? '@lang('messages.yes')' : '@lang('messages.no')';
+                        $('#account-is-cash-box').html(`<span class="badge badge-${cashBoxClass}">${cashBoxText}</span>`);
+                    }
+                    
+                    // Show account actions if it's not a group
+                    if (!node.is_group) {
+                        $('#account-actions').show();
+                        $('#view-account-link').attr('href', '{{ url("accounts") }}/' + node.id);
+                        $('#edit-account-link').attr('href', '{{ url("accounts") }}/' + node.id + '/edit');
+                    } else {
+                        $('#account-actions').hide();
+                    }
                 }
                 
                 // Add animations to highlight the changes
@@ -512,20 +694,13 @@
                     $('#account-details tr').removeClass('bg-light-pulse');
                 }, 1000);
                 
-                // Show account actions if it's not a group
-                if (!node.is_group) {
-                    $('#account-actions').show();
-                    $('#view-account-link').attr('href', '{{ url("accounts") }}/' + node.id);
-                    $('#edit-account-link').attr('href', '{{ url("accounts") }}/' + node.id + '/edit');
-                } else {
-                    $('#account-actions').hide();
-                }
-                
                 // Highlight the selected node visually
                 $('.jstree-clicked').addClass('node-highlight');
                 setTimeout(() => {
                     $('.jstree-clicked').removeClass('node-highlight');
                 }, 1000);
+            } else {
+                console.error('No node data found for:', nodeId);
             }
         });
         
@@ -548,17 +723,20 @@
             $(this).addClass('active');
             
             if (type === 'all') {
-                // Show all nodes
-                $tree.jstree('show_all');
+                // Show all category nodes
+                $tree.jstree(true).show_all();
+                $tree.jstree(true).open_all();
             } else {
-                // Search by attribute
-                $('#accountTree li').hide();
-                $('#accountTree li[data-type="' + type + '"]').show();
-                $('#accountTree li').each(function() {
-                    if ($(this).find('li[data-type="' + type + '"]').length) {
-                        $(this).show();
-                    }
-                });
+                // First close all nodes
+                $tree.jstree(true).close_all();
+                
+                // Open and show only the selected category
+                const categoryNodeId = 'cat-' + type;
+                $tree.jstree(true).open_node(categoryNodeId);
+                
+                // Show only the nodes of this type
+                $('#accountTree > ul > li').hide();
+                $('#accountTree > ul > li[data-type="' + type + '"]').show();
             }
         });
         

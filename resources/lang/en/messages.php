@@ -175,6 +175,10 @@ return [
     'account_type_expense' => 'Expenses',
     'account_type_equity' => 'Equity',
     'delete_confirmation_account' => 'Are you sure you want to delete this?',
+    'cannot_delete_account_with_children' => 'Cannot delete this category because it contains sub-accounts. Delete the child accounts first.',
+    'cannot_delete_account_with_transactions' => 'Cannot delete this account because it has financial transactions associated with it. Accounts with transactions are protected from deletion.',
+    'error_deleting_account' => 'An error occurred while trying to delete the account. Please try again or contact system administrator.',
+    'cannot_change_account_currency_with_transactions' => 'Cannot change account currency because it has financial transactions. Please create a new account with the desired currency.',
     
     // Account create/edit
     'add_new_account_category' => 'Add New Account / Category',
@@ -825,4 +829,17 @@ return [
     'levels' => 'Levels',
     'chart_of_accounts' => 'Chart of Accounts',
     'accounts_count' => 'Accounts Count',
+
+    // Multi-currency translations
+    'filter_by_currency' => 'Filter by Currency',
+    'display_currency' => 'Display in Currency',
+    'original_currencies' => 'Original Currencies',
+    'all_accounts_in_currency' => 'All Accounts in Currency',
+    'summary_in_currency' => 'Summary in Currency',
+    'total_revenues' => 'Total Revenues',
+    'total_expenses' => 'Total Expenses',
+    'account_code' => 'Account Code',
+    'account_name' => 'Account Name',
+    'all_currencies' => 'All Currencies',
+    'in_all_currencies' => 'In All Currencies',
 ]; 

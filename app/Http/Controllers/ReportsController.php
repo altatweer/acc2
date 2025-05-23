@@ -17,11 +17,28 @@ class ReportsController extends Controller
     {
         $from = $request->input('from');
         $to = $request->input('to');
-        $accounts = \App\Models\Account::where('is_group', false)->orderBy('code')->get();
+        $selectedCurrency = $request->input('currency');
+        $displayCurrency = $request->input('display_currency');
+        
+        // جلب العملات المتاحة للفلترة
+        $currencies = \App\Models\Currency::all();
+        $defaultCurrency = \App\Models\Currency::getDefaultCode();
+        
+        // جلب الحسابات الفعلية
+        $query = \App\Models\Account::where('is_group', false);
+        
+        // فلترة الحسابات حسب العملة إذا تم اختيارها
+        if ($selectedCurrency) {
+            $query->where('currency', $selectedCurrency);
+        }
+        
+        $accounts = $query->orderBy('code')->get();
+        
         $rows = [];
         $totalDebit = 0;
         $totalCredit = 0;
         $totalBalance = 0;
+        
         foreach ($accounts as $account) {
             $query = $account->journalEntryLines();
             if ($from) {
@@ -37,42 +54,218 @@ class ReportsController extends Controller
             $debit = $query->sum('debit');
             $credit = $query->sum('credit');
             $balance = $debit - $credit;
+            
+            // تجاهل الحسابات التي ليس لديها أي حركة إذا كان الرصيد صفر
+            if ($debit == 0 && $credit == 0 && $balance == 0) {
+                continue;
+            }
+            
             $rows[] = [
                 'account' => $account,
                 'debit' => $debit,
                 'credit' => $credit,
                 'balance' => $balance,
             ];
+            
             $totalDebit += $debit;
             $totalCredit += $credit;
             $totalBalance += $balance;
         }
+        
+        // تجميع الصفوف حسب العملة
+        $rowsByCurrency = collect($rows)->groupBy(function($row) {
+            return $row['account']->currency ?? 'Unknown';
+        });
+        
+        // حساب المجاميع حسب كل عملة
+        $totalsByCurrency = [];
+        $grandTotalInDefaultCurrency = [
+            'debit' => 0,
+            'credit' => 0,
+            'balance' => 0,
+        ];
+        
+        // المجموع الكلي معروض بكل العملات المتاحة
+        $grandTotalInAllCurrencies = [];
+        
+        foreach ($rowsByCurrency as $currency => $currencyRows) {
+            $totalsByCurrency[$currency] = [
+                'debit' => $currencyRows->sum('debit'),
+                'credit' => $currencyRows->sum('credit'),
+                'balance' => $currencyRows->sum('balance'),
+            ];
+            
+            // تحويل إلى العملة الافتراضية للمجموع الكلي
+            if ($currency != $defaultCurrency) {
+                $grandTotalInDefaultCurrency['debit'] += \App\Helpers\CurrencyHelper::convert(
+                    $totalsByCurrency[$currency]['debit'], 
+                    $currency, 
+                    $defaultCurrency
+                );
+                $grandTotalInDefaultCurrency['credit'] += \App\Helpers\CurrencyHelper::convert(
+                    $totalsByCurrency[$currency]['credit'], 
+                    $currency, 
+                    $defaultCurrency
+                );
+                $grandTotalInDefaultCurrency['balance'] += \App\Helpers\CurrencyHelper::convert(
+                    $totalsByCurrency[$currency]['balance'], 
+                    $currency, 
+                    $defaultCurrency
+                );
+            } else {
+                $grandTotalInDefaultCurrency['debit'] += $totalsByCurrency[$currency]['debit'];
+                $grandTotalInDefaultCurrency['credit'] += $totalsByCurrency[$currency]['credit'];
+                $grandTotalInDefaultCurrency['balance'] += $totalsByCurrency[$currency]['balance'];
+            }
+        }
+        
+        // حساب المجموع الكلي بكل العملات المتاحة في النظام - تحسين الحساب
+        foreach ($currencies as $targetCurrency) {
+            $targetCode = $targetCurrency->code;
+            $totalDebitInCurrency = 0;
+            $totalCreditInCurrency = 0;
+            $totalBalanceInCurrency = 0;
+            
+            // جمع القيم من كل العملات بعد تحويلها للعملة المستهدفة
+            foreach ($totalsByCurrency as $currCode => $totals) {
+                if ($currCode == $targetCode) {
+                    $totalDebitInCurrency += $totals['debit'];
+                    $totalCreditInCurrency += $totals['credit'];
+                    $totalBalanceInCurrency += $totals['balance'];
+                } else {
+                    $totalDebitInCurrency += \App\Helpers\CurrencyHelper::convert(
+                        $totals['debit'], 
+                        $currCode, 
+                        $targetCode
+                    );
+                    $totalCreditInCurrency += \App\Helpers\CurrencyHelper::convert(
+                        $totals['credit'], 
+                        $currCode, 
+                        $targetCode
+                    );
+                    $totalBalanceInCurrency += \App\Helpers\CurrencyHelper::convert(
+                        $totals['balance'], 
+                        $currCode, 
+                        $targetCode
+                    );
+                }
+            }
+            
+            $grandTotalInAllCurrencies[$targetCode] = [
+                'debit' => $totalDebitInCurrency,
+                'credit' => $totalCreditInCurrency,
+                'balance' => $totalBalanceInCurrency,
+            ];
+        }
+        
+        // إعداد البيانات للعرض بعملة واحدة
+        $allRowsInDisplayCurrency = [];
+        if ($displayCurrency) {
+            foreach ($rows as $row) {
+                $originalCurrency = $row['account']->currency ?? $defaultCurrency;
+                
+                // تحويل القيم إلى العملة المختارة
+                $convertedDebit = ($originalCurrency != $displayCurrency) ? 
+                    \App\Helpers\CurrencyHelper::convert($row['debit'], $originalCurrency, $displayCurrency) : 
+                    $row['debit'];
+                
+                $convertedCredit = ($originalCurrency != $displayCurrency) ? 
+                    \App\Helpers\CurrencyHelper::convert($row['credit'], $originalCurrency, $displayCurrency) : 
+                    $row['credit'];
+                
+                $convertedBalance = ($originalCurrency != $displayCurrency) ? 
+                    \App\Helpers\CurrencyHelper::convert($row['balance'], $originalCurrency, $displayCurrency) : 
+                    $row['balance'];
+                
+                $allRowsInDisplayCurrency[] = [
+                    'account' => $row['account'],
+                    'original_currency' => $originalCurrency,
+                    'debit' => $convertedDebit,
+                    'credit' => $convertedCredit,
+                    'balance' => $convertedBalance,
+                ];
+            }
+        }
+        
         $balanceType = $request->input('balance_type');
         if ($balanceType === 'positive') {
             $rows = array_filter($rows, fn($row) => $row['balance'] > 0);
+            $rowsByCurrency = $rowsByCurrency->map(function($currencyRows) {
+                return $currencyRows->filter(fn($row) => $row['balance'] > 0);
+            })->filter(function($currencyRows) {
+                return $currencyRows->count() > 0;
+            });
+            
+            if ($displayCurrency) {
+                $allRowsInDisplayCurrency = array_filter($allRowsInDisplayCurrency, fn($row) => $row['balance'] > 0);
+            }
         } elseif ($balanceType === 'negative') {
             $rows = array_filter($rows, fn($row) => $row['balance'] < 0);
+            $rowsByCurrency = $rowsByCurrency->map(function($currencyRows) {
+                return $currencyRows->filter(fn($row) => $row['balance'] < 0);
+            })->filter(function($currencyRows) {
+                return $currencyRows->count() > 0;
+            });
+            
+            if ($displayCurrency) {
+                $allRowsInDisplayCurrency = array_filter($allRowsInDisplayCurrency, fn($row) => $row['balance'] < 0);
+            }
         }
-        return view('reports.trial_balance', compact('rows', 'from', 'to', 'totalDebit', 'totalCredit', 'totalBalance'));
+        
+        return view('reports.trial_balance', compact(
+            'rows', 
+            'rowsByCurrency',
+            'totalsByCurrency',
+            'grandTotalInDefaultCurrency',
+            'grandTotalInAllCurrencies',
+            'allRowsInDisplayCurrency',
+            'from', 
+            'to', 
+            'totalDebit', 
+            'totalCredit', 
+            'totalBalance',
+            'currencies',
+            'selectedCurrency',
+            'displayCurrency',
+            'defaultCurrency'
+        ));
     }
     public function balanceSheet(Request $request)
     {
         $from = $request->input('from');
         $to = $request->input('to');
+        $selectedCurrency = $request->input('currency');
+        $displayCurrency = $request->input('display_currency');
+        
+        // جلب العملات المتاحة للفلترة
+        $currencies = \App\Models\Currency::all();
+        $defaultCurrency = \App\Models\Currency::getDefaultCode();
+        
         $types = [
             ['ar' => 'أصل', 'en' => 'asset'],
             ['ar' => 'خصم', 'en' => 'liability'],
             ['ar' => 'حقوق ملكية', 'en' => 'equity'],
         ];
+        
         $sections = [];
+        $sectionsByCurrency = [];
+        $sectionTotalsByCurrency = [];
+        
         foreach ($types as $typeArr) {
-            $accounts = \App\Models\Account::where('is_group', false)
+            $query = \App\Models\Account::where('is_group', false)
                 ->whereHas('parent', function($q) use ($typeArr) {
                     $q->whereIn('type', [$typeArr['ar'], $typeArr['en']]);
-                })
-                ->orderBy('name')->get();
+                });
+                
+            if ($selectedCurrency) {
+                $query->where('currency', $selectedCurrency);
+            }
+            
+            $accounts = $query->orderBy('name')->get();
             $rows = [];
             $total = 0;
+            $rowsByCurrency = collect();
+            
             foreach ($accounts as $account) {
                 $query = $account->journalEntryLines();
                 if ($from) {
@@ -88,18 +281,134 @@ class ReportsController extends Controller
                 $debit = $query->sum('debit');
                 $credit = $query->sum('credit');
                 $balance = $debit - $credit;
-                $rows[] = [
+                
+                // تجاهل الحسابات التي ليس لديها رصيد
+                if ($balance == 0) {
+                    continue;
+                }
+                
+                $accountCurrency = $account->currency ?: $defaultCurrency;
+                
+                $row = [
                     'account' => $account,
                     'balance' => $balance,
+                    'currency' => $accountCurrency,
                 ];
+                
+                $rows[] = $row;
+                
+                // تجميع حسب العملة
+                if (!$rowsByCurrency->has($accountCurrency)) {
+                    $rowsByCurrency[$accountCurrency] = collect();
+                    if (!isset($sectionTotalsByCurrency[$accountCurrency])) {
+                        $sectionTotalsByCurrency[$accountCurrency] = [];
+                    }
+                    if (!isset($sectionTotalsByCurrency[$accountCurrency][$typeArr['ar']])) {
+                        $sectionTotalsByCurrency[$accountCurrency][$typeArr['ar']] = 0;
+                    }
+                }
+                
+                $rowsByCurrency[$accountCurrency]->push($row);
+                $sectionTotalsByCurrency[$accountCurrency][$typeArr['ar']] += $balance;
+                
                 $total += $balance;
             }
+            
             $sections[$typeArr['ar']] = [
                 'rows' => $rows,
                 'total' => $total,
             ];
+            
+            foreach ($rowsByCurrency as $currencyCode => $currencyRows) {
+                if (!isset($sectionsByCurrency[$currencyCode])) {
+                    $sectionsByCurrency[$currencyCode] = [];
+                }
+                
+                $sectionsByCurrency[$currencyCode][$typeArr['ar']] = [
+                    'rows' => $currencyRows,
+                    'total' => $sectionTotalsByCurrency[$currencyCode][$typeArr['ar']],
+                ];
+            }
         }
-        return view('reports.balance_sheet', compact('sections', 'from', 'to'));
+        
+        // حساب المجموع الكلي بكل العملات المتاحة
+        $balanceSheetTotalsInAllCurrencies = [];
+        
+        foreach ($currencies as $targetCurrency) {
+            $targetCode = $targetCurrency->code;
+            $assets = 0;
+            $liabilities = 0;
+            $equity = 0;
+            
+            // المجموع للأصول والخصوم وحقوق الملكية
+            foreach ($sectionTotalsByCurrency as $currCode => $sectionTotals) {
+                foreach ($sectionTotals as $sectionType => $amount) {
+                    $convertedAmount = ($currCode == $targetCode) ? 
+                        $amount : 
+                        \App\Helpers\CurrencyHelper::convert($amount, $currCode, $targetCode);
+                    
+                    if ($sectionType == 'أصل') {
+                        $assets += $convertedAmount;
+                    } elseif ($sectionType == 'خصم') {
+                        $liabilities += $convertedAmount;
+                    } elseif ($sectionType == 'حقوق ملكية') {
+                        $equity += $convertedAmount;
+                    }
+                }
+            }
+            
+            $balanceSheetTotalsInAllCurrencies[$targetCode] = [
+                'assets' => $assets,
+                'liabilities' => $liabilities,
+                'equity' => $equity,
+                'balance' => $assets - ($liabilities + $equity),
+            ];
+        }
+        
+        // إعداد البيانات للعرض بعملة واحدة
+        $sectionsInDisplayCurrency = [];
+        if ($displayCurrency) {
+            foreach ($types as $typeArr) {
+                $rowsInDisplayCurrency = [];
+                $totalInDisplayCurrency = 0;
+                
+                foreach ($sections[$typeArr['ar']]['rows'] as $row) {
+                    $originalCurrency = $row['currency'];
+                    
+                    // تحويل القيم إلى العملة المختارة
+                    $convertedBalance = ($originalCurrency != $displayCurrency) ? 
+                        \App\Helpers\CurrencyHelper::convert($row['balance'], $originalCurrency, $displayCurrency) : 
+                        $row['balance'];
+                    
+                    $rowsInDisplayCurrency[] = [
+                        'account' => $row['account'],
+                        'original_currency' => $originalCurrency,
+                        'balance' => $convertedBalance,
+                    ];
+                    
+                    $totalInDisplayCurrency += $convertedBalance;
+                }
+                
+                $sectionsInDisplayCurrency[$typeArr['ar']] = [
+                    'rows' => $rowsInDisplayCurrency,
+                    'total' => $totalInDisplayCurrency,
+                ];
+            }
+        }
+        
+        return view('reports.balance_sheet', compact(
+            'sections', 
+            'sectionsByCurrency',
+            'sectionTotalsByCurrency',
+            'balanceSheetTotalsInAllCurrencies',
+            'sectionsInDisplayCurrency',
+            'from', 
+            'to',
+            'currencies',
+            'selectedCurrency',
+            'displayCurrency',
+            'defaultCurrency'
+        ));
     }
     public function incomeStatement(Request $request)
     {
@@ -108,6 +417,7 @@ class ReportsController extends Controller
         $type = $request->input('type'); // إيراد أو مصروف أو الكل
         $parent_id = $request->input('parent_id'); // فلتر الفئة الرئيسية
         $currency = $request->input('currency'); // فلتر العملة
+        $displayCurrency = $request->input('display_currency'); // عملة العرض
 
         // جلب العملات المتاحة
         $currencies = \App\Models\Currency::all();
@@ -145,6 +455,13 @@ class ReportsController extends Controller
         $totalDebit = 0;
         $totalCredit = 0;
         $totalBalance = 0;
+        
+        // تجميع الصفوف حسب العملة
+        $rowsByCurrency = collect();
+        $revenuesByCurrency = [];
+        $expensesByCurrency = [];
+        $netByCurrency = [];
+        
         foreach ($accounts as $account) {
             $query = $account->journalEntryLines();
             if ($from) {
@@ -161,32 +478,145 @@ class ReportsController extends Controller
             $credit = $query->sum('credit');
             $balance = $debit - $credit;
             $parentType = $account->parent ? $account->parent->type : null;
+            
             // تجاهل الحسابات التي ليس لديها أي حركة
             if ($debit == 0 && $credit == 0 && $balance == 0) {
                 continue;
             }
-            $rows[] = [
+            
+            $accountCurrency = $account->currency ?: $defaultCurrency;
+            
+            $row = [
                 'account' => $account,
                 'debit' => $debit,
                 'credit' => $credit,
                 'balance' => $balance,
                 'type' => $parentType,
+                'currency' => $accountCurrency,
             ];
+            
+            $rows[] = $row;
+            
+            // إذا لم تكن العملة موجودة في المجموعة، أضف مجموعة جديدة
+            if (!$rowsByCurrency->has($accountCurrency)) {
+                $rowsByCurrency[$accountCurrency] = collect();
+                $revenuesByCurrency[$accountCurrency] = 0;
+                $expensesByCurrency[$accountCurrency] = 0;
+            }
+            
+            $rowsByCurrency[$accountCurrency]->push($row);
+            
             $totalDebit += $debit;
             $totalCredit += $credit;
             $totalBalance += $balance;
+            
             if (in_array($parentType, ['إيراد', 'revenue'])) {
                 $totalRevenue += abs($balance);
+                $revenuesByCurrency[$accountCurrency] += abs($balance);
             } elseif (in_array($parentType, ['مصروف', 'expense'])) {
                 $totalExpense += abs($balance);
+                $expensesByCurrency[$accountCurrency] += abs($balance);
             }
         }
+        
+        // حساب صافي الربح/الخسارة لكل عملة
+        foreach ($revenuesByCurrency as $curr => $revenue) {
+            $expense = $expensesByCurrency[$curr] ?? 0;
+            $netByCurrency[$curr] = $revenue - $expense;
+        }
+        
         $totalRevenue = abs($totalRevenue);
         $totalExpense = abs($totalExpense);
         $net = $totalRevenue - $totalExpense;
         
+        // المجموع الكلي معروض بكل العملات المتاحة
+        $financialResultsInAllCurrencies = [];
+        
+        // حساب المجموع الكلي بكل العملات مع الأخذ بالاعتبار تحويل قيم كل العملات
+        foreach ($currencies as $targetCurrency) {
+            $targetCode = $targetCurrency->code;
+            $totalRevenueInCurrency = 0;
+            $totalExpenseInCurrency = 0;
+            
+            // جمع القيم من كل العملات بعد تحويلها للعملة المستهدفة
+            foreach ($revenuesByCurrency as $currCode => $amount) {
+                if ($currCode == $targetCode) {
+                    $totalRevenueInCurrency += $amount;
+                } else {
+                    $totalRevenueInCurrency += \App\Helpers\CurrencyHelper::convert($amount, $currCode, $targetCode);
+                }
+            }
+            
+            foreach ($expensesByCurrency as $currCode => $amount) {
+                if ($currCode == $targetCode) {
+                    $totalExpenseInCurrency += $amount;
+                } else {
+                    $totalExpenseInCurrency += \App\Helpers\CurrencyHelper::convert($amount, $currCode, $targetCode);
+                }
+            }
+            
+            $netProfitInCurrency = $totalRevenueInCurrency - $totalExpenseInCurrency;
+            
+            $financialResultsInAllCurrencies[$targetCode] = [
+                'revenue' => $totalRevenueInCurrency,
+                'expense' => $totalExpenseInCurrency,
+                'net' => $netProfitInCurrency,
+            ];
+        }
+        
+        // إعداد البيانات للعرض بعملة واحدة
+        $allRowsInDisplayCurrency = [];
+        $revenueInDisplayCurrency = 0;
+        $expenseInDisplayCurrency = 0;
+        
+        if ($displayCurrency) {
+            foreach ($rows as $row) {
+                $originalCurrency = $row['currency'];
+                $parentType = $row['type'];
+                
+                // تحويل القيم إلى العملة المختارة
+                $convertedDebit = ($originalCurrency != $displayCurrency) ? 
+                    \App\Helpers\CurrencyHelper::convert($row['debit'], $originalCurrency, $displayCurrency) : 
+                    $row['debit'];
+                
+                $convertedCredit = ($originalCurrency != $displayCurrency) ? 
+                    \App\Helpers\CurrencyHelper::convert($row['credit'], $originalCurrency, $displayCurrency) : 
+                    $row['credit'];
+                
+                $convertedBalance = ($originalCurrency != $displayCurrency) ? 
+                    \App\Helpers\CurrencyHelper::convert($row['balance'], $originalCurrency, $displayCurrency) : 
+                    $row['balance'];
+                
+                $allRowsInDisplayCurrency[] = [
+                    'account' => $row['account'],
+                    'original_currency' => $originalCurrency,
+                    'debit' => $convertedDebit,
+                    'credit' => $convertedCredit,
+                    'balance' => $convertedBalance,
+                    'type' => $parentType,
+                ];
+                
+                if (in_array($parentType, ['إيراد', 'revenue'])) {
+                    $revenueInDisplayCurrency += abs($convertedBalance);
+                } elseif (in_array($parentType, ['مصروف', 'expense'])) {
+                    $expenseInDisplayCurrency += abs($convertedBalance);
+                }
+            }
+        }
+        
+        $netInDisplayCurrency = $revenueInDisplayCurrency - $expenseInDisplayCurrency;
+        
         return view('reports.income_statement', compact(
             'rows', 
+            'rowsByCurrency',
+            'revenuesByCurrency',
+            'expensesByCurrency',
+            'netByCurrency',
+            'financialResultsInAllCurrencies',
+            'allRowsInDisplayCurrency',
+            'revenueInDisplayCurrency',
+            'expenseInDisplayCurrency',
+            'netInDisplayCurrency',
             'from', 
             'to', 
             'type', 
@@ -197,14 +627,20 @@ class ReportsController extends Controller
             'net',
             'currencies',
             'defaultCurrency',
-            'currency'
+            'currency',
+            'displayCurrency'
         ));
     }
     public function payroll(Request $request)
     {
         $month = $request->input('month');
         $employeeName = $request->input('employee');
-        $currency = $request->input('currency');
+        $selectedCurrency = $request->input('currency');
+        $displayCurrency = $request->input('display_currency');
+        
+        // جلب العملات المتاحة للفلترة
+        $currencies = \App\Models\Currency::all();
+        $defaultCurrency = \App\Models\Currency::getDefaultCode();
         
         // استعلام مع علاقة الموظف
         $query = \App\Models\SalaryPayment::with('employee');
@@ -219,16 +655,63 @@ class ReportsController extends Controller
             });
         }
         
-        if ($currency) {
-            $query->whereHas('employee', function($q) use ($currency) {
-                $q->where('currency', $currency);
+        if ($selectedCurrency) {
+            $query->whereHas('employee', function($q) use ($selectedCurrency) {
+                $q->where('currency', $selectedCurrency);
             });
         }
         
         $rows = $query->orderBy('salary_month', 'desc')->get();
         
-        // جلب العملات المتاحة للفلترة
-        $currencies = \App\Models\Currency::all();
+        // تجميع الصفوف حسب العملة
+        $rowsByCurrency = $rows->groupBy(function($row) {
+            return $row->employee->currency ?? 'Unknown';
+        });
+        
+        // حساب المجاميع لكل عملة
+        $totalsByCurrency = [];
+        
+        foreach ($rowsByCurrency as $currencyCode => $currencyRows) {
+            $totalsByCurrency[$currencyCode] = [
+                'gross' => $currencyRows->sum('gross_salary'),
+                'allowances' => $currencyRows->sum('total_allowances'),
+                'deductions' => $currencyRows->sum('total_deductions'),
+                'net' => $currencyRows->sum('net_salary'),
+            ];
+        }
+        
+        // حساب المجموع الكلي بكل العملات المتاحة
+        $payrollTotalsInAllCurrencies = [];
+        
+        foreach ($currencies as $targetCurrency) {
+            $targetCode = $targetCurrency->code;
+            $totalGrossInCurrency = 0;
+            $totalAllowancesInCurrency = 0;
+            $totalDeductionsInCurrency = 0;
+            $totalNetInCurrency = 0;
+            
+            // جمع القيم من كل العملات بعد تحويلها للعملة المستهدفة
+            foreach ($totalsByCurrency as $currCode => $totals) {
+                if ($currCode == $targetCode) {
+                    $totalGrossInCurrency += $totals['gross'];
+                    $totalAllowancesInCurrency += $totals['allowances'];
+                    $totalDeductionsInCurrency += $totals['deductions'];
+                    $totalNetInCurrency += $totals['net'];
+                } else {
+                    $totalGrossInCurrency += \App\Helpers\CurrencyHelper::convert($totals['gross'], $currCode, $targetCode);
+                    $totalAllowancesInCurrency += \App\Helpers\CurrencyHelper::convert($totals['allowances'], $currCode, $targetCode);
+                    $totalDeductionsInCurrency += \App\Helpers\CurrencyHelper::convert($totals['deductions'], $currCode, $targetCode);
+                    $totalNetInCurrency += \App\Helpers\CurrencyHelper::convert($totals['net'], $currCode, $targetCode);
+                }
+            }
+            
+            $payrollTotalsInAllCurrencies[$targetCode] = [
+                'gross' => $totalGrossInCurrency,
+                'allowances' => $totalAllowancesInCurrency,
+                'deductions' => $totalDeductionsInCurrency,
+                'net' => $totalNetInCurrency,
+            ];
+        }
         
         // المجاميع القديمة - لا نستخدمها في العرض الجديد، لكن نحتفظ بها للتوافقية
         $totalNet = $rows->sum('net_salary');
@@ -238,6 +721,9 @@ class ReportsController extends Controller
         
         return view('reports.payroll', compact(
             'rows', 
+            'rowsByCurrency',
+            'totalsByCurrency',
+            'payrollTotalsInAllCurrencies',
             'month', 
             'employeeName', 
             'totalNet', 
@@ -245,22 +731,43 @@ class ReportsController extends Controller
             'totalAllowances', 
             'totalDeductions',
             'currencies',
-            'currency'
+            'selectedCurrency',
+            'displayCurrency',
+            'defaultCurrency'
         ));
     }
     public function expensesRevenues(Request $request)
     {
         $from = $request->input('from');
         $to = $request->input('to');
+        $selectedCurrency = $request->input('currency');
+        $displayCurrency = $request->input('display_currency');
+        
+        // جلب العملات المتاحة للفلترة
+        $currencies = \App\Models\Currency::all();
+        $defaultCurrency = \App\Models\Currency::getDefaultCode();
+        
         // جلب الحسابات الفعلية المرتبطة بفئة نوعها إيراد أو مصروف
-        $accounts = \App\Models\Account::where('is_group', false)
+        $query = \App\Models\Account::where('is_group', false)
             ->whereHas('parent', function($q) {
                 $q->whereIn('type', ['إيراد', 'مصروف', 'revenue', 'expense']);
-            })
-            ->orderBy('name')->get();
+            });
+        
+        if ($selectedCurrency) {
+            $query->where('currency', $selectedCurrency);
+        }
+        
+        $accounts = $query->orderBy('name')->get();
+        
         $rows = [];
         $totalRevenue = 0;
         $totalExpense = 0;
+        
+        // تجميع الصفوف حسب العملة
+        $rowsByCurrency = collect();
+        $revenuesByCurrency = [];
+        $expensesByCurrency = [];
+        
         foreach ($accounts as $account) {
             $query = $account->journalEntryLines();
             if ($from) {
@@ -277,24 +784,138 @@ class ReportsController extends Controller
             $credit = $query->sum('credit');
             $balance = $debit - $credit;
             $parentType = $account->parent ? $account->parent->type : null;
+            
             // تجاهل الحسابات التي ليس لديها أي حركة
             if ($debit == 0 && $credit == 0 && $balance == 0) {
                 continue;
             }
-            $rows[] = [
+            
+            $accountCurrency = $account->currency ?: $defaultCurrency;
+            
+            $row = [
                 'account' => $account,
                 'debit' => $debit,
                 'credit' => $credit,
                 'balance' => $balance,
                 'type' => $parentType,
+                'currency' => $accountCurrency,
             ];
+            
+            $rows[] = $row;
+            
+            // إذا لم تكن العملة موجودة في المجموعة، أضف مجموعة جديدة
+            if (!$rowsByCurrency->has($accountCurrency)) {
+                $rowsByCurrency[$accountCurrency] = collect();
+                $revenuesByCurrency[$accountCurrency] = 0;
+                $expensesByCurrency[$accountCurrency] = 0;
+            }
+            
+            $rowsByCurrency[$accountCurrency]->push($row);
+            
             if (in_array($parentType, ['إيراد', 'revenue'])) {
                 $totalRevenue += abs($balance);
+                $revenuesByCurrency[$accountCurrency] += abs($balance);
             } elseif (in_array($parentType, ['مصروف', 'expense'])) {
                 $totalExpense += abs($balance);
+                $expensesByCurrency[$accountCurrency] += abs($balance);
             }
         }
-        return view('reports.expenses_revenues', compact('rows', 'from', 'to', 'totalRevenue', 'totalExpense'));
+        
+        // المجموع الكلي معروض بكل العملات المتاحة
+        $financialResultsInAllCurrencies = [];
+        
+        foreach ($currencies as $targetCurrency) {
+            $targetCode = $targetCurrency->code;
+            $totalRevenueInCurrency = 0;
+            $totalExpenseInCurrency = 0;
+            
+            // جمع القيم من كل العملات بعد تحويلها للعملة المستهدفة
+            foreach ($revenuesByCurrency as $currCode => $amount) {
+                if ($currCode == $targetCode) {
+                    $totalRevenueInCurrency += $amount;
+                } else {
+                    $totalRevenueInCurrency += \App\Helpers\CurrencyHelper::convert($amount, $currCode, $targetCode);
+                }
+            }
+            
+            foreach ($expensesByCurrency as $currCode => $amount) {
+                if ($currCode == $targetCode) {
+                    $totalExpenseInCurrency += $amount;
+                } else {
+                    $totalExpenseInCurrency += \App\Helpers\CurrencyHelper::convert($amount, $currCode, $targetCode);
+                }
+            }
+            
+            $netProfitInCurrency = $totalRevenueInCurrency - $totalExpenseInCurrency;
+            
+            $financialResultsInAllCurrencies[$targetCode] = [
+                'revenue' => $totalRevenueInCurrency,
+                'expense' => $totalExpenseInCurrency,
+                'net' => $netProfitInCurrency,
+            ];
+        }
+        
+        // إعداد البيانات للعرض بعملة واحدة
+        $allRowsInDisplayCurrency = [];
+        $revenueInDisplayCurrency = 0;
+        $expenseInDisplayCurrency = 0;
+        
+        if ($displayCurrency) {
+            foreach ($rows as $row) {
+                $originalCurrency = $row['currency'];
+                $parentType = $row['type'];
+                
+                // تحويل القيم إلى العملة المختارة
+                $convertedDebit = ($originalCurrency != $displayCurrency) ? 
+                    \App\Helpers\CurrencyHelper::convert($row['debit'], $originalCurrency, $displayCurrency) : 
+                    $row['debit'];
+                
+                $convertedCredit = ($originalCurrency != $displayCurrency) ? 
+                    \App\Helpers\CurrencyHelper::convert($row['credit'], $originalCurrency, $displayCurrency) : 
+                    $row['credit'];
+                
+                $convertedBalance = ($originalCurrency != $displayCurrency) ? 
+                    \App\Helpers\CurrencyHelper::convert($row['balance'], $originalCurrency, $displayCurrency) : 
+                    $row['balance'];
+                
+                $allRowsInDisplayCurrency[] = [
+                    'account' => $row['account'],
+                    'original_currency' => $originalCurrency,
+                    'debit' => $convertedDebit,
+                    'credit' => $convertedCredit,
+                    'balance' => $convertedBalance,
+                    'type' => $parentType,
+                ];
+                
+                if (in_array($parentType, ['إيراد', 'revenue'])) {
+                    $revenueInDisplayCurrency += abs($convertedBalance);
+                } elseif (in_array($parentType, ['مصروف', 'expense'])) {
+                    $expenseInDisplayCurrency += abs($convertedBalance);
+                }
+            }
+        }
+        
+        $netInDisplayCurrency = $revenueInDisplayCurrency - $expenseInDisplayCurrency;
+        
+        return view('reports.expenses_revenues', compact(
+            'rows', 
+            'rowsByCurrency',
+            'revenuesByCurrency',
+            'expensesByCurrency',
+            'financialResultsInAllCurrencies',
+            'allRowsInDisplayCurrency',
+            'revenueInDisplayCurrency',
+            'expenseInDisplayCurrency',
+            'netInDisplayCurrency',
+            'from', 
+            'to', 
+            'totalRevenue', 
+            'totalExpense',
+            'currencies',
+            'selectedCurrency',
+            'displayCurrency',
+            'defaultCurrency'
+        ));
     }
     public function exportBalanceSheetExcel(Request $request)
     {
@@ -922,4 +1543,4 @@ class ReportsController extends Controller
             ->header('Content-Type', 'application/pdf')
             ->header('Content-Disposition', 'attachment; filename="test.pdf"');
     }
-} 
+}

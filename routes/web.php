@@ -136,11 +136,12 @@ Route::middleware(['auth'])->group(function () {
     Route::post('accounts/store-account', [AccountController::class, 'storeAccount'])->name('accounts.storeAccount');
     Route::post('accounts/next-code', [AccountController::class, 'nextCode'])->name('accounts.nextCode');
     Route::get('accounts/chart', [AccountController::class, 'chart'])->name('accounts.chart');
+    Route::get('accounts/fix-zero-codes', [AccountController::class, 'fixZeroCodes'])->name('accounts.fixZeroCodes');
+    Route::get('accounts/by-currency/{currency}', [AccountController::class, 'byCurrency']);
     Route::get('accounts/{account}/edit', [AccountController::class, 'edit'])->name('accounts.edit');
     Route::put('accounts/{account}', [AccountController::class, 'update'])->name('accounts.update');
     Route::delete('accounts/{account}', [AccountController::class, 'destroy'])->name('accounts.destroy');
     Route::get('accounts/{account}', [AccountController::class, 'show'])->name('accounts.show');
-    Route::get('accounts/by-currency/{currency}', [AccountController::class, 'byCurrency']);
 
     // Transactions
     Route::resource('transactions', TransactionController::class);
