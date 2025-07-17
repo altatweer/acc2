@@ -11,19 +11,29 @@ class Account extends Model
     use HasFactory, BelongsToTenant;
 
     protected $fillable = [
-        'name',         // اسم الحساب أو الفئة
-        'code',         // رقم الحساب المحاسبي
-        'parent_id',    // الحساب الأب
-        'type',         // نوع الحساب المحاسبي (أصل، خصم، إيراد، مصروف، رأس مال)
-        'nature',       // طبيعة الحساب (مدين/دائن)
-        'is_group',     // هل هو فئة تصنيفية أو حساب فعلي
-        'is_cash_box',  // هل هو صندوق كاش
-        'currency',     // رمز العملة للحساب
+        'tenant_id',
+        'name',
+        'code',
+        'parent_id',
+        'type',
+        'nature',
+        'is_cash_box',
+        'supports_multi_currency',
+        'default_currency',
+        'require_currency_selection',
+        'is_group',
+        'has_opening_balance',
+        'opening_balance',
+        'opening_balance_type',
+        'opening_balance_date',
+        'opening_balance_currency',
+        'opening_balance_journal_entry_id',
     ];
 
     protected $casts = [
         'is_group'    => 'boolean',
         'is_cash_box' => 'boolean',
+        'supports_multi_currency' => 'boolean',
     ];
     
     // تمكين التحميل الكسول للعلاقات
@@ -76,29 +86,38 @@ class Account extends Model
         return $this->hasMany(\App\Models\JournalEntryLine::class, 'account_id');
     }
 
-    public function balance()
+    public function balance($currency = null)
     {
-        // استخدام التخزين المؤقت لتجنب تكرار الاستعلامات
-        $cacheKey = 'account_balance_' . $this->id;
+        // إذا لم يتم تحديد العملة، استخدم عملة الحساب
+        $currency = $currency ?? $this->default_currency;
         
-        return \Cache::remember($cacheKey, 60, function () {
-            // مجموع المدين والدائن
-            $debit = $this->journalEntryLines()->sum('debit');
-            $credit = $this->journalEntryLines()->sum('credit');
-            
-            // إذا كانت طبيعة الحساب مدين: الرصيد = المدين - الدائن
-            // إذا كانت طبيعة الحساب دائن: الرصيد = الدائن - المدين
-            if ($this->nature === 'مدين' || $this->nature === 'debit') {
-                return $debit - $credit;
-            } else {
-                return $credit - $debit;
-            }
-        });
+        // تأكد من أن العملة محددة
+        if (empty($currency)) {
+            return 0;
+        }
+        
+        // مجموع المدين والدائن بعملة محددة
+        $debit = $this->journalEntryLines()
+            ->where('currency', $currency)
+            ->sum('debit');
+        $credit = $this->journalEntryLines()
+            ->where('currency', $currency)
+            ->sum('credit');
+        
+        // إذا كانت طبيعة الحساب مدين: الرصيد = المدين - الدائن
+        // إذا كانت طبيعة الحساب دائن: الرصيد = الدائن - المدين
+        if ($this->nature === 'مدين' || $this->nature === 'debit') {
+            return $debit - $credit;
+        } else {
+            return $credit - $debit;
+        }
     }
 
-    public function canWithdraw($amount)
+    public function canWithdraw($amount, $currency = null)
     {
-        return $this->balance() >= $amount;
+        // إذا لم يتم تحديد العملة، استخدم عملة الحساب
+        $currency = $currency ?? $this->default_currency;
+        return $this->balance($currency) >= $amount;
     }
 
     public function users()

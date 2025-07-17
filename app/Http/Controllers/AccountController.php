@@ -24,10 +24,66 @@ class AccountController extends Controller
         return view('accounts.index_group', compact('categories'));
     }
 
-    public function realAccounts() // عرض الحسابات الفعلية
+    public function realAccounts(Request $request) // عرض الحسابات الفعلية
     {
-        $accounts = Account::where('is_group', 0)->with('parent')->paginate(20);
-        return view('accounts.index_real', compact('accounts'));
+        // بناء استعلام الحسابات مع الفلاتر
+        $query = Account::where('is_group', 0)->with('parent');
+        
+        // تطبيق فلاتر البحث
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('code', 'like', "%{$search}%");
+            });
+        }
+        
+        if ($request->filled('type')) {
+            $query->where('type', $request->type);
+        }
+        
+        if ($request->filled('nature')) {
+            $query->where('nature', $request->nature);
+        }
+        
+        if ($request->filled('is_cash_box')) {
+            $query->where('is_cash_box', $request->is_cash_box);
+        }
+        
+        if ($request->filled('currency')) {
+            $query->where('default_currency', $request->currency);
+        }
+        
+        // الحصول على النتائج مع pagination
+        $accounts = $query->paginate(20)->appends($request->all());
+        
+        // حساب الإحصائيات الشاملة (من جميع الحسابات وليس الصفحة فقط)
+        $allAccountsQuery = Account::where('is_group', 0);
+        
+        $statistics = [
+            'total_accounts' => $allAccountsQuery->count(),
+            'asset_accounts' => $allAccountsQuery->where('type', 'asset')->count(),
+            'liability_accounts' => $allAccountsQuery->where('type', 'liability')->count(),
+            'equity_accounts' => $allAccountsQuery->where('type', 'equity')->count(),
+            'revenue_accounts' => $allAccountsQuery->where('type', 'revenue')->count(),
+            'expense_accounts' => $allAccountsQuery->where('type', 'expense')->count(),
+            'cash_box_accounts' => $allAccountsQuery->where('is_cash_box', 1)->count(),
+            'debit_accounts' => $allAccountsQuery->where('nature', 'debit')->count(),
+            'credit_accounts' => $allAccountsQuery->where('nature', 'credit')->count(),
+        ];
+        
+        // الحصول على جميع العملات المستخدمة  
+        $currencies = Account::where('is_group', 0)
+            ->whereNotNull('default_currency')
+            ->distinct()
+            ->pluck('default_currency')
+            ->sort()
+            ->values();
+        
+        // الحصول على جميع الصناديق النقدية لعرض الأرصدة
+        $allCashBoxes = Account::where('is_cash_box', 1)->get();
+        
+        return view('accounts.index_real', compact('accounts', 'statistics', 'currencies', 'allCashBoxes'));
     }
 
     public function createGroup()
@@ -138,7 +194,7 @@ class AccountController extends Controller
 
         Account::create($validated);
 
-        return redirect()->localizedRoute('accounts.index')->with('success', __('messages.created_success'));
+        return redirect()->route('accounts.index')->with('success', __('messages.created_success'));
     }
 
     public function createAccount()
@@ -157,18 +213,42 @@ class AccountController extends Controller
         // Validate including currency only for actual accounts
         $validated = $request->validate([
             'name'         => 'required|string|max:255',
-            'code'         => 'nullable|string|max:20|unique:accounts,code,NULL,id,currency,' . $request->currency,
+            'code'         => 'nullable|string|max:20|unique:accounts,code',
             'parent_id'    => 'required|exists:accounts,id',
             'nature'       => 'required|in:debit,credit',
-            'currency'     => 'required|string|max:3|exists:currencies,code',
+            
+            // validation للرصيد الافتتاحي
+            'has_opening_balance'        => 'boolean',
+            'opening_balance_amount'     => 'required_if:has_opening_balance,true|nullable|numeric|min:0',
+            'opening_balance_currency'   => 'required_if:has_opening_balance,true|nullable|string|max:3',
+            'opening_balance_type'       => 'required_if:has_opening_balance,true|nullable|in:debit,credit',
+            'opening_balance_date'       => 'required_if:has_opening_balance,true|nullable|date',
         ]);
 
         $parent = Account::find($validated['parent_id']);
 
-        $validated['type']       = $parent->type ?? 'asset';
-        $validated['is_group']   = 0;
-        // Persist cash box flag
-        $validated['is_cash_box'] = $request->boolean('is_cash_box');
+        // إعداد البيانات للحساب الجديد - نظام العملات المتعددة
+        $accountData = [
+            'name'         => $validated['name'],
+            'code'         => $validated['code'],
+            'parent_id'    => $validated['parent_id'],
+            'type'         => $parent->type ?? 'asset',
+            'nature'       => $validated['nature'],
+            'is_group'     => 0,
+            'is_cash_box'  => $request->boolean('is_cash_box'),
+            
+            // إعدادات العملات المتعددة
+            'supports_multi_currency'      => true,  // يدعم جميع العملات
+            'default_currency'             => 'IQD', // العملة الافتراضية
+            'require_currency_selection'   => false, // لا يتطلب اختيار عملة
+            
+            // إعدادات الرصيد الافتتاحي
+            'has_opening_balance'          => $request->boolean('has_opening_balance'),
+            'opening_balance'              => $request->boolean('has_opening_balance') ? ($validated['opening_balance_amount'] ?? 0) : 0,
+            'opening_balance_currency'     => $request->boolean('has_opening_balance') ? ($validated['opening_balance_currency'] ?? 'IQD') : 'IQD',
+            'opening_balance_type'         => $request->boolean('has_opening_balance') ? $validated['opening_balance_type'] : null,
+            'opening_balance_date'         => $request->boolean('has_opening_balance') ? $validated['opening_balance_date'] : null,
+        ];
 
         // تحسين توليد كود الحساب تحت الفئة: زيادة بمقدار 1
         if (empty($validated['code']) || $validated['code'] === '0000') {
@@ -197,6 +277,7 @@ class AccountController extends Controller
             }
             
             $validated['code'] = (string) $nextCode;
+            $accountData['code'] = $validated['code'];
             \Log::info('تم توليد كود جديد للحساب', [
                 'account_name' => $validated['name'],
                 'parent_id' => $validated['parent_id'],
@@ -217,9 +298,25 @@ class AccountController extends Controller
             return back()->withInput()->with('error', 'لا يمكن إنشاء حساب بكود 0000، الرجاء تحديد فئة أو كود مناسب');
         }
 
-        Account::create($validated);
+        try {
+            \DB::transaction(function() use ($accountData, $request) {
+                // إنشاء الحساب
+                $account = Account::create($accountData);
+                
+                // معالجة الرصيد الافتتاحي إذا كان موجوداً
+                if ($request->boolean('has_opening_balance') && 
+                    $accountData['opening_balance'] > 0) {
+                    
+                    $this->createOpeningBalanceEntry($account, $accountData);
+                }
+            });
 
-        return redirect()->localizedRoute('accounts.real')->with('success', __('messages.created_success'));
+            return redirect()->route('accounts.real')->with('success', __('messages.created_success'));
+            
+        } catch (\Exception $e) {
+            \Log::error('فشل في إنشاء الحساب: ' . $e->getMessage());
+            return back()->withInput()->with('error', 'فشل في إنشاء الحساب: ' . $e->getMessage());
+        }
     }
 
     public function edit(Account $account)
@@ -239,13 +336,20 @@ class AccountController extends Controller
         // Validate input based on is_group flag: 1=group (category), 0=actual account
         $validated = $request->validate([
             'name'        => 'required|string|max:255',
-            'code'        => 'nullable|string|max:20|unique:accounts,code,' . $account->id . ',id,currency,' . $request->currency,
+            'code'        => 'nullable|string|max:20|unique:accounts,code,' . $account->id,
             'parent_id'   => 'nullable|exists:accounts,id',
             'type'        => 'required_if:is_group,1|in:asset,liability,revenue,expense,equity',
             'nature'      => 'required_if:is_group,0|in:debit,credit',
             'is_cash_box' => 'required_if:is_group,0|boolean',
-            'currency'    => 'required_if:is_group,0|string|max:3|exists:currencies,code',
             'is_group'    => 'required|boolean',
+            
+            // validation للرصيد الافتتاحي
+            'has_opening_balance'        => 'boolean',
+            'edit_opening_balance'       => 'boolean',
+            'opening_balance_amount'     => 'nullable|numeric|min:0',
+            'opening_balance_currency'   => 'nullable|string|max:3',
+            'opening_balance_type'       => 'nullable|in:debit,credit',
+            'opening_balance_date'       => 'nullable|date',
         ]);
 
         // Determine cash box flag
@@ -262,31 +366,81 @@ class AccountController extends Controller
                 'is_group' => 1,
             ]);
 
-            return redirect()->localizedRoute('accounts.index')->with('success', __('messages.updated_success'));
+            return redirect()->route('accounts.index')->with('success', __('messages.updated_success'));
         }
 
+        // فحص وجود حركات مالية للحساب
+        $hasTransactions = \App\Models\JournalEntryLine::where('account_id', $account->id)->exists();
+
         // منع تغيير عملة الحساب إذا كان مرتبط بمعاملات مالية
-        if (!$account->is_group && $account->currency !== $validated['currency']) {
-            $hasJournalEntries = $account->journalEntryLines()->exists();
-            $hasTransactions = $account->transactions()->exists();
-            
-            if ($hasJournalEntries || $hasTransactions) {
+        if (!$account->is_group && $account->default_currency !== ($validated['default_currency'] ?? $account->default_currency)) {
+            if ($hasTransactions) {
                 return back()->withInput()->with('error', __('messages.cannot_change_account_currency_with_transactions'));
             }
         }
 
-        $account->update([
-            'name'        => $validated['name'],
-            'code'        => $validated['code'],
-            'parent_id'   => $validated['parent_id'],
-            'type'        => $account->parent->type ?? 'asset',
-            'nature'      => $validated['nature'],
-            'currency'    => $validated['currency'],
-            'is_cash_box' => $cashFlag,
-            'is_group'    => 0,
-        ]);
+        try {
+            \DB::transaction(function() use ($request, $account, $validated, $cashFlag, $hasTransactions) {
+                // تحديث الحساب الفعلي - نظام العملات المتعددة
+                $updateData = [
+                    'name'        => $validated['name'],
+                    'code'        => $validated['code'],
+                    'parent_id'   => $validated['parent_id'],
+                    'type'        => $account->parent->type ?? 'asset',
+                    'nature'      => $validated['nature'],
+                    'is_cash_box' => $cashFlag,
+                    'is_group'    => 0,
+                    
+                    // ضمان دعم العملات المتعددة
+                    'supports_multi_currency'      => true,
+                    'default_currency'             => $account->default_currency ?? 'IQD',
+                    'require_currency_selection'   => false,
+                ];
 
-        return redirect()->localizedRoute('accounts.real')->with('success', __('messages.updated_success'));
+                // معالجة الرصيد الافتتاحي
+                if (!$hasTransactions) {
+                    // إضافة رصيد افتتاحي جديد
+                    if ($request->boolean('has_opening_balance') && !$account->has_opening_balance) {
+                        if ($validated['opening_balance_amount'] > 0) {
+                            $updateData['has_opening_balance'] = true;
+                            $updateData['opening_balance'] = $validated['opening_balance_amount'];
+                            $updateData['opening_balance_currency'] = $validated['opening_balance_currency'] ?? 'IQD';
+                            $updateData['opening_balance_type'] = $validated['opening_balance_type'];
+                            $updateData['opening_balance_date'] = $validated['opening_balance_date'];
+                        }
+                    }
+                    // تعديل رصيد افتتاحي موجود
+                    elseif ($request->boolean('edit_opening_balance') && $account->has_opening_balance) {
+                        if ($validated['opening_balance_amount'] > 0) {
+                            $updateData['opening_balance'] = $validated['opening_balance_amount'];
+                            $updateData['opening_balance_currency'] = $validated['opening_balance_currency'] ?? $account->opening_balance_currency ?? 'IQD';
+                            $updateData['opening_balance_type'] = $validated['opening_balance_type'];
+                            $updateData['opening_balance_date'] = $validated['opening_balance_date'];
+                        }
+                    }
+                }
+
+                $account->update($updateData);
+
+                // معالجة القيود المحاسبية للرصيد الافتتاحي
+                if (!$hasTransactions) {
+                    // إنشاء قيد جديد للرصيد الافتتاحي
+                    if ($request->boolean('has_opening_balance') && !$account->has_opening_balance && $validated['opening_balance_amount'] > 0) {
+                        $this->createOpeningBalanceEntry($account, $updateData);
+                    }
+                    // تعديل القيد الموجود
+                    elseif ($request->boolean('edit_opening_balance') && $account->has_opening_balance && $validated['opening_balance_amount'] > 0) {
+                        $this->updateOpeningBalanceEntry($account, $updateData);
+                    }
+                }
+            });
+
+            return redirect()->route('accounts.real')->with('success', __('messages.updated_success'));
+            
+        } catch (\Exception $e) {
+            \Log::error('فشل في تحديث الحساب: ' . $e->getMessage());
+            return back()->withInput()->with('error', 'فشل في تحديث الحساب: ' . $e->getMessage());
+        }
     }
 
     public function destroy(Account $account)
@@ -338,23 +492,35 @@ class AccountController extends Controller
     /**
      * عرض تفاصيل الحساب بما في ذلك الأرصدة المحسوبة من المعاملات.
      */
-    public function show(Account $account)
+    public function show(Account $account, Request $request)
     {
         $defaultCurrency = Currency::where('is_default', true)->first();
+        $selectedCurrency = $request->get('currency', $account->default_currency);
 
-        // جلب الحركات من القيود الجديدة فقط بعملة الحساب
-        $lines = $account->journalEntryLines()
-            ->where('currency', $account->currency)
+        // جلب الحركات من القيود الجديدة مع إمكانية فلترة حسب العملة
+        $linesQuery = $account->journalEntryLines()
             ->with('journalEntry')
-            ->orderBy('created_at')
-            ->get();
+            ->orderBy('created_at');
+            
+        // إذا تم تحديد عملة معينة، فلتر حسب العملة
+        if ($selectedCurrency) {
+            $linesQuery->where('currency', $selectedCurrency);
+        }
+        
+        $lines = $linesQuery->get();
 
-        // حساب الرصيد فقط بعملة الحساب
-        $balance = $lines->reduce(function($carry, $line) {
-            return $carry + $line->debit - $line->credit;
-        }, 0);
+        // حساب الرصيد حسب العملة المختارة أو العملة الافتراضية
+        $balance = $account->balance($selectedCurrency ?: $account->default_currency);
 
-        return view('accounts.show', compact('account', 'defaultCurrency', 'lines', 'balance'));
+        // جلب جميع العملات المتاحة في النظام
+        $allCurrencies = Currency::where('is_active', true)->pluck('code');
+        
+        // إذا لم تكن هناك عملات نشطة، استخدم قائمة افتراضية
+        if ($allCurrencies->isEmpty()) {
+            $allCurrencies = collect(['IQD', 'USD', 'EUR']);
+        }
+
+        return view('accounts.show', compact('account', 'defaultCurrency', 'lines', 'balance', 'allCurrencies', 'selectedCurrency'));
     }
 
     /**
@@ -365,18 +531,25 @@ class AccountController extends Controller
         $user = auth()->user();
         if ($user->isSuperAdmin() || $user->hasRole('admin')) {
             $cashAccounts = Account::where('is_cash_box', 1)
-                ->where('currency', $currency)
-                ->get(['id', 'code', 'name']);
+                ->where('default_currency', $currency)
+                ->get(['id', 'code', 'name', 'default_currency']);
         } else {
             $cashAccounts = $user->cashBoxes()
                 ->where('is_cash_box', 1)
-                ->where('currency', $currency)
-                ->select('accounts.id', 'accounts.code', 'accounts.name')
+                ->where('default_currency', $currency)
+                ->select('accounts.id', 'accounts.code', 'accounts.name', 'accounts.default_currency')
                 ->get();
         }
+        
+        // إضافة رصيد كل حساب
+        $cashAccounts = $cashAccounts->map(function($account) use ($currency) {
+            $account->balance = $account->balance($currency);
+            return $account;
+        });
+        
         $targetAccounts = Account::where('is_group', 0)
             ->where('is_cash_box', 0)
-            ->where('currency', $currency)
+            ->where('default_currency', $currency)
             ->get(['id', 'code', 'name']);
         return response()->json(compact('cashAccounts', 'targetAccounts'));
     }
@@ -610,5 +783,203 @@ class AccountController extends Controller
         }
         
         return back()->with('success', $message);
+    }
+
+    /**
+     * Get account balance for AJAX requests
+     */
+    public function getBalance(Account $account)
+    {
+        // جلب العملة من الطلب أو استخدام عملة الحساب الافتراضية
+        $currency = request('currency', $account->default_currency);
+        $balance = $account->balance($currency);
+        
+        return response()->json([
+            'balance' => $balance,
+            'currency' => $currency,
+            'formatted_balance' => number_format($balance, 2) . ' ' . $currency
+        ]);
+    }
+
+    /**
+     * إنشاء القيد المحاسبي للرصيد الافتتاحي
+     */
+    private function createOpeningBalanceEntry(Account $account, array $accountData)
+    {
+        // الحصول على حساب الأرصدة الافتتاحية
+        $openingBalanceAccountId = \App\Models\AccountingSetting::where('key', 'opening_balance_account')
+            ->value('value');
+        
+        if (!$openingBalanceAccountId) {
+            throw new \Exception('لم يتم العثور على حساب الأرصدة الافتتاحية في إعدادات النظام');
+        }
+        
+        $openingBalanceAccount = Account::find($openingBalanceAccountId);
+        if (!$openingBalanceAccount) {
+            throw new \Exception('حساب الأرصدة الافتتاحية غير موجود');
+        }
+
+        // إنشاء القيد المحاسبي
+        $journalEntry = \App\Models\JournalEntry::create([
+            'date' => $accountData['opening_balance_date'],
+            'description' => 'رصيد افتتاحي للحساب: ' . $account->name,
+            'created_by' => auth()->id(),
+            'currency' => $accountData['opening_balance_currency'],
+            'exchange_rate' => 1,
+            'total_debit' => $accountData['opening_balance'],
+            'total_credit' => $accountData['opening_balance'],
+            'tenant_id' => $account->tenant_id,
+        ]);
+
+        // إنشاء خطوط القيد حسب نوع الرصيد
+        if ($accountData['opening_balance_type'] === 'debit') {
+            // رصيد مدين: مدين الحساب، دائن الأرصدة الافتتاحية
+            
+            // خط مدين: الحساب الجديد
+            $journalEntry->lines()->create([
+                'account_id' => $account->id,
+                'description' => 'رصيد افتتاحي مدين',
+                'debit' => $accountData['opening_balance'],
+                'credit' => 0,
+                'currency' => $accountData['opening_balance_currency'],
+                'exchange_rate' => 1,
+            ]);
+            
+            // خط دائن: حساب الأرصدة الافتتاحية
+            $journalEntry->lines()->create([
+                'account_id' => $openingBalanceAccount->id,
+                'description' => 'رصيد افتتاحي للحساب: ' . $account->name,
+                'debit' => 0,
+                'credit' => $accountData['opening_balance'],
+                'currency' => $accountData['opening_balance_currency'],
+                'exchange_rate' => 1,
+            ]);
+            
+        } else {
+            // رصيد دائن: مدين الأرصدة الافتتاحية، دائن الحساب
+            
+            // خط مدين: حساب الأرصدة الافتتاحية
+            $journalEntry->lines()->create([
+                'account_id' => $openingBalanceAccount->id,
+                'description' => 'رصيد افتتاحي للحساب: ' . $account->name,
+                'debit' => $accountData['opening_balance'],
+                'credit' => 0,
+                'currency' => $accountData['opening_balance_currency'],
+                'exchange_rate' => 1,
+            ]);
+            
+            // خط دائن: الحساب الجديد
+            $journalEntry->lines()->create([
+                'account_id' => $account->id,
+                'description' => 'رصيد افتتاحي دائن',
+                'debit' => 0,
+                'credit' => $accountData['opening_balance'],
+                'currency' => $accountData['opening_balance_currency'],
+                'exchange_rate' => 1,
+            ]);
+        }
+
+        // ربط القيد بالحساب
+        $account->update([
+            'opening_balance_journal_entry_id' => $journalEntry->id
+        ]);
+
+        \Log::info('تم إنشاء قيد الرصيد الافتتاحي', [
+            'account_id' => $account->id,
+            'account_name' => $account->name,
+            'journal_entry_id' => $journalEntry->id,
+            'opening_balance' => $accountData['opening_balance'],
+            'opening_balance_type' => $accountData['opening_balance_type']
+        ]);
+    }
+
+    /**
+     * إنشاء القيد المحاسبي للرصيد الافتتاحي (تحديث)
+     */
+    private function updateOpeningBalanceEntry(Account $account, array $accountData)
+    {
+        // الحصول على القيد الحالي
+        $journalEntry = $account->openingBalanceJournalEntry;
+
+        if (!$journalEntry) {
+            \Log::error('لم يتم العثور على قيد الرصيد الافتتاحي الموجود للحساب', [
+                'account_id' => $account->id,
+                'account_name' => $account->name
+            ]);
+            return; // لا يمكن تحديث قيد غير موجود
+        }
+
+        // تحديث خطوط القيد حسب نوع الرصيد
+        if ($accountData['opening_balance_type'] === 'debit') {
+            // رصيد مدين: مدين الحساب، دائن الأرصدة الافتتاحية
+            
+            // خط مدين: الحساب الجديد
+            $journalEntry->lines()->updateOrCreate(
+                ['account_id' => $account->id],
+                [
+                    'description' => 'رصيد افتتاحي مدين',
+                    'debit' => $accountData['opening_balance'],
+                    'credit' => 0,
+                    'currency' => $accountData['opening_balance_currency'],
+                    'exchange_rate' => 1,
+                ]
+            );
+            
+            // خط دائن: حساب الأرصدة الافتتاحية
+            $journalEntry->lines()->updateOrCreate(
+                ['account_id' => $account->openingBalanceAccount->id],
+                [
+                    'description' => 'رصيد افتتاحي للحساب: ' . $account->name,
+                    'debit' => 0,
+                    'credit' => $accountData['opening_balance'],
+                    'currency' => $accountData['opening_balance_currency'],
+                    'exchange_rate' => 1,
+                ]
+            );
+            
+        } else {
+            // رصيد دائن: مدين الأرصدة الافتتاحية، دائن الحساب
+            
+            // خط مدين: حساب الأرصدة الافتتاحية
+            $journalEntry->lines()->updateOrCreate(
+                ['account_id' => $account->openingBalanceAccount->id],
+                [
+                    'description' => 'رصيد افتتاحي للحساب: ' . $account->name,
+                    'debit' => $accountData['opening_balance'],
+                    'credit' => 0,
+                    'currency' => $accountData['opening_balance_currency'],
+                    'exchange_rate' => 1,
+                ]
+            );
+            
+            // خط دائن: الحساب الجديد
+            $journalEntry->lines()->updateOrCreate(
+                ['account_id' => $account->id],
+                [
+                    'description' => 'رصيد افتتاحي دائن',
+                    'debit' => 0,
+                    'credit' => $accountData['opening_balance'],
+                    'currency' => $accountData['opening_balance_currency'],
+                    'exchange_rate' => 1,
+                ]
+            );
+        }
+
+        // تحديث التاريخ والمبلغ إذا كان مطلوباً
+        if ($accountData['opening_balance_date']) {
+            $journalEntry->update(['date' => $accountData['opening_balance_date']]);
+        }
+        if ($accountData['opening_balance_amount']) {
+            $journalEntry->update(['total_debit' => $accountData['opening_balance_amount']]);
+            $journalEntry->update(['total_credit' => $accountData['opening_balance_amount']]);
+        }
+
+        \Log::info('تم تحديث قيد الرصيد الافتتاحي', [
+            'account_id' => $account->id,
+            'account_name' => $account->name,
+            'journal_entry_id' => $journalEntry->id,
+            'opening_balance' => $accountData['opening_balance'],
+            'opening_balance_type' => $accountData['opening_balance_type']
+        ]);
     }
 }
