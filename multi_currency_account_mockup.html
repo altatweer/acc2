@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نموذج الحساب متعدد العملات</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8f9fa; }
+        .account-card { background: white; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        .currency-tab { border-radius: 10px; transition: all 0.3s; }
+        .currency-tab.active { background: linear-gradient(45deg, #007bff, #0056b3); color: white; }
+        .balance-display { font-size: 1.8rem; font-weight: bold; }
+        .currency-badge { background: linear-gradient(45deg, #28a745, #20c997); color: white; }
+        .operation-btn { border-radius: 10px; margin: 5px; }
+        .statement-row:hover { background-color: #f8f9fa; }
+        .multi-currency-indicator { 
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+            border-radius: 20px;
+            padding: 5px 15px;
+            font-size: 0.85rem;
+        }
+        .progress-balance { height: 8px; border-radius: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2><i class="fas fa-university text-primary"></i> إدارة الحسابات</h2>
+                <span class="multi-currency-indicator">
+                    <i class="fas fa-globe"></i> متعدد العملات
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Account Info Card -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="account-card p-4">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <h3 class="text-primary mb-1">
+                            <i class="fas fa-cash-register"></i> الصندوق الرئيسي
+                        </h3>
+                        <p class="text-muted mb-2">
+                            <strong>رقم الحساب:</strong> 1001-MC 
+                            <span class="badge bg-success ms-2">نشط</span>
+                        </p>
+                        <p class="text-muted mb-0">
+                            <i class="fas fa-coins"></i> يدعم: USD, IQD, EUR, GBP
+                        </p>
+                    </div>
+                    <div class="col-md-6 text-md-end">
+                        <div class="d-flex justify-content-md-end flex-wrap">
+                            <button class="btn btn-primary operation-btn">
+                                <i class="fas fa-plus"></i> إيداع
+                            </button>
+                            <button class="btn btn-warning operation-btn">
+                                <i class="fas fa-minus"></i> سحب
+                            </button>
+                            <button class="btn btn-info operation-btn">
+                                <i class="fas fa-exchange-alt"></i> تحويل
+                            </button>
+                            <button class="btn btn-secondary operation-btn">
+                                <i class="fas fa-chart-line"></i> تقرير
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Currency Tabs -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="account-card p-3">
+                <div class="d-flex flex-wrap gap-2 mb-3">
+                    <button class="btn currency-tab active" data-currency="USD">
+                        <i class="fas fa-dollar-sign"></i> USD
+                    </button>
+                    <button class="btn currency-tab" data-currency="IQD">
+                        <i class="fas fa-coins"></i> IQD
+                    </button>
+                    <button class="btn currency-tab" data-currency="EUR">
+                        <i class="fas fa-euro-sign"></i> EUR
+                    </button>
+                    <button class="btn currency-tab" data-currency="GBP">
+                        <i class="fas fa-pound-sign"></i> GBP
+                    </button>
+                    <button class="btn btn-outline-success">
+                        <i class="fas fa-plus"></i> إضافة عملة
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Current Balance Display -->
+    <div class="row mb-4">
+        <div class="col-lg-8">
+            <div class="account-card p-4">
+                <div id="currency-display">
+                    <!-- USD Display (Active) -->
+                    <div class="currency-content" data-currency="USD">
+                        <div class="row align-items-center mb-3">
+                            <div class="col-md-6">
+                                <h4>الرصيد الحالي - دولار أمريكي</h4>
+                                <div class="balance-display text-success">
+                                    $15,750.50
+                                </div>
+                                <small class="text-muted">آخر تحديث: منذ 5 دقائق</small>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="text-md-end">
+                                    <p class="mb-1"><strong>سعر الصرف:</strong> 1420.00 IQD</p>
+                                    <p class="mb-1"><strong>المقابل بالدينار:</strong> 22,365,710 IQD</p>
+                                    <div class="progress progress-balance">
+                                        <div class="progress-bar bg-success" style="width: 75%"></div>
+                                    </div>
+                                    <small class="text-muted">75% من الحد الأقصى</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Quick Stats -->
+                        <div class="row text-center">
+                            <div class="col-md-3">
+                                <div class="p-3 bg-light rounded">
+                                    <h6 class="text-success mb-1">$8,500</h6>
+                                    <small class="text-muted">إجمالي الواردات</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="p-3 bg-light rounded">
+                                    <h6 class="text-danger mb-1">$3,200</h6>
+                                    <small class="text-muted">إجمالي المصروفات</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="p-3 bg-light rounded">
+                                    <h6 class="text-info mb-1">42</h6>
+                                    <small class="text-muted">عدد المعاملات</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="p-3 bg-light rounded">
+                                    <h6 class="text-warning mb-1">$750</h6>
+                                    <small class="text-muted">متوسط المعاملة</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Summary -->
+        <div class="col-lg-4">
+            <div class="account-card p-4">
+                <h5 class="mb-3">ملخص جميع العملات</h5>
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="currency-badge badge">USD</span>
+                        <strong>$15,750.50</strong>
+                    </div>
+                    <div class="progress progress-balance">
+                        <div class="progress-bar" style="width: 40%"></div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="currency-badge badge">IQD</span>
+                        <strong>5,680,000 د.ع</strong>
+                    </div>
+                    <div class="progress progress-balance">
+                        <div class="progress-bar bg-warning" style="width: 30%"></div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="currency-badge badge">EUR</span>
+                        <strong>€2,450.00</strong>
+                    </div>
+                    <div class="progress progress-balance">
+                        <div class="progress-bar bg-info" style="width: 20%"></div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="currency-badge badge">GBP</span>
+                        <strong>£890.75</strong>
+                    </div>
+                    <div class="progress progress-balance">
+                        <div class="progress-bar bg-secondary" style="width: 10%"></div>
+                    </div>
+                </div>
+                
+                <hr>
+                <div class="text-center">
+                    <h6 class="text-primary">إجمالي القيمة (بالدينار)</h6>
+                    <h4 class="text-success">31,845,230 د.ع</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Transactions -->
+    <div class="row">
+        <div class="col-12">
+            <div class="account-card p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5><i class="fas fa-history"></i> آخر المعاملات - USD</h5>
+                    <div>
+                        <button class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-filter"></i> فلترة
+                        </button>
+                        <button class="btn btn-sm btn-outline-success">
+                            <i class="fas fa-download"></i> تصدير
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>التاريخ</th>
+                                <th>النوع</th>
+                                <th>الوصف</th>
+                                <th>المبلغ</th>
+                                <th>الرصيد</th>
+                                <th>العملة</th>
+                                <th>الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="statement-row">
+                                <td>2025-01-15</td>
+                                <td><span class="badge bg-success">إيداع</span></td>
+                                <td>إيداع نقدي من العميل أحمد محمد</td>
+                                <td class="text-success">+$2,500.00</td>
+                                <td>$15,750.50</td>
+                                <td><span class="currency-badge badge">USD</span></td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-info">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr class="statement-row">
+                                <td>2025-01-14</td>
+                                <td><span class="badge bg-warning">سحب</span></td>
+                                <td>دفع فاتورة مورد شركة التطوير</td>
+                                <td class="text-danger">-$800.00</td>
+                                <td>$13,250.50</td>
+                                <td><span class="currency-badge badge">USD</span></td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-info">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr class="statement-row">
+                                <td>2025-01-13</td>
+                                <td><span class="badge bg-info">تحويل</span></td>
+                                <td>تحويل من حساب EUR</td>
+                                <td class="text-success">+$1,200.00</td>
+                                <td>$14,050.50</td>
+                                <td><span class="currency-badge badge">USD</span></td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-info">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr class="statement-row">
+                                <td>2025-01-12</td>
+                                <td><span class="badge bg-success">إيداع</span></td>
+                                <td>إيراد من مبيعات اليوم</td>
+                                <td class="text-success">+$3,750.00</td>
+                                <td>$12,850.50</td>
+                                <td><span class="currency-badge badge">USD</span></td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-info">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="text-center mt-3">
+                    <button class="btn btn-outline-primary">
+                        <i class="fas fa-list"></i> عرض كشف حساب كامل
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="account-card p-4">
+                <h5 class="mb-3"><i class="fas fa-bolt"></i> عمليات سريعة</h5>
+                <div class="row">
+                    <div class="col-md-3 mb-2">
+                        <button class="btn btn-success w-100">
+                            <i class="fas fa-plus-circle"></i><br>
+                            إيداع سريع
+                        </button>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <button class="btn btn-warning w-100">
+                            <i class="fas fa-minus-circle"></i><br>
+                            سحب سريع
+                        </button>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <button class="btn btn-info w-100">
+                            <i class="fas fa-exchange-alt"></i><br>
+                            تحويل عملات
+                        </button>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <button class="btn btn-secondary w-100">
+                            <i class="fas fa-cog"></i><br>
+                            إعدادات الحساب
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+<script>
+// Currency Tab Switching
+document.querySelectorAll('.currency-tab').forEach(tab => {
+    tab.addEventListener('click', function() {
+        // Remove active class from all tabs
+        document.querySelectorAll('.currency-tab').forEach(t => t.classList.remove('active'));
+        // Add active class to clicked tab
+        this.classList.add('active');
+        
+        // Update display based on currency
+        const currency = this.dataset.currency;
+        updateCurrencyDisplay(currency);
+    });
+});
+
+function updateCurrencyDisplay(currency) {
+    const displays = {
+        'USD': {
+            balance: '$15,750.50',
+            equivalent: '22,365,710 د.ع',
+            rate: '1420.00 IQD',
+            income: '$8,500',
+            expense: '$3,200',
+            transactions: '42',
+            average: '$750'
+        },
+        'IQD': {
+            balance: '5,680,000 د.ع',
+            equivalent: '$4,000.00',
+            rate: '1.00 د.ع',
+            income: '12,100,000 د.ع',
+            expense: '4,550,000 د.ع',
+            transactions: '38',
+            average: '149,500 د.ع'
+        },
+        'EUR': {
+            balance: '€2,450.00',
+            equivalent: '3,479,000 د.ع',
+            rate: '1520.00 IQD',
+            income: '€3,200',
+            expense: '€950',
+            transactions: '15',
+            average: '€163'
+        },
+        'GBP': {
+            balance: '£890.75',
+            equivalent: '1,603,750 د.ع',
+            rate: '1800.00 IQD',
+            income: '£1,200',
+            expense: '£450',
+            transactions: '8',
+            average: '£111'
+        }
+    };
+    
+    const data = displays[currency];
+    if (data) {
+        document.querySelector('.balance-display').textContent = data.balance;
+        document.querySelector('.balance-display').parentElement.querySelector('h4').textContent = 
+            `الرصيد الحالي - ${getCurrencyName(currency)}`;
+    }
+}
+
+function getCurrencyName(currency) {
+    const names = {
+        'USD': 'دولار أمريكي',
+        'IQD': 'دينار عراقي', 
+        'EUR': 'يورو أوروبي',
+        'GBP': 'جنيه إسترليني'
+    };
+    return names[currency] || currency;
+}
+
+// Animation for progress bars
+document.addEventListener('DOMContentLoaded', function() {
+    const progressBars = document.querySelectorAll('.progress-bar');
+    progressBars.forEach(bar => {
+        const width = bar.style.width;
+        bar.style.width = '0%';
+        setTimeout(() => {
+            bar.style.transition = 'width 1s ease-in-out';
+            bar.style.width = width;
+        }, 500);
+    });
+});
+</script>
+
+</body>
+</html> 

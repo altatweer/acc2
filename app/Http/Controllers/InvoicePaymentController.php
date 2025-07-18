@@ -22,117 +22,210 @@ class InvoicePaymentController extends Controller
 
     public function store(Request $request)
     {
+        // Debugging - طباعة البيانات المرسلة
+        \Log::info('Invoice Payment Request Data:', $request->all());
+        
         $validated = $request->validate([
             'invoice_id' => 'required|exists:invoices,id',
             'cash_account_id' => 'required|exists:accounts,id',
+            'payment_currency' => 'required|exists:currencies,code',
             'payment_amount' => 'required|numeric|min:0.01',
             'exchange_rate' => 'required|numeric|min:0.000001',
             'date' => 'required|date',
         ]);
 
-        // تحقق من مطابقة العملة
-        $invoice = \App\Models\Invoice::findOrFail($validated['invoice_id']);
-        $cashAccount = \App\Models\Account::findOrFail($validated['cash_account_id']);
-        if ($cashAccount->currency !== $invoice->currency) {
-            throw \Illuminate\Validation\ValidationException::withMessages([
-                'cash_account_id' => ['عملة الصندوق يجب أن تطابق عملة الفاتورة.']
-            ]);
-        }
+        \Log::info('Validated Data:', $validated);
+
+        $invoice = Invoice::findOrFail($validated['invoice_id']);
+        $cashAccount = Account::findOrFail($validated['cash_account_id']);
+        $paymentCurrency = $validated['payment_currency'];
 
         // منع السداد إذا كانت الفاتورة ملغية أو مسودة أو مدفوعة بالكامل
         if (!in_array($invoice->status, ['unpaid', 'partial'])) {
-            return back()->with('error', __('messages.error_general'));
+            return back()->with('error', 'لا يمكن السداد على هذه الفاتورة في الحالة الحالية.');
         }
+
+        // حساب المبلغ المحول إلى عملة الفاتورة
+        $paymentAmount = $validated['payment_amount']; // المبلغ بعملة السداد المختارة
+        $exchangeRate = $validated['exchange_rate'];
+        
+        if ($paymentCurrency === $invoice->currency) {
+            // نفس العملة - لا حاجة للتحويل
+            $convertedAmount = $paymentAmount;
+            $exchangeRate = 1.0;
+        } else {
+            // عملات مختلفة - حساب المبلغ المحول بناءً على اتجاه التحويل
+            if ($paymentCurrency === 'IQD' && $invoice->currency === 'USD') {
+                // السداد بالدينار والفاتورة بالدولار: المبلغ ÷ السعر
+                $convertedAmount = $paymentAmount / $exchangeRate;
+            } else if ($paymentCurrency === 'USD' && $invoice->currency === 'IQD') {
+                // السداد بالدولار والفاتورة بالدينار: المبلغ × (1/السعر)
+                $convertedAmount = $paymentAmount * (1 / $exchangeRate);
+            } else {
+                // للعملات الأخرى - الطريقة العادية
+                $convertedAmount = $paymentAmount * $exchangeRate;
+            }
+        }
+
+        \Log::info('Conversion calculation:', [
+            'payment_currency' => $paymentCurrency,
+            'invoice_currency' => $invoice->currency,
+            'payment_amount' => $paymentAmount,
+            'exchange_rate' => $exchangeRate,
+            'converted_amount' => $convertedAmount
+        ]);
 
         // تحقق من عدم تجاوز السداد لإجمالي الفاتورة
         $paidSoFar = \App\Models\Transaction::where('invoice_id', $invoice->id)
             ->where('type', 'receipt')
             ->sum('amount');
         $remaining = $invoice->total - $paidSoFar;
-        if ($validated['payment_amount'] > $remaining) {
-            throw \Illuminate\Validation\ValidationException::withMessages([
-                'payment_amount' => ['المبلغ المدفوع يتجاوز المتبقي على الفاتورة.']
+        
+        \Log::info('Payment validation:', [
+            'invoice_total' => $invoice->total,
+            'paid_so_far' => $paidSoFar,
+            'remaining' => $remaining,
+            'converted_amount' => $convertedAmount,
+            'will_exceed' => $convertedAmount > $remaining
+        ]);
+        
+        if ($convertedAmount > $remaining) {
+            \Log::error('Payment exceeds remaining amount');
+            return back()->withInput()->withErrors([
+                'payment_amount' => 'المبلغ المحول (' . number_format($convertedAmount, 2) . ' ' . $invoice->currency . ') يتجاوز المتبقي على الفاتورة (' . number_format($remaining, 2) . ' ' . $invoice->currency . ').'
             ]);
         }
 
-        DB::transaction(function () use ($validated) {
-            $invoice = Invoice::findOrFail($validated['invoice_id']);
-            $cashAccount = Account::findOrFail($validated['cash_account_id']);
-            // Create receipt voucher
-            $voucher = Voucher::create([
-                'voucher_number' => $this->generateVoucherNumber(),
-                'type' => 'receipt',
-                'date' => $validated['date'],
-                'currency' => $cashAccount->currency,
-                'exchange_rate' => $validated['exchange_rate'],
-                'description' => __('messages.invoice_payment_desc', ['number' => $invoice->invoice_number]),
-                'recipient_name' => $invoice->invoice_number,
-                'created_by' => auth()->id(),
-                'invoice_id' => $invoice->id,
-            ]);
-            $amount = $validated['payment_amount'];
-            // إنشاء قيد محاسبي مالي (مدين: الصندوق/البنك، دائن: حساب العملاء الافتراضي حسب عملة الفاتورة)
-            $receivablesAccountId = \App\Models\AccountingSetting::get('default_customers_account', $invoice->currency);
-            $lines = [
-                [
+        // ملاحظة: لا نتحقق من رصيد الصندوق في فواتير المبيعات
+        // لأن العميل يدفع لنا (المال يدخل للصندوق وليس يخرج منه)
+
+        \Log::info('Starting database transaction...');
+
+        try {
+            DB::transaction(function () use ($validated, $invoice, $cashAccount, $paymentAmount, $convertedAmount, $exchangeRate, $paymentCurrency) {
+                \Log::info('Inside transaction - creating voucher...');
+                
+                // Create receipt voucher
+                $voucher = Voucher::create([
+                    'voucher_number' => $this->generateVoucherNumber(),
+                    'type' => 'receipt',
+                    'date' => $validated['date'],
+                    'currency' => $paymentCurrency,
+                    'exchange_rate' => $exchangeRate,
+                    'description' => 'سداد فاتورة رقم ' . $invoice->invoice_number,
+                    'recipient_name' => $invoice->customer->name,
+                    'created_by' => auth()->id(),
+                    'invoice_id' => $invoice->id,
+                ]);
+
+                \Log::info('Voucher created successfully', ['voucher_id' => $voucher->id]);
+
+                // إنشاء قيد محاسبي مالي
+                $receivablesAccountId = $invoice->customer->account_id;
+                
+                \Log::info('Creating journal entry lines...', [
+                    'cash_account_id' => $cashAccount->id,
+                    'receivables_account_id' => $receivablesAccountId,
+                    'payment_amount' => $paymentAmount,
+                    'converted_amount' => $convertedAmount
+                ]);
+                
+                $lines = [
+                    [
+                        'account_id' => $cashAccount->id,
+                        'description' => 'تحصيل نقدي من فاتورة ' . $invoice->invoice_number,
+                        'debit' => $paymentAmount,
+                        'credit' => 0,
+                        'currency' => $paymentCurrency,
+                        'exchange_rate' => $paymentCurrency === $invoice->currency ? 1.0 : $exchangeRate,
+                    ],
+                    [
+                        'account_id' => $receivablesAccountId,
+                        'description' => 'سداد مستحقات فاتورة ' . $invoice->invoice_number,
+                        'debit' => 0,
+                        'credit' => $convertedAmount,
+                        'currency' => $invoice->currency,
+                        'exchange_rate' => 1.0, // القيد بعملة الفاتورة الأصلية
+                    ],
+                ];
+                
+                // إنشاء القيد المحاسبي
+                $journalCurrency = $paymentCurrency === $invoice->currency ? $paymentCurrency : 'MIX';
+                $isMultiCurrency = $paymentCurrency !== $invoice->currency;
+                
+                $journal = \App\Models\JournalEntry::create([
+                    'date' => $validated['date'],
+                    'description' => 'قيد سداد فاتورة ' . $invoice->invoice_number,
+                    'source_type' => \App\Models\Voucher::class,
+                    'source_id' => $voucher->id,
+                    'created_by' => auth()->id(),
+                    'currency' => $journalCurrency,
+                    'is_multi_currency' => $isMultiCurrency,
+                    'exchange_rate' => $exchangeRate,
+                    'total_debit' => $paymentAmount,
+                    'total_credit' => $convertedAmount,
+                ]);
+                
+                foreach ($lines as $line) {
+                    $journal->lines()->create($line);
+                }
+                
+                \Log::info('Journal entry created successfully', ['journal_id' => $journal->id]);
+                
+                // إنشاء معاملة مالية (Transaction) تمثل السداد
+                $transaction = \App\Models\Transaction::create([
+                    'voucher_id' => $voucher->id,
+                    'invoice_id' => $invoice->id,
+                    'date' => $validated['date'],
+                    'type' => 'receipt',
                     'account_id' => $cashAccount->id,
-                    'description' => __('messages.invoice_cash_desc', ['number' => $invoice->invoice_number]),
-                    'debit' => $amount,
-                    'credit' => 0,
-                    'currency' => $cashAccount->currency,
-                    'exchange_rate' => $validated['exchange_rate'],
-                ],
-                [
-                    'account_id' => $receivablesAccountId,
-                    'description' => __('messages.invoice_settle_desc', ['number' => $invoice->invoice_number]),
-                    'debit' => 0,
-                    'credit' => $amount,
+                    'amount' => $convertedAmount, // المبلغ بعملة الفاتورة
                     'currency' => $invoice->currency,
-                    'exchange_rate' => $validated['exchange_rate'],
-                ],
-            ];
-            $journal = \App\Models\JournalEntry::create([
-                'date' => $validated['date'],
-                'description' => __('messages.invoice_journal_desc', ['number' => $invoice->invoice_number]),
-                'source_type' => \App\Models\Voucher::class,
-                'source_id' => $voucher->id,
-                'created_by' => auth()->id(),
-                'currency' => $cashAccount->currency,
-                'exchange_rate' => $validated['exchange_rate'],
-                'total_debit' => $amount,
-                'total_credit' => $amount,
-            ]);
-            foreach ($lines as $line) {
-                $journal->lines()->create($line);
-            }
-            // إنشاء معاملة مالية (Transaction) تمثل السداد
-            \App\Models\Transaction::create([
-                'voucher_id' => $voucher->id,
-                'invoice_id' => $invoice->id,
-                'date' => $validated['date'],
-                'type' => 'receipt',
-                'account_id' => $cashAccount->id,
-                'amount' => $amount,
-                'currency' => $invoice->currency,
-                'exchange_rate' => $validated['exchange_rate'],
-                'description' => __('messages.invoice_payment_desc', ['number' => $invoice->invoice_number]),
-                'user_id' => auth()->id(),
-            ]);
-            // حساب مجموع المدفوعات للفاتورة
-            $paidAmount = \App\Models\Transaction::where('invoice_id', $invoice->id)
-                ->where('type', 'receipt')
-                ->sum('amount');
-            if ($paidAmount >= $invoice->total) {
-                $invoice->status = 'paid';
-            } elseif ($paidAmount > 0) {
-                $invoice->status = 'partial';
-            } else {
-                $invoice->status = 'unpaid';
-            }
-            $invoice->save();
-        });
-        return redirect()->route('invoice-payments.create')
-            ->with('success', __('messages.created_success'));
+                    'exchange_rate' => $exchangeRate,
+                    'description' => 'سداد فاتورة ' . $invoice->invoice_number,
+                    'user_id' => auth()->id(),
+                ]);
+                
+                \Log::info('Transaction created successfully', ['transaction_id' => $transaction->id]);
+                
+                // تحديث حالة الفاتورة
+                $paidAmount = \App\Models\Transaction::where('invoice_id', $invoice->id)
+                    ->where('type', 'receipt')
+                    ->sum('amount');
+                    
+                \Log::info('Updating invoice status...', [
+                    'total_paid_amount' => $paidAmount,
+                    'invoice_total' => $invoice->total,
+                    'previous_status' => $invoice->status
+                ]);
+                    
+                if ($paidAmount >= $invoice->total) {
+                    $invoice->status = 'paid';
+                } elseif ($paidAmount > 0) {
+                    $invoice->status = 'partial';
+                } else {
+                    $invoice->status = 'unpaid';
+                }
+                $invoice->save();
+                
+                \Log::info('Invoice status updated', ['new_status' => $invoice->status]);
+            });
+        } catch (\Exception $e) {
+            \Log::error('Database transaction failed: ' . $e->getMessage());
+            \Log::error('Stack trace: ' . $e->getTraceAsString());
+            return back()->withInput()->withErrors(['payment_amount' => 'حدث خطأ أثناء عملية السداد: ' . $e->getMessage()]);
+        }
+
+        \Log::info('Database transaction completed successfully');
+
+        $successMessage = 'تم السداد بنجاح. المبلغ المدفوع: ' . number_format($paymentAmount, 2) . ' ' . $paymentCurrency;
+        if ($paymentCurrency !== $invoice->currency) {
+            $successMessage .= ' (المحول: ' . number_format($convertedAmount, 2) . ' ' . $invoice->currency . ')';
+        }
+
+        \Log::info('Redirecting with success message', ['message' => $successMessage]);
+
+        return redirect()->route('invoices.show', $invoice)->with('success', $successMessage);
     }
 
     /**

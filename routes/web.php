@@ -44,21 +44,6 @@ Route::get('/language/{lang}', [LanguageController::class, 'switchLang'])->name(
 // طريقة مباشرة لتبديل اللغة (أكثر موثوقية)
 Route::get('/set-language/{lang}', [LanguageController::class, 'forceLang'])->name('force.language');
 
-// إضافة الراوت الجديد:
-Route::get('/test-language/{locale}', function ($locale) {
-   if (!in_array($locale, ['en', 'ar'])) {
-       abort(400);
-   }
-   Session::put('locale', $locale);
-   App::setLocale($locale);
-   $previous = url()->previous();
-   // إذا لم يكن هناك صفحة سابقة أو كان هو نفس رابط التبديل، أعد التوجيه للوحة التحكم
-   if ($previous == request()->fullUrl() || $previous == '') {
-       return redirect('/dashboard');
-   }
-   return redirect()->back();
-})->name('lang.switch');
-
 // Extended language testing routes
 Route::get('/test-language/force/{lang}', [TestLanguageController::class, 'forceLanguage'])->name('test.force.language');
 
@@ -194,6 +179,7 @@ Route::middleware(['auth'])->group(function () {
     // Salary batches
     Route::resource('salary-batches', SalaryBatchController::class)->only(['index','create','store','show','destroy']);
     Route::post('salary-batches/{salaryBatch}/approve', [SalaryBatchController::class, 'approve'])->middleware(\App\Http\Middleware\PreventDuplicateSubmission::class)->name('salary-batches.approve');
+    Route::get('salary-batches/{salaryBatch}/print', [SalaryBatchController::class, 'print'])->name('salary-batches.print');
 
     // Settings
     Route::get('settings/accounting', [AccountingSettingController::class, 'edit'])->name('accounting-settings.edit');
@@ -361,4 +347,9 @@ Route::get('/debug-tenant', function () {
             'trace' => explode("\n", $e->getTraceAsString())
         ], 500);
     }
+});
+
+// API Routes for AJAX calls
+Route::prefix('api')->middleware('auth')->group(function () {
+    Route::get('accounts/{account}/balance', [AccountController::class, 'getBalance']);
 });

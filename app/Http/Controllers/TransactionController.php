@@ -42,7 +42,7 @@ class TransactionController extends Controller
 
         // تحقق من مطابقة العملة مع الحسابات
         $account = \App\Models\Account::find($validated['account_id']);
-        if (!$account || $account->currency !== $validated['currency']) {
+        if (!$account || $account->default_currency !== $validated['currency']) {
             throw \Illuminate\Validation\ValidationException::withMessages([
                 'account_id' => ['عملة الحساب يجب أن تطابق العملة المدخلة.']
             ]);

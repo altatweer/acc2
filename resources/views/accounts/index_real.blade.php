@@ -32,7 +32,7 @@ use Illuminate\Support\Facades\DB;
             <div class="col-lg-3 col-6">
                 <div class="small-box bg-gradient-success">
                     <div class="inner">
-                        <h3>{{ $accounts->where('type', 'asset')->count() }}</h3>
+                        <h3>{{ $statistics['asset_accounts'] }}</h3>
                         <p>@lang('messages.type_asset')</p>
                     </div>
                     <div class="icon">
@@ -43,7 +43,7 @@ use Illuminate\Support\Facades\DB;
             <div class="col-lg-3 col-6">
                 <div class="small-box bg-gradient-danger">
                     <div class="inner">
-                        <h3>{{ $accounts->where('type', 'liability')->count() }}</h3>
+                        <h3>{{ $statistics['liability_accounts'] }}</h3>
                         <p>@lang('messages.type_liability')</p>
                     </div>
                     <div class="icon">
@@ -54,7 +54,7 @@ use Illuminate\Support\Facades\DB;
             <div class="col-lg-3 col-6">
                 <div class="small-box bg-gradient-warning">
                     <div class="inner">
-                        <h3>{{ $accounts->where('is_cash_box', true)->count() }}</h3>
+                        <h3>{{ $statistics['cash_box_accounts'] }}</h3>
                         <p>@lang('messages.is_cash_box')</p>
                     </div>
                     <div class="icon">
@@ -65,7 +65,7 @@ use Illuminate\Support\Facades\DB;
             <div class="col-lg-3 col-6">
                 <div class="small-box bg-gradient-info">
                     <div class="inner">
-                        <h3>{{ $accounts->count() }}</h3>
+                        <h3>{{ $statistics['total_accounts'] }}</h3>
                         <p>@lang('messages.total_accounts')</p>
                     </div>
                     <div class="icon">
@@ -94,68 +94,88 @@ use Illuminate\Support\Facades\DB;
             <div class="card-body">
                 <div class="tab-content">
                     <div class="tab-pane fade show active" id="custom-tabs-filter" role="tabpanel" aria-labelledby="filter-tab">
-                        <div class="row">
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>@lang('messages.account_type')</label>
-                                    <select id="filter-type" class="form-control">
-                                        <option value="">@lang('messages.all')</option>
-                                        <option value="asset">@lang('messages.type_asset')</option>
-                                        <option value="liability">@lang('messages.type_liability')</option>
-                                        <option value="equity">@lang('messages.type_equity')</option>
-                                        <option value="revenue">@lang('messages.type_revenue')</option>
-                                        <option value="expense">@lang('messages.type_expense')</option>
-                                    </select>
+                        <form method="GET" action="{{ route('accounts.real') }}" id="filterForm">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>@lang('messages.account_type')</label>
+                                        <select name="type" id="filter-type" class="form-control">
+                                            <option value="">@lang('messages.all')</option>
+                                            <option value="asset" {{ request('type') == 'asset' ? 'selected' : '' }}>@lang('messages.type_asset')</option>
+                                            <option value="liability" {{ request('type') == 'liability' ? 'selected' : '' }}>@lang('messages.type_liability')</option>
+                                            <option value="equity" {{ request('type') == 'equity' ? 'selected' : '' }}>@lang('messages.type_equity')</option>
+                                            <option value="revenue" {{ request('type') == 'revenue' ? 'selected' : '' }}>@lang('messages.type_revenue')</option>
+                                            <option value="expense" {{ request('type') == 'expense' ? 'selected' : '' }}>@lang('messages.type_expense')</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>@lang('messages.account_nature')</label>
+                                        <select name="nature" id="filter-nature" class="form-control">
+                                            <option value="">@lang('messages.all')</option>
+                                            <option value="debit" {{ request('nature') == 'debit' ? 'selected' : '' }}>@lang('messages.debit_nature')</option>
+                                            <option value="credit" {{ request('nature') == 'credit' ? 'selected' : '' }}>@lang('messages.credit_nature')</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>@lang('messages.is_cash_box')</label>
+                                        <select name="is_cash_box" id="filter-cash-box" class="form-control">
+                                            <option value="">@lang('messages.all')</option>
+                                            <option value="1" {{ request('is_cash_box') == '1' ? 'selected' : '' }}>@lang('messages.yes')</option>
+                                            <option value="0" {{ request('is_cash_box') == '0' ? 'selected' : '' }}>@lang('messages.no')</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>@lang('messages.currency')</label>
+                                        <select name="currency" id="filter-currency" class="form-control">
+                                            <option value="">@lang('messages.all')</option>
+                                            @foreach($currencies as $currency)
+                                                <option value="{{ $currency }}" {{ request('currency') == $currency ? 'selected' : '' }}>{{ $currency }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>@lang('messages.account_nature')</label>
-                                    <select id="filter-nature" class="form-control">
-                                        <option value="">@lang('messages.all')</option>
-                                        <option value="debit">@lang('messages.debit_nature')</option>
-                                        <option value="credit">@lang('messages.credit_nature')</option>
-                                    </select>
+                            <div class="row">
+                                <div class="col-12">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-filter mr-1"></i> تطبيق الفلتر
+                                    </button>
+                                    <a href="{{ route('accounts.real') }}" class="btn btn-default">
+                                        <i class="fas fa-times mr-1"></i> إعادة تعيين
+                                    </a>
                                 </div>
                             </div>
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>@lang('messages.is_cash_box')</label>
-                                    <select id="filter-cash-box" class="form-control">
-                                        <option value="">@lang('messages.all')</option>
-                                        <option value="1">@lang('messages.yes')</option>
-                                        <option value="0">@lang('messages.no')</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>@lang('messages.currency')</label>
-                                    <select id="filter-currency" class="form-control">
-                                        <option value="">@lang('messages.all')</option>
-                                        @foreach($accounts->pluck('currency')->unique()->filter() as $currency)
-                                            <option value="{{ $currency }}">{{ $currency }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
+                        </form>
                     </div>
                     <div class="tab-pane fade" id="custom-tabs-search" role="tabpanel" aria-labelledby="search-tab">
-                        <div class="input-group">
-                            <input type="text" id="accounts-search" class="form-control" placeholder="@lang('messages.search_placeholder')">
-                            <div class="input-group-append">
-                                <button class="btn btn-primary" id="search-button">
-                                    <i class="fas fa-search"></i> @lang('messages.search_button')
-                                </button>
-                                <button class="btn btn-default" id="reset-search">
-                                    <i class="fas fa-times"></i> @lang('messages.reset_button')
-                                </button>
+                        <form method="GET" action="{{ route('accounts.real') }}" id="searchForm">
+                            <!-- الاحتفاظ بالفلاتر السابقة في البحث -->
+                            <input type="hidden" name="type" value="{{ request('type') }}">
+                            <input type="hidden" name="nature" value="{{ request('nature') }}">
+                            <input type="hidden" name="is_cash_box" value="{{ request('is_cash_box') }}">
+                            <input type="hidden" name="currency" value="{{ request('currency') }}">
+                            
+                            <div class="input-group">
+                                <input type="text" name="search" value="{{ request('search') }}" id="accounts-search" class="form-control" placeholder="@lang('messages.search_placeholder')">
+                                <div class="input-group-append">
+                                    <button type="submit" class="btn btn-primary" id="search-button">
+                                        <i class="fas fa-search"></i> @lang('messages.search_button')
+                                    </button>
+                                    <a href="{{ route('accounts.real') }}" class="btn btn-default" id="reset-search">
+                                        <i class="fas fa-times"></i> @lang('messages.reset_button')
+                                    </a>
+                                </div>
                             </div>
-                        </div>
-                        <small class="form-text text-muted">
-                            يمكنك البحث عن طريق رمز الحساب أو اسمه
-                        </small>
+                            <small class="form-text text-muted">
+                                يمكنك البحث عن طريق رمز الحساب أو اسمه
+                            </small>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -277,6 +297,9 @@ use Illuminate\Support\Facades\DB;
                 <div>
                     <strong>@lang('messages.total_accounts')</strong> 
                     <span class="badge badge-primary badge-pill ml-1">{{ $accounts->total() }}</span>
+                    @if($accounts->total() != $statistics['total_accounts'])
+                        <small class="text-muted">من أصل {{ $statistics['total_accounts'] }}</small>
+                    @endif
                 </div>
                 <div>{{ $accounts->appends(['locale' => app()->getLocale()])->links() }}</div>
             </div>
@@ -299,76 +322,61 @@ use Illuminate\Support\Facades\DB;
                     <div class="card-body">
                         <div class="row">
                             @php
-                                $cashBoxes = $accounts->where('is_cash_box', true)->take(8);
+                                $cashBoxes = $allCashBoxes->take(8);
+                                $activeCurrencies = \App\Models\Currency::where('is_active', true)->pluck('code');
+                                if ($activeCurrencies->isEmpty()) {
+                                    $activeCurrencies = collect(['IQD', 'USD', 'EUR']);
+                                }
                             @endphp
                             
                             @forelse($cashBoxes as $cashBox)
-                                <div class="col-md-3 col-sm-6 mb-3">
-                                    <div class="info-box bg-gradient-{{ $loop->iteration % 4 == 0 ? 'danger' : ($loop->iteration % 4 == 1 ? 'success' : ($loop->iteration % 4 == 2 ? 'info' : 'warning')) }}">
-                                        <span class="info-box-icon"><i class="fas fa-wallet"></i></span>
-                                        <div class="info-box-content">
-                                            <span class="info-box-text">{{ $cashBox->name }}</span>
-                                            <span class="info-box-number">
-                                                @php
-                                                try {
-                                                    // إضافة فحص للتأكد من وجود الجداول وقاعدة البيانات
-                                                    if (Schema::hasTable('journal_entry_lines')) {
-                                                        // حساب الرصيد الفعلي من قاعدة البيانات مع فحص أفضل
-                                                        $linesQuery = $cashBox->journalEntryLines()
-                                                                ->where('currency', $cashBox->currency);
-                                                        
-                                                        $totalLines = $linesQuery->count();
-                                                        
-                                                        if ($totalLines > 0) {
-                                                            $balance = $linesQuery->selectRaw('SUM(debit) - SUM(credit) as balance')
-                                                                    ->first()->balance ?? 0;
-                                                        } else {
-                                                            $balance = 0;
-                                                        }
-                                                    } else {
-                                                        $balance = 0;
-                                                    }
-                                                } catch (\Exception $e) {
-                                                    $balance = 0;
-                                                    // يمكن إضافة تسجيل الأخطاء هنا لمعرفة المشكلة بالضبط
-                                                    // Log::error('حدث خطأ في حساب الرصيد: ' . $e->getMessage());
-                                                }
-                                                @endphp
-                                                {{ number_format($balance, 2) }} {{ $cashBox->currency ?? 'IQD' }}
-                                            </span>
-                                            <div class="progress">
-                                                @php
-                                                try {
-                                                    // حساب نسبة استخدام الصندوق (للاستخدام في progress bar)
-                                                    if (isset($allCashBoxes) && $allCashBoxes->count() > 0) {
-                                                        $maxBalance = 1; // قيمة افتراضية لتجنب القسمة على صفر
-                                                        
-                                                        foreach ($allCashBoxes as $acc) {
-                                                            if (Schema::hasTable('journal_entry_lines')) {
-                                                                $accBalance = abs($acc->journalEntryLines()
-                                                                    ->where('currency', $acc->currency)
-                                                                    ->selectRaw('SUM(debit) - SUM(credit) as balance')
-                                                                    ->first()->balance ?? 0);
-                                                                
-                                                                if ($accBalance > $maxBalance) {
-                                                                    $maxBalance = $accBalance;
-                                                                }
-                                                            }
-                                                        }
-                                                        
-                                                        $percentage = min(100, round((abs($balance) / $maxBalance) * 100));
-                                                    } else {
-                                                        $percentage = 10; // قيمة افتراضية
-                                                    }
-                                                } catch (\Exception $e) {
-                                                    $percentage = 10; // قيمة افتراضية في حالة الخطأ
-                                                }
-                                                @endphp
-                                                <div class="progress-bar" style="width: {{ $percentage }}%"></div>
+                                <div class="col-md-6 col-lg-4 mb-4">
+                                    <div class="card card-widget widget-user-2 shadow-lg">
+                                        <!-- Widget user header -->
+                                        <div class="widget-user-header bg-gradient-{{ $loop->iteration % 4 == 0 ? 'danger' : ($loop->iteration % 4 == 1 ? 'success' : ($loop->iteration % 4 == 2 ? 'info' : 'warning')) }}">
+                                            <div class="widget-user-image">
+                                                <i class="fas fa-wallet fa-2x"></i>
                                             </div>
-                                            <a href="{{ route('accounts.show', $cashBox) }}" class="small-box-footer">
-                                                @lang('messages.details') <i class="fas fa-arrow-circle-right"></i>
-                                            </a>
+                                            <h3 class="widget-user-username">{{ $cashBox->name }}</h3>
+                                            <h5 class="widget-user-desc">
+                                                <i class="fas fa-cash-register mr-1"></i> صندوق نقدي
+                                            </h5>
+                                        </div>
+                                        <div class="card-footer p-0">
+                                            <div class="row">
+                                                @foreach($activeCurrencies as $index => $currency)
+                                                    @php
+                                                        $currencyBalance = $cashBox->balance($currency);
+                                                        $isDefault = $currency == ($cashBox->default_currency ?? 'IQD');
+                                                        $colorClass = $index % 3 == 0 ? 'primary' : ($index % 3 == 1 ? 'success' : 'info');
+                                                    @endphp
+                                                    <div class="col-4 border-right">
+                                                        <div class="description-block @if($isDefault) border-bottom @endif">
+                                                            <span class="description-percentage text-{{ $currencyBalance >= 0 ? 'success' : 'danger' }}">
+                                                                <i class="fas fa-{{ $currencyBalance >= 0 ? 'plus' : 'minus' }}"></i>
+                                                                @if($isDefault) <i class="fas fa-star text-warning ml-1"></i> @endif
+                                                            </span>
+                                                            <h5 class="description-header text-{{ $currencyBalance >= 0 ? 'success' : 'danger' }}">
+                                                                {{ number_format(abs($currencyBalance), 0) }}
+                                                            </h5>
+                                                            <span class="description-text font-weight-bold text-{{ $colorClass }}">{{ $currency }}</span>
+                                                        </div>
+                                                        @if($isDefault)
+                                                            <div class="bg-{{ $colorClass }} text-white text-center py-1">
+                                                                <small><i class="fas fa-star mr-1"></i>افتراضي</small>
+                                                            </div>
+                                                        @endif
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                            <!-- .row -->
+                                            <div class="row">
+                                                <div class="col-12 text-center p-2">
+                                                    <a href="{{ route('accounts.show', $cashBox) }}" class="btn btn-sm btn-primary">
+                                                        <i class="fas fa-eye mr-1"></i> @lang('messages.details')
+                                                    </a>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -392,7 +400,7 @@ use Illuminate\Support\Facades\DB;
 <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap4.min.js"></script>
 <script>
 $(function(){
-    // تهيئة جدول البيانات
+    // تهيئة جدول البيانات (للعرض فقط - بدون فلترة)
     const table = $('#realAccountsTable').DataTable({
         language: {
             url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/' + (document.documentElement.lang === 'ar' ? 'ar.json' : 'en.json')
@@ -400,77 +408,17 @@ $(function(){
         order: [[0, 'asc']],
         pageLength: 25,
         lengthMenu: [10, 25, 50, 100],
-        searching: true,
+        searching: false, // تعطيل البحث المحلي - نستخدم البحث على الخادم
+        paging: false, // تعطيل التصفح المحلي - نستخدم Laravel pagination
+        info: false, // تعطيل عرض المعلومات
         responsive: true,
-        dom: 'Bfrtip',
+        dom: 'Brt', // إزالة عناصر التحكم غير المطلوبة
         buttons: [
             'copy', 'excel', 'pdf', 'print'
         ]
     });
 
-    // وظيفة تصفية البيانات حسب المعايير المحددة
-    function applyFilter() {
-        const typeFilter = $('#filter-type').val();
-        const natureFilter = $('#filter-nature').val();
-        const cashFilter = $('#filter-cash-box').val();
-        const currencyFilter = $('#filter-currency').val();
-
-        table.rows().every(function() {
-            const row = this.node();
-            const $row = $(row);
-            
-            let display = true;
-            
-            if (typeFilter && $row.data('type') !== typeFilter) {
-                display = false;
-            }
-            
-            if (natureFilter && $row.data('nature') !== natureFilter) {
-                display = false;
-            }
-            
-            if (cashFilter !== '' && $row.data('cash') !== cashFilter) {
-                display = false;
-            }
-            
-            if (currencyFilter && $row.data('currency') !== currencyFilter) {
-                display = false;
-            }
-            
-            $(row).toggle(display);
-        });
-        
-        // إعادة ترقيم الصفوف بعد الفلترة
-        table.rows(':visible').nodes().each(function(row, index) {
-            $(row).find('td:first').text(index + 1);
-        });
-    }
-
-    // تطبيق الفلاتر عند التغيير
-    $('#filter-type, #filter-nature, #filter-cash-box, #filter-currency').on('change', applyFilter);
-    
-    // وظيفة البحث
-    $('#search-button').on('click', function() {
-        const searchText = $('#accounts-search').val().toLowerCase();
-        
-        table.search(searchText).draw();
-    });
-    
-    // إعادة تعيين البحث
-    $('#reset-search').on('click', function() {
-        $('#accounts-search').val('');
-        table.search('').draw();
-    });
-
-    // تنفيذ البحث عند الضغط على Enter
-    $('#accounts-search').on('keypress', function(e) {
-        if (e.which === 13) {
-            e.preventDefault();
-            $('#search-button').click();
-        }
-    });
-
-    // إضافة تأثيرات حركية للصناديق الإحصائية
+    // تطبيق التأثيرات البصرية فور تحميل الصفحة
     $('.small-box').each(function(index) {
         $(this).css('opacity', '0');
         $(this).css('transform', 'translateY(20px)');
@@ -480,6 +428,49 @@ $(function(){
             $(this).css('opacity', '1');
             $(this).css('transform', 'translateY(0)');
         }, 100 * index);
+    });
+
+    // إضافة تأثير hover للصفوف
+    $('#realAccountsTable tbody tr').hover(
+        function() {
+            $(this).addClass('table-active');
+        },
+        function() {
+            $(this).removeClass('table-active');
+        }
+    );
+
+    // تحسين تبديل التبويبات
+    $('.nav-tabs a').on('click', function(e) {
+        e.preventDefault();
+        $(this).tab('show');
+    });
+
+    // إضافة مؤشر تحميل عند إرسال النماذج
+    $('#filterForm, #searchForm').on('submit', function() {
+        const submitBtn = $(this).find('button[type="submit"]');
+        const originalText = submitBtn.html();
+        
+        submitBtn.prop('disabled', true)
+                 .html('<i class="fas fa-spinner fa-spin mr-1"></i> جاري التحميل...');
+                 
+        // إعادة تعيين النص بعد فترة (في حالة عدم إعادة التحميل)
+        setTimeout(() => {
+            submitBtn.prop('disabled', false).html(originalText);
+        }, 5000);
+    });
+
+    // تطبيق الفلتر تلقائياً عند تغيير القيم
+    $('#filter-type, #filter-nature, #filter-cash-box, #filter-currency').on('change', function() {
+        $('#filterForm').submit();
+    });
+
+    // البحث السريع عند الضغط على Enter
+    $('#accounts-search').on('keypress', function(e) {
+        if (e.which === 13) {
+            e.preventDefault();
+            $('#searchForm').submit();
+        }
     });
 });
 </script>

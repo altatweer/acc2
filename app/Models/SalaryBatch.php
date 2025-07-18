@@ -2,7 +2,6 @@
 namespace App\Models;
 
 use App\Traits\BelongsToTenant;
-
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -15,6 +14,12 @@ class SalaryBatch extends Model
         'tenant_id',
     ];
 
+    protected $casts = [
+        'approved_at' => 'datetime',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+    ];
+
     public function salaryPayments()
     {
         return $this->hasMany(SalaryPayment::class);
@@ -22,11 +27,11 @@ class SalaryBatch extends Model
 
     public function creator()
     {
-        return $this->belongsTo(User::class, 'created_by');
+        return $this->belongsTo(\App\Models\User::class, 'created_by');
     }
 
     public function approver()
     {
-        return $this->belongsTo(User::class, 'approved_by');
+        return $this->belongsTo(\App\Models\User::class, 'approved_by');
     }
 } 

@@ -43,12 +43,23 @@
           </div>
           <div class="form-group">
             <label>@lang('messages.receivables_account')</label>
-            <select name="account_id" class="form-control select2" required>
-              <option value="" disabled>-- @lang('messages.select_account') --</option>
-              @foreach($accounts as $acc)
-                <option value="{{ $acc->id }}" {{ old('account_id',$customer->account_id) == $acc->id ? 'selected' : '' }}>{{ $acc->name }}</option>
-              @endforeach
-            </select>
+            <div class="input-group">
+              <input type="text" class="form-control" 
+                     value="{{ $customer->account ? $customer->account->name . ' (' . $customer->account->code . ')' : 'لا يوجد حساب' }}" 
+                     readonly 
+                     style="background-color: #f8f9fa; cursor: not-allowed;">
+              <div class="input-group-append">
+                <span class="input-group-text bg-secondary text-white">
+                  <i class="fas fa-lock"></i>
+                </span>
+              </div>
+            </div>
+            <small class="form-text text-muted">
+              <i class="fas fa-info-circle"></i>
+              الحساب المحاسبي مرتبط تلقائياً بالعميل ولا يمكن تعديله لحماية البيانات المحاسبية
+            </small>
+            <!-- إخفاء الحساب المحاسبي الحالي للحفاظ عليه -->
+            <input type="hidden" name="account_id" value="{{ $customer->account_id }}">
           </div>
         </div>
         <div class="card-footer text-right">

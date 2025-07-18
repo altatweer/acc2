@@ -359,7 +359,7 @@ class InstallController extends Controller
                 // تحديث parent_id
                 foreach ($chart as $row) {
                     if ($row['parent_code']) {
-                        $account = \App\Models\Account::where('code', $row['code'])->where('currency', $currency)->first();
+                        $account = \App\Models\Account::where('code', $row['code'])->where('default_currency', $currency)->first();
                         if ($account && isset($codeToId[$row['parent_code']])) {
                             $account->parent_id = $codeToId[$row['parent_code']];
                             $account->save();
@@ -382,7 +382,7 @@ class InstallController extends Controller
                 ];
                 $missing = [];
                 foreach ($defaultAccounts as $settingKey => $accountCode) {
-                    $account = \App\Models\Account::where('code', $accountCode)->where('currency', $currency)->first();
+                    $account = \App\Models\Account::where('code', $accountCode)->where('default_currency', $currency)->first();
                     if ($account) {
                         \App\Models\AccountingSetting::updateOrCreate(
                             ['key' => $settingKey, 'currency' => $currency],

@@ -40,8 +40,8 @@
                                         @endswitch
                                     </td>
                                     <td>
-                                        <a href="{{ Route::localizedRoute('accounts.edit', ['account' => $account->id, ]) }}" class="btn btn-info btn-sm">@lang('messages.edit')</a>
-                                        <form action="{{ Route::localizedRoute('accounts.destroy', ['account' => $account->id, ]) }}" method="POST" style="display:inline-block;">
+                                        <a href="{{ route('accounts.edit', ['account' => $account->id]) }}" class="btn btn-info btn-sm">@lang('messages.edit')</a>
+                                        <form action="{{ route('accounts.destroy', ['account' => $account->id]) }}" method="POST" style="display:inline-block;">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" onclick="return confirm('@lang('messages.delete_confirmation_account')')" class="btn btn-danger btn-sm">@lang('messages.delete')</button>

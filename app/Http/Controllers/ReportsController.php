@@ -29,7 +29,7 @@ class ReportsController extends Controller
         
         // فلترة الحسابات حسب العملة إذا تم اختيارها
         if ($selectedCurrency) {
-            $query->where('currency', $selectedCurrency);
+            $query->where('default_currency', $selectedCurrency);
         }
         
         $accounts = $query->orderBy('code')->get();
@@ -253,12 +253,20 @@ class ReportsController extends Controller
         
         foreach ($types as $typeArr) {
             $query = \App\Models\Account::where('is_group', false)
-                ->whereHas('parent', function($q) use ($typeArr) {
-                    $q->whereIn('type', [$typeArr['ar'], $typeArr['en']]);
+                ->where(function($q) use ($typeArr) {
+                    // البحث في الحسابات التي لها parent
+                    $q->whereHas('parent', function($subQ) use ($typeArr) {
+                        $subQ->whereIn('type', [$typeArr['ar'], $typeArr['en']]);
+                    })
+                    // أو البحث في الحسابات التي ليس لها parent ولكن نوعها مطابق
+                    ->orWhere(function($subQ) use ($typeArr) {
+                        $subQ->whereNull('parent_id')
+                            ->whereIn('type', [$typeArr['ar'], $typeArr['en']]);
+                    });
                 });
                 
             if ($selectedCurrency) {
-                $query->where('currency', $selectedCurrency);
+                $query->where('default_currency', $selectedCurrency);
             }
             
             $accounts = $query->orderBy('name')->get();
@@ -287,7 +295,7 @@ class ReportsController extends Controller
                     continue;
                 }
                 
-                $accountCurrency = $account->currency ?: $defaultCurrency;
+                $accountCurrency = $account->default_currency ?: $defaultCurrency;
                 
                 $row = [
                     'account' => $account,
@@ -433,13 +441,26 @@ class ReportsController extends Controller
 
         // جلب الحسابات الفعلية المرتبطة بفئة نوعها إيراد أو مصروف
         $accounts = \App\Models\Account::where('is_group', false)
-            ->whereHas('parent', function($q) use ($type) {
-                if ($type) {
-                    $typeArr = [$type, $type === 'إيراد' ? 'revenue' : ($type === 'مصروف' ? 'expense' : $type)];
-                    $q->whereIn('type', $typeArr);
-                } else {
-                    $q->whereIn('type', ['إيراد', 'مصروف', 'revenue', 'expense']);
-                }
+            ->where(function($q) use ($type) {
+                // البحث في الحسابات التي لها parent
+                $q->whereHas('parent', function($subQ) use ($type) {
+                    if ($type) {
+                        $typeArr = [$type, $type === 'إيراد' ? 'revenue' : ($type === 'مصروف' ? 'expense' : $type)];
+                        $subQ->whereIn('type', $typeArr);
+                    } else {
+                        $subQ->whereIn('type', ['إيراد', 'مصروف', 'revenue', 'expense']);
+                    }
+                })
+                // أو البحث في الحسابات التي ليس لها parent ولكن نوعها إيراد أو مصروف
+                ->orWhere(function($subQ) use ($type) {
+                    $subQ->whereNull('parent_id');
+                    if ($type) {
+                        $typeArr = [$type, $type === 'إيراد' ? 'revenue' : ($type === 'مصروف' ? 'expense' : $type)];
+                        $subQ->whereIn('type', $typeArr);
+                    } else {
+                        $subQ->whereIn('type', ['إيراد', 'مصروف', 'revenue', 'expense']);
+                    }
+                });
             })
             ->when($parent_id, function($q) use ($parent_id) {
                 $q->where('parent_id', $parent_id);
@@ -477,14 +498,14 @@ class ReportsController extends Controller
             $debit = $query->sum('debit');
             $credit = $query->sum('credit');
             $balance = $debit - $credit;
-            $parentType = $account->parent ? $account->parent->type : null;
+            $parentType = $account->parent ? $account->parent->type : $account->type;
             
             // تجاهل الحسابات التي ليس لديها أي حركة
             if ($debit == 0 && $credit == 0 && $balance == 0) {
                 continue;
             }
             
-            $accountCurrency = $account->currency ?: $defaultCurrency;
+            $accountCurrency = $account->default_currency ?: $defaultCurrency;
             
             $row = [
                 'account' => $account,
@@ -749,8 +770,16 @@ class ReportsController extends Controller
         
         // جلب الحسابات الفعلية المرتبطة بفئة نوعها إيراد أو مصروف
         $query = \App\Models\Account::where('is_group', false)
-            ->whereHas('parent', function($q) {
-                $q->whereIn('type', ['إيراد', 'مصروف', 'revenue', 'expense']);
+            ->where(function($q) {
+                // البحث في الحسابات التي لها parent
+                $q->whereHas('parent', function($subQ) {
+                    $subQ->whereIn('type', ['إيراد', 'مصروف', 'revenue', 'expense']);
+                })
+                // أو البحث في الحسابات التي ليس لها parent ولكن نوعها إيراد أو مصروف
+                ->orWhere(function($subQ) {
+                    $subQ->whereNull('parent_id')
+                        ->whereIn('type', ['إيراد', 'مصروف', 'revenue', 'expense']);
+                });
             });
         
         if ($selectedCurrency) {
@@ -783,14 +812,14 @@ class ReportsController extends Controller
             $debit = $query->sum('debit');
             $credit = $query->sum('credit');
             $balance = $debit - $credit;
-            $parentType = $account->parent ? $account->parent->type : null;
+            $parentType = $account->parent ? $account->parent->type : $account->type;
             
             // تجاهل الحسابات التي ليس لديها أي حركة
             if ($debit == 0 && $credit == 0 && $balance == 0) {
                 continue;
             }
             
-            $accountCurrency = $account->currency ?: $defaultCurrency;
+            $accountCurrency = $account->default_currency ?: $defaultCurrency;
             
             $row = [
                 'account' => $account,

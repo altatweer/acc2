@@ -1,0 +1,554 @@
+/**
+ * Professional Print Styles for Accounting System
+ * Optimized for Arabic RTL layout and professional document printing
+ */
+
+/* ==============================================
+   GENERAL PRINT OPTIMIZATIONS
+   ============================================== */
+@media print {
+    /* Page setup */
+    @page {
+        size: A4;
+        margin: 15mm 20mm;
+        margin-top: 15mm;
+        margin-bottom: 20mm;
+    }
+    
+    /* Reset and base styles */
+    * {
+        -webkit-print-color-adjust: exact !important;
+        color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        box-sizing: border-box;
+    }
+    
+    html, body {
+        height: auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        font-family: 'Cairo', 'Tajawal', 'Amiri', Arial, sans-serif !important;
+        font-size: 12pt !important;
+        line-height: 1.4 !important;
+        color: #000 !important;
+        background: #fff !important;
+        direction: rtl;
+    }
+    
+    /* Hide unwanted elements */
+    .navbar, .nav-link, .main-sidebar, .main-header, .main-footer,
+    .content-header, .no-print, .print-actions, .btn, .alert,
+    .breadcrumb, .pagination, .modal, .dropdown-menu, .tooltip,
+    .popover, .sidebar, .footer, .header, .menu, .navigation {
+        display: none !important;
+        visibility: hidden !important;
+        height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    
+    /* Content wrapper adjustments */
+    .content-wrapper, .main-content, .container, .container-fluid {
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #fff !important;
+        width: 100% !important;
+        min-height: auto !important;
+        box-shadow: none !important;
+    }
+}
+
+/* ==============================================
+   TYPOGRAPHY FOR PRINT
+   ============================================== */
+@media print {
+    h1, h2, h3, h4, h5, h6 {
+        color: #000 !important;
+        page-break-after: avoid;
+        margin-top: 0;
+        margin-bottom: 10pt;
+    }
+    
+    h1 { font-size: 18pt; font-weight: 700; }
+    h2 { font-size: 16pt; font-weight: 600; }
+    h3 { font-size: 14pt; font-weight: 600; }
+    h4 { font-size: 13pt; font-weight: 600; }
+    h5 { font-size: 12pt; font-weight: 600; }
+    h6 { font-size: 11pt; font-weight: 600; }
+    
+    p, div, span {
+        font-size: 11pt;
+        line-height: 1.3;
+        margin-bottom: 6pt;
+    }
+    
+    strong, b {
+        font-weight: 700;
+        color: #000;
+    }
+    
+    small {
+        font-size: 9pt;
+    }
+}
+
+/* ==============================================
+   TABLE OPTIMIZATIONS
+   ============================================== */
+@media print {
+    table {
+        border-collapse: collapse !important;
+        width: 100% !important;
+        margin-bottom: 15pt;
+        page-break-inside: avoid;
+    }
+    
+    thead {
+        display: table-header-group !important;
+    }
+    
+    tbody {
+        display: table-row-group !important;
+    }
+    
+    tfoot {
+        display: table-footer-group !important;
+    }
+    
+    th, td {
+        border: 1px solid #000 !important;
+        padding: 6pt 8pt !important;
+        font-size: 10pt !important;
+        text-align: right;
+        vertical-align: top;
+        page-break-inside: avoid;
+    }
+    
+    th {
+        background: #f0f0f0 !important;
+        font-weight: 700 !important;
+        color: #000 !important;
+        text-align: center;
+    }
+    
+    tr {
+        page-break-inside: avoid;
+    }
+    
+    /* Table header styles */
+    .table-header th {
+        background: #e9ecef !important;
+        border: 2px solid #000 !important;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5pt;
+    }
+    
+    /* Table total rows */
+    .table-total, .table-info {
+        background: #f8f9fa !important;
+        font-weight: 700 !important;
+        border: 2px solid #000 !important;
+    }
+    
+    .table-total td, .table-info td {
+        border: 2px solid #000 !important;
+        font-weight: 700;
+    }
+}
+
+/* ==============================================
+   DOCUMENT STRUCTURE
+   ============================================== */
+@media print {
+    /* Document title */
+    .document-title {
+        text-align: center;
+        margin-bottom: 20pt;
+        padding: 10pt;
+        border: 2px solid #000;
+        background: #f8f9fa !important;
+    }
+    
+    .document-title h3 {
+        margin: 0;
+        font-size: 16pt;
+        font-weight: 700;
+        color: #000;
+    }
+    
+    /* Document info section */
+    .document-info {
+        background: #f8f9fa !important;
+        border: 1px solid #000;
+        padding: 15pt;
+        margin-bottom: 20pt;
+        page-break-inside: avoid;
+    }
+    
+    /* Section titles */
+    .section-title {
+        color: #000 !important;
+        font-weight: 700;
+        font-size: 14pt;
+        margin-bottom: 15pt;
+        padding-bottom: 8pt;
+        border-bottom: 2px solid #000;
+        page-break-after: avoid;
+    }
+    
+    /* Company header */
+    .company-header {
+        margin-bottom: 20pt;
+        padding: 15pt 0;
+        border-bottom: 3px solid #000;
+        page-break-inside: avoid;
+    }
+    
+    .company-name {
+        font-size: 20pt !important;
+        font-weight: 700;
+        color: #000;
+        margin-bottom: 8pt;
+    }
+    
+    .company-logo {
+        max-height: 60pt;
+        max-width: 120pt;
+        border: 1px solid #000;
+    }
+}
+
+/* ==============================================
+   BADGES AND STATUS INDICATORS
+   ============================================== */
+@media print {
+    .badge {
+        background: #f0f0f0 !important;
+        color: #000 !important;
+        border: 1px solid #000 !important;
+        padding: 3pt 6pt;
+        font-size: 9pt;
+        font-weight: 600;
+        border-radius: 0;
+    }
+    
+    .badge-success {
+        background: #d4edda !important;
+        border-color: #28a745 !important;
+    }
+    
+    .badge-danger {
+        background: #f8d7da !important;
+        border-color: #dc3545 !important;
+    }
+    
+    .badge-warning {
+        background: #fff3cd !important;
+        border-color: #ffc107 !important;
+    }
+    
+    .badge-info {
+        background: #d1ecf1 !important;
+        border-color: #17a2b8 !important;
+    }
+    
+    .badge-primary {
+        background: #d1ecf1 !important;
+        border-color: #007bff !important;
+    }
+}
+
+/* ==============================================
+   SIGNATURE SECTION
+   ============================================== */
+@media print {
+    .signature-section {
+        margin-top: 30pt;
+        margin-bottom: 20pt;
+        page-break-inside: avoid;
+        display: flex;
+        justify-content: space-between;
+    }
+    
+    .signature-box {
+        text-align: center;
+        min-width: 150pt;
+        flex: 1;
+        margin: 0 10pt;
+    }
+    
+    .signature-line {
+        display: block;
+        border-top: 2px solid #000;
+        width: 100%;
+        margin: 25pt 0 8pt 0;
+    }
+    
+    .signature-title {
+        font-size: 11pt;
+        font-weight: 600;
+        color: #000;
+        margin-bottom: 5pt;
+    }
+    
+    .signature-name {
+        font-size: 10pt;
+        color: #666;
+        min-height: 12pt;
+    }
+}
+
+/* ==============================================
+   CURRENCY AND NUMBERS
+   ============================================== */
+@media print {
+    .currency-amount {
+        font-family: 'Courier New', monospace !important;
+        font-weight: 600;
+        color: #000;
+        font-size: 11pt;
+    }
+    
+    .text-debit {
+        color: #000 !important;
+        font-weight: 700;
+    }
+    
+    .text-credit {
+        color: #000 !important;
+        font-weight: 700;
+    }
+    
+    .text-success {
+        color: #000 !important;
+        font-weight: 600;
+    }
+    
+    .text-danger {
+        color: #000 !important;
+        font-weight: 600;
+    }
+    
+    .text-warning {
+        color: #000 !important;
+        font-weight: 600;
+    }
+    
+    .text-info {
+        color: #000 !important;
+        font-weight: 600;
+    }
+    
+    .text-primary {
+        color: #000 !important;
+        font-weight: 600;
+    }
+}
+
+/* ==============================================
+   PAGE BREAKS AND LAYOUT
+   ============================================== */
+@media print {
+    .page-break-before {
+        page-break-before: always;
+    }
+    
+    .page-break-after {
+        page-break-after: always;
+    }
+    
+    .page-break-inside-avoid {
+        page-break-inside: avoid;
+    }
+    
+    .currency-section {
+        page-break-inside: avoid;
+        margin-bottom: 20pt;
+    }
+    
+    .items-section, .payments-section, .transactions-section {
+        page-break-inside: avoid;
+        margin-bottom: 20pt;
+    }
+    
+    .summary-section {
+        page-break-inside: avoid;
+        margin-top: 20pt;
+    }
+}
+
+/* ==============================================
+   STATISTICS AND CARDS
+   ============================================== */
+@media print {
+    .statistics-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10pt;
+        margin: 15pt 0;
+    }
+    
+    .stat-card {
+        background: #f8f9fa !important;
+        border: 1px solid #000;
+        padding: 10pt;
+        text-align: center;
+    }
+    
+    .stat-number {
+        font-size: 16pt;
+        font-weight: 700;
+        color: #000;
+        margin-bottom: 5pt;
+    }
+    
+    .stat-label {
+        font-size: 10pt;
+        color: #000;
+        font-weight: 600;
+    }
+    
+    .summary-item {
+        text-align: center;
+        padding: 8pt;
+    }
+    
+    .summary-number {
+        font-size: 18pt;
+        font-weight: 700;
+        color: #000;
+        margin-bottom: 5pt;
+    }
+    
+    .summary-label {
+        font-size: 11pt;
+        color: #000;
+        font-weight: 600;
+    }
+}
+
+/* ==============================================
+   ALERTS AND STATUS BOXES
+   ============================================== */
+@media print {
+    .alert {
+        background: #f8f9fa !important;
+        border: 2px solid #000 !important;
+        color: #000 !important;
+        padding: 12pt;
+        margin: 15pt 0;
+        border-radius: 0;
+    }
+    
+    .voucher-status .alert,
+    .invoice-status .alert {
+        text-align: center;
+        font-weight: 700;
+        font-size: 13pt;
+    }
+}
+
+/* ==============================================
+   CUSTOMER INFO AND CONTACT DETAILS
+   ============================================== */
+@media print {
+    .customer-info {
+        background: #f8f9fa !important;
+        border: 1px solid #000;
+        padding: 10pt;
+        margin: 10pt 0;
+    }
+    
+    .customer-name {
+        font-weight: 700;
+        color: #000;
+        font-size: 12pt;
+        margin-bottom: 5pt;
+    }
+    
+    .customer-contact {
+        font-size: 10pt;
+        color: #000;
+        margin-bottom: 3pt;
+    }
+    
+    .company-contact {
+        font-size: 10pt;
+        color: #000;
+    }
+    
+    .company-address {
+        font-size: 11pt;
+        color: #000;
+        margin-bottom: 5pt;
+    }
+}
+
+/* ==============================================
+   ICONS AND VISUAL ELEMENTS
+   ============================================== */
+@media print {
+    .fas, .far, .fab {
+        color: #000 !important;
+        font-size: 10pt;
+    }
+    
+    /* Hide decorative icons in print */
+    .section-title .fas,
+    .stat-icon .fas {
+        display: none;
+    }
+}
+
+/* ==============================================
+   RESPONSIVE PRINT ADJUSTMENTS
+   ============================================== */
+@media print and (max-width: 210mm) {
+    .statistics-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .signature-section {
+        flex-direction: column;
+        gap: 20pt;
+    }
+    
+    .signature-box {
+        margin: 0;
+        min-width: auto;
+    }
+}
+
+/* ==============================================
+   PRINT UTILITIES
+   ============================================== */
+@media print {
+    .print-only {
+        display: block !important;
+    }
+    
+    .screen-only {
+        display: none !important;
+    }
+    
+    .text-center {
+        text-align: center !important;
+    }
+    
+    .text-right {
+        text-align: right !important;
+    }
+    
+    .text-left {
+        text-align: left !important;
+    }
+    
+    .font-weight-bold, .fw-bold {
+        font-weight: 700 !important;
+    }
+    
+    .border-right-4 {
+        border-right: 4px solid #000 !important;
+    }
+} 

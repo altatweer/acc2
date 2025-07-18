@@ -62,8 +62,20 @@
                         <td>{{ $entry->description }}</td>
                         <td>{{ $entry->user->name ?? '-' }}</td>
                         <td>{{ $entry->currency }}</td>
-                        <td>{{ number_format($entry->total_debit,2) }}</td>
-                        <td>{{ number_format($entry->total_credit,2) }}</td>
+                        <td>
+                            @if($entry->currency == 'MIX' || $entry->is_multi_currency)
+                                <span class="text-info font-weight-bold">متعدد العملات</span>
+                            @else
+                                {{ number_format($entry->total_debit,2) }}
+                            @endif
+                        </td>
+                        <td>
+                            @if($entry->currency == 'MIX' || $entry->is_multi_currency)
+                                <span class="text-info font-weight-bold">متعدد العملات</span>
+                            @else
+                                {{ number_format($entry->total_credit,2) }}
+                            @endif
+                        </td>
                         <td>
                             @if($entry->status == 'active')
                                 <span class="badge badge-success">@lang('messages.active')</span>

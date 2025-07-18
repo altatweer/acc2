@@ -63,38 +63,27 @@ class VoucherController extends Controller
    public function create(Request $request)
    {
        try {
-           // محاولة الحصول على العملة الافتراضية مع التعامل مع إمكانية null بسبب تعدد المستأجرين
-           $defaultCurrency = Currency::where('is_default', true)->first();
+           // الحصول على جميع العملات المتاحة
+           $currencies = Currency::all();
+           $defaultCurrency = Currency::where('is_default', true)->first() ?: Currency::first();
            
-           // إذا لم يتم العثور على عملة افتراضية، حاول الحصول على أي عملة
-           if (!$defaultCurrency && Currency::count() > 0) {
-               $defaultCurrency = Currency::first();
-           }
-           
-           // إذا لم يتم العثور على أي عملة، قم بإنشاء كائن افتراضي
+           // إذا لم توجد عملات، إنشاء عملة افتراضية
            if (!$defaultCurrency) {
                $defaultCurrency = new \stdClass();
-               $defaultCurrency->code = 'USD';
-               $defaultCurrency->name = 'US Dollar';
+               $defaultCurrency->code = 'IQD';
+               $defaultCurrency->name = 'Iraqi Dinar';
                $defaultCurrency->is_default = true;
                $defaultCurrency->exchange_rate = 1;
                $defaultCurrency->id = 0;
            }
            
-           // الحصول على جميع العملات
-           $currencies = Currency::all();
-           
-           // إذا لم يتم العثور على أي عملات، قم بإنشاء مصفوفة فارغة
            if ($currencies->isEmpty()) {
                $currencies = collect([$defaultCurrency]);
            }
            
            $user = auth()->user();
            
-           // استخدام العملة من الطلب أو القيمة القديمة أو العملة الافتراضية
-           $currency = $request->input('currency', old('currency', $defaultCurrency->code ?? 'USD'));
-           
-           // تحسين استعلام الحسابات النقدية
+           // جلب جميع الصناديق النقدية (بغض النظر عن العملة)
            try {
                $isAdmin = $user->isSuperAdmin() || $user->hasRole('admin');
            } catch (\Exception $e) {
@@ -105,17 +94,14 @@ class VoucherController extends Controller
                ? Account::where('is_cash_box', 1) 
                : $user->cashBoxes()->where('is_cash_box', 1);
                
-           $cashAccounts = $cashAccountsQuery
-               ->when($currency, fn($q) => $q->where('currency', $currency))
-               ->get();
+           $cashAccounts = $cashAccountsQuery->get();
            
-           // الحصول على الحسابات المستهدفة
+           // جلب جميع الحسابات المستهدفة (بغض النظر عن العملة)
            $targetAccounts = Account::where('is_group', 0)
                ->where('is_cash_box', 0)
-               ->when($currency, fn($q) => $q->where('currency', $currency))
                ->get();
            
-           // التحقق من وجود حسابات، وإذا لم تكن موجودة، إنشاء مصفوفات فارغة
+           // التحقق من وجود حسابات
            if ($cashAccounts->isEmpty()) {
                $cashAccounts = collect([]);
            }
@@ -155,57 +141,77 @@ class VoucherController extends Controller
        $validated = $request->validate([
            'type' => 'required|in:receipt,payment,transfer,deposit,withdraw',
            'date' => 'required|date',
-           'currency' => 'required|string|max:3|exists:currencies,code',
            'recipient_name' => 'nullable|string|max:255',
            'description' => 'required|string|max:1000',
            'transactions' => 'required|array',
            'transactions.*.account_id' => 'required|exists:accounts,id',
            'transactions.*.target_account_id' => 'required|exists:accounts,id',
            'transactions.*.amount' => 'required|numeric|min:0.01',
+           'transactions.*.cash_currency' => 'required|string|max:3|exists:currencies,code',
+           'transactions.*.target_currency' => 'required|string|max:3|exists:currencies,code',
+           'transactions.*.exchange_rate' => 'nullable|numeric|min:0.0000000001',
+           'transactions.*.converted_amount' => 'required|numeric|min:0.01',
        ]);
 
-       // Ensure account currencies match the voucher currency
+       // التحقق من صحة الحسابات وسعر الصرف
        foreach ($validated['transactions'] as $index => $tx) {
-           $acc = Account::find($tx['account_id']);
-           if (!$acc || $acc->currency !== $validated['currency']) {
+           $cashAccount = Account::find($tx['account_id']);
+           $targetAccount = Account::find($tx['target_account_id']);
+           
+           // التحقق من أن الحسابات موجودة وصحيحة
+           if (!$cashAccount || !$cashAccount->is_cash_box) {
                throw \Illuminate\Validation\ValidationException::withMessages([
-                   "transactions.$index.account_id" => ["يجب أن تكون عملة حساب الصندوق مطابقة لعملة السند"]
+                   "transactions.$index.account_id" => ["يجب اختيار صندوق نقدي صحيح"]
                ]);
            }
-           $tgt = Account::find($tx['target_account_id']);
-           if (!$tgt || $tgt->currency !== $validated['currency']) {
+           
+           if (!$targetAccount || $targetAccount->is_cash_box) {
                throw \Illuminate\Validation\ValidationException::withMessages([
-                   "transactions.$index.target_account_id" => ["يجب أن تكون عملة الحساب المستهدف مطابقة لعملة السند"]
+                   "transactions.$index.target_account_id" => ["يجب اختيار حساب غير نقدي"]
                ]);
            }
-       }
-
-       // Prevent cash box from going negative on withdrawal/payment
-       foreach ($validated['transactions'] as $index => $tx) {
-           $acc = Account::find($tx['account_id']);
-           if ($acc && $acc->is_cash_box && in_array($validated['type'], ['payment','withdraw','transfer'])) {
-               if (!$acc->canWithdraw($tx['amount'])) {
+           
+           // التحقق من سعر الصرف إذا كانت العملات مختلفة
+           if ($tx['cash_currency'] !== $tx['target_currency']) {
+               if (empty($tx['exchange_rate']) || $tx['exchange_rate'] <= 0) {
                    throw \Illuminate\Validation\ValidationException::withMessages([
-                       "transactions.$index.account_id" => ["لا يوجد رصيد كافٍ في الصندوق النقدي لتنفيذ العملية."]
+                       "transactions.$index.exchange_rate" => ["سعر الصرف مطلوب عند اختلاف العملات"]
                    ]);
                }
            }
+           
+           // التحقق من صحة العملات
+           $cashCurrencyExists = Currency::where('code', $tx['cash_currency'])->where('is_active', true)->exists();
+           $targetCurrencyExists = Currency::where('code', $tx['target_currency'])->where('is_active', true)->exists();
+           
+           if (!$cashCurrencyExists) {
+               throw \Illuminate\Validation\ValidationException::withMessages([
+                   "transactions.$index.cash_currency" => ["عملة الصندوق غير صحيحة أو غير مفعلة"]
+               ]);
+           }
+           
+           if (!$targetCurrencyExists) {
+               throw \Illuminate\Validation\ValidationException::withMessages([
+                   "transactions.$index.target_currency" => ["عملة الحساب غير صحيحة أو غير مفعلة"]
+               ]);
+           }
        }
 
-       // Fetch exchange rate for the voucher currency
-       $exchangeRate = Currency::where('code', $validated['currency'])->value('exchange_rate');
-       // Prevent cash box from going negative on withdrawal/payment
+       // التحقق من الرصيد للسحب والدفع - استخدام عملة الصندوق
        if (in_array($validated['type'], ['withdraw', 'payment'])) {
-           foreach ($validated['transactions'] as $tx) {
-               $account = Account::find($tx['account_id']);
-               // احتساب الرصيد من القيود المحاسبية فقط
-               $currentBalance = $account->journalEntryLines()
-                   ->where('currency', $validated['currency'])
+           foreach ($validated['transactions'] as $index => $tx) {
+               $cashAccount = Account::find($tx['account_id']);
+               $cashCurrency = $tx['cash_currency'];
+               
+               // احتساب الرصيد من القيود المحاسبية حسب عملة الصندوق
+               $currentBalance = $cashAccount->journalEntryLines()
+                   ->where('currency', $cashCurrency)
                    ->selectRaw('SUM(debit - credit) as balance')
                    ->value('balance') ?? 0;
+                   
                if ($currentBalance < $tx['amount']) {
                    throw \Illuminate\Validation\ValidationException::withMessages([
-                       'transactions' => ["رصيد الصندوق {$account->name} لا يكفي للسحب (الرصيد الحالي: {$currentBalance})."]
+                       "transactions.$index.amount" => ["رصيد الصندوق {$cashAccount->name} لا يكفي للسحب. الرصيد الحالي: " . number_format($currentBalance, 3) . " " . $cashCurrency]
                    ]);
                }
            }
@@ -234,114 +240,154 @@ class VoucherController extends Controller
            }
        }
 
-       DB::transaction(function () use ($validated, $request, $exchangeRate) {
+       DB::transaction(function () use ($validated, $request) {
            $voucher = Voucher::create([
                'voucher_number' => $this->generateVoucherNumber(),
                'type' => $validated['type'],
                'date' => $request->filled('date') ? date('Y-m-d H:i:s', strtotime($validated['date'])) : now(),
-               'currency' => $validated['currency'],
+               'currency' => 'MIX', // إشارة للعملات المتعددة (3 أحرف فقط)
                'description' => $validated['description'],
                'recipient_name' => $validated['recipient_name'],
                'created_by' => auth()->id(),
            ]);
 
-           // بناء سطور القيد المحاسبي حسب نوع السند
+           // بناء سطور القيد المحاسبي حسب نوع السند مع دعم العملات المتعددة
            $lines = [];
            foreach ($validated['transactions'] as $tx) {
+               $cashCurrency = $tx['cash_currency'];
+               $targetCurrency = $tx['target_currency'];
+               $amount = $tx['amount'];
+               $convertedAmount = $tx['converted_amount'];
+               $exchangeRate = $tx['exchange_rate'] ?? 1;
+               
+               // جلب أسعار الصرف لكل عملة
+               $cashExchangeRate = Currency::where('code', $cashCurrency)->value('exchange_rate') ?? 1;
+               $targetExchangeRate = Currency::where('code', $targetCurrency)->value('exchange_rate') ?? 1;
+               
                if (in_array($validated['type'], ['receipt', 'deposit'])) {
-                   // قبض: الصندوق/البنك مدين، الحساب المستهدف دائن
+                   // سند قبض: الصندوق مدين بعملته، الحساب المستهدف دائن بعملته
                    $lines[] = [
                        'account_id' => $tx['account_id'],
-                       'description' => $tx['description'] ?? null,
-                       'debit' => $tx['amount'],
+                       'description' => $tx['description'] ?? "قبض من {$tx['target_account_id']}",
+                       'debit' => $amount,
                        'credit' => 0,
-                       'currency' => $validated['currency'],
-                       'exchange_rate' => $exchangeRate,
+                       'currency' => $cashCurrency,
+                       'exchange_rate' => $cashExchangeRate,
                    ];
                    $lines[] = [
                        'account_id' => $tx['target_account_id'],
-                       'description' => $tx['description'] ?? null,
+                       'description' => $tx['description'] ?? "دفع لـ {$tx['account_id']}",
                        'debit' => 0,
-                       'credit' => $tx['amount'],
-                       'currency' => $validated['currency'],
-                       'exchange_rate' => $exchangeRate,
+                       'credit' => $convertedAmount,
+                       'currency' => $targetCurrency,
+                       'exchange_rate' => $targetExchangeRate,
                    ];
+                   
                    // إنشاء الحركات المالية
                    $voucher->transactions()->create([
                        'account_id' => $tx['account_id'],
                        'target_account_id' => $tx['target_account_id'],
-                       'amount' => $tx['amount'],
-                       'currency' => $validated['currency'],
+                       'amount' => $amount,
+                       'currency' => $cashCurrency,
                        'exchange_rate' => $exchangeRate,
                        'date' => $voucher->date,
                        'description' => $tx['description'] ?? null,
                        'type' => 'receipt',
                        'user_id' => auth()->id(),
                    ]);
+                   
                } elseif (in_array($validated['type'], ['payment', 'withdraw'])) {
-                   // صرف: الصندوق/البنك دائن، الحساب المستفيد مدين
+                   // سند صرف: الصندوق دائن بعملته، الحساب المستهدف مدين بعملته
                    $lines[] = [
                        'account_id' => $tx['account_id'],
-                       'description' => $tx['description'] ?? null,
+                       'description' => $tx['description'] ?? "صرف لـ {$tx['target_account_id']}",
                        'debit' => 0,
-                       'credit' => $tx['amount'],
-                       'currency' => $validated['currency'],
-                       'exchange_rate' => $exchangeRate,
+                       'credit' => $amount,
+                       'currency' => $cashCurrency,
+                       'exchange_rate' => $cashExchangeRate,
                    ];
                    $lines[] = [
                        'account_id' => $tx['target_account_id'],
-                       'description' => $tx['description'] ?? null,
-                       'debit' => $tx['amount'],
+                       'description' => $tx['description'] ?? "استلام من {$tx['account_id']}",
+                       'debit' => $convertedAmount,
                        'credit' => 0,
-                       'currency' => $validated['currency'],
-                       'exchange_rate' => $exchangeRate,
+                       'currency' => $targetCurrency,
+                       'exchange_rate' => $targetExchangeRate,
                    ];
+                   
                    // إنشاء الحركات المالية
                    $voucher->transactions()->create([
                        'account_id' => $tx['account_id'],
                        'target_account_id' => $tx['target_account_id'],
-                       'amount' => -$tx['amount'],
-                       'currency' => $validated['currency'],
+                       'amount' => -$amount,
+                       'currency' => $cashCurrency,
                        'exchange_rate' => $exchangeRate,
                        'date' => $voucher->date,
                        'description' => $tx['description'] ?? null,
                        'type' => 'payment',
                        'user_id' => auth()->id(),
                    ]);
+                   
                } elseif ($validated['type'] === 'transfer') {
-                   // تحويل: الصندوق الأول دائن، الصندوق الثاني مدين
+                   // سند تحويل: الصندوق الأول دائن بعملته، الصندوق الثاني مدين بعملته
                    $lines[] = [
                        'account_id' => $tx['account_id'],
-                       'description' => $tx['description'] ?? null,
+                       'description' => $tx['description'] ?? "تحويل إلى {$tx['target_account_id']}",
                        'debit' => 0,
-                       'credit' => $tx['amount'],
-                       'currency' => $validated['currency'],
-                       'exchange_rate' => $exchangeRate,
+                       'credit' => $amount,
+                       'currency' => $cashCurrency,
+                       'exchange_rate' => $cashExchangeRate,
                    ];
                    $lines[] = [
                        'account_id' => $tx['target_account_id'],
-                       'description' => $tx['description'] ?? null,
-                       'debit' => $tx['amount'],
+                       'description' => $tx['description'] ?? "تحويل من {$tx['account_id']}",
+                       'debit' => $convertedAmount,
                        'credit' => 0,
-                       'currency' => $validated['currency'],
-                       'exchange_rate' => $exchangeRate,
+                       'currency' => $targetCurrency,
+                       'exchange_rate' => $targetExchangeRate,
                    ];
-                   // إنشاء الحركات المالية (موجودة مسبقًا في transferStore)
+                   
+                   // إنشاء الحركات المالية
+                   $voucher->transactions()->create([
+                       'account_id' => $tx['account_id'],
+                       'target_account_id' => $tx['target_account_id'],
+                       'amount' => -$amount,
+                       'currency' => $cashCurrency,
+                       'exchange_rate' => $exchangeRate,
+                       'date' => $voucher->date,
+                       'description' => $tx['description'] ?? null,
+                       'type' => 'transfer',
+                       'user_id' => auth()->id(),
+                   ]);
                }
            }
-           $totalDebit = collect($lines)->sum('debit');
-           $totalCredit = collect($lines)->sum('credit');
+           // حساب المجاميع بالعملة الأساسية (IQD) لضمان التوازن
+           $totalDebitInBase = 0;
+           $totalCreditInBase = 0;
+           $baseCurrency = Currency::where('is_default', true)->value('code') ?? 'IQD';
+           $baseCurrencyRate = Currency::where('code', $baseCurrency)->value('exchange_rate') ?? 1;
+           
+           foreach ($lines as $line) {
+               $lineRate = $line['exchange_rate'] ?? 1;
+               // تحويل المبالغ إلى العملة الأساسية
+               $debitInBase = ($line['debit'] * $lineRate) / $baseCurrencyRate;
+               $creditInBase = ($line['credit'] * $lineRate) / $baseCurrencyRate;
+               $totalDebitInBase += $debitInBase;
+               $totalCreditInBase += $creditInBase;
+           }
+           
            $journal = \App\Models\JournalEntry::create([
                'date' => $validated['date'],
-               'description' => 'قيد سند مالي #' . $voucher->voucher_number,
+               'description' => 'قيد سند مالي متعدد العملات #' . $voucher->voucher_number,
                'source_type' => \App\Models\Voucher::class,
                'source_id' => $voucher->id,
                'created_by' => auth()->id(),
-               'currency' => $validated['currency'],
-               'exchange_rate' => $exchangeRate,
-               'total_debit' => $totalDebit,
-               'total_credit' => $totalCredit,
+               'currency' => 'MIX', // إشارة للعملات المتعددة (3 أحرف فقط)
+               'exchange_rate' => 1,
+               'total_debit' => $totalDebitInBase,
+               'total_credit' => $totalCreditInBase,
            ]);
+           
            foreach ($lines as $line) {
                $journal->lines()->create($line);
            }
@@ -384,13 +430,13 @@ class VoucherController extends Controller
        // تحقق من مطابقة العملات كما في store
        foreach ($validated['transactions'] as $index => $tx) {
            $acc = \App\Models\Account::find($tx['account_id']);
-           if (!$acc || $acc->currency !== $validated['currency']) {
+           if (!$acc || $acc->default_currency !== $validated['currency']) {
                throw \Illuminate\Validation\ValidationException::withMessages([
                    "transactions.$index.account_id" => ["يجب أن تكون عملة حساب الصندوق مطابقة لعملة السند"]
                ]);
            }
            $tgt = \App\Models\Account::find($tx['target_account_id']);
-           if (!$tgt || $tgt->currency !== $validated['currency']) {
+           if (!$tgt || $tgt->default_currency !== $validated['currency']) {
                throw \Illuminate\Validation\ValidationException::withMessages([
                    "transactions.$index.target_account_id" => ["يجب أن تكون عملة الحساب المستهدف مطابقة لعملة السند"]
                ]);
@@ -581,12 +627,24 @@ class VoucherController extends Controller
            $cashAccountsFrom = $user->cashBoxes()->where('is_cash_box', 1)->get();
        }
        $cashAccountsTo = \App\Models\Account::where('is_cash_box', 1)->get();
+       
+       // إضافة رصيد كل حساب
+       $cashAccountsFrom = $cashAccountsFrom->map(function($account) {
+           $account->balance = $account->balance($account->default_currency);
+           return $account;
+       });
+       
+       $cashAccountsTo = $cashAccountsTo->map(function($account) {
+           $account->balance = $account->balance($account->default_currency);
+           return $account;
+       });
+       
        $currencies = \App\Models\Currency::all();
        $exchangeRates = [];
        foreach ($currencies as $from) {
            foreach ($currencies as $to) {
                if ($from->code !== $to->code) {
-                   $exchangeRates[$from->code . '_' . $to->code] = $to->exchange_rate / $from->exchange_rate;
+                   $exchangeRates[$from->code . '_' . $to->code] = $from->exchange_rate / $to->exchange_rate;
                }
            }
        }
@@ -604,7 +662,17 @@ class VoucherController extends Controller
            'amount' => 'required|numeric|min:0.01',
            'date' => 'required|date',
            'description' => 'nullable|string',
-           'exchange_rate' => 'nullable|numeric|min:0.0001',
+           'exchange_rate' => 'nullable|numeric|min:0.0000000001', // زيادة الدقة المسموحة
+       ]);
+
+       // Debug: سجل البيانات المدخلة
+       \Log::info('Transfer Debug - Input Data', [
+           'account_id' => $validated['account_id'],
+           'target_account_id' => $validated['target_account_id'],
+           'amount' => $validated['amount'],
+           'exchange_rate' => $validated['exchange_rate'],
+           'date' => $validated['date'],
+           'raw_request' => $request->all()
        ]);
 
        $from = \App\Models\Account::find($validated['account_id']);
@@ -616,19 +684,29 @@ class VoucherController extends Controller
            return back()->withErrors(['target_account_id' => 'لا يمكن التحويل إلى نفس الصندوق.']);
        }
 
-       $fromCurrency = $from->currency;
-       $toCurrency = $to->currency;
+       $fromCurrency = $from->default_currency;
+       $toCurrency = $to->default_currency;
        $amountFrom = $validated['amount'];
        $exchangeRate = $validated['exchange_rate'] ?? 1;
        $amountTo = $amountFrom;
        if ($fromCurrency !== $toCurrency) {
-           // تحويل عملة: احسب المبلغ المستلم بناءً على سعر الصرف
-           $amountTo = $exchangeRate ? $amountFrom / $exchangeRate : $amountFrom;
+           // تحويل عملة: احسب المبلغ المستلم بناءً على سعر الصرف مع دقة عالية
+           $amountTo = $exchangeRate ? round($amountFrom * $exchangeRate, 6) : $amountFrom;
        }
 
+       // Debug: سجل تفاصيل العملة والحسابات
+       \Log::info('Transfer Debug - Calculation', [
+           'from_account' => ['id' => $from->id, 'name' => $from->name, 'currency' => $fromCurrency],
+           'to_account' => ['id' => $to->id, 'name' => $to->name, 'currency' => $toCurrency],
+           'amount_from' => $amountFrom,
+           'exchange_rate' => $exchangeRate,
+           'amount_to' => $amountTo,
+           'calculation' => $fromCurrency !== $toCurrency ? "$amountFrom * $exchangeRate = $amountTo" : "Same currency"
+       ]);
+
        // التحقق من وجود رصيد كافٍ في الحساب المصدر
-       if (!$from->canWithdraw($amountFrom)) {
-           return back()->withErrors(['amount' => 'لا يوجد رصيد كافٍ في الصندوق المصدر لإجراء التحويل. الرصيد الحالي: ' . $from->balance()]);
+       if (!$from->canWithdraw($amountFrom, $fromCurrency)) {
+           return back()->withErrors(['amount' => 'لا يوجد رصيد كافٍ في الصندوق المصدر لإجراء التحويل. الرصيد الحالي: ' . $from->balance($fromCurrency) . ' ' . $fromCurrency]);
        }
 
        \DB::transaction(function () use ($validated, $from, $to, $fromCurrency, $toCurrency, $amountFrom, $amountTo, $exchangeRate) {
@@ -657,17 +735,21 @@ class VoucherController extends Controller
 
            if ($fromCurrency === $toCurrency) {
                // تحويل بنفس العملة
+               $fromExchangeRate = \App\Models\Currency::where('code', $fromCurrency)->value('exchange_rate') ?? 1;
+               
                $journal->lines()->create([
                    'account_id' => $from->id,
                    'debit' => 0,
                    'credit' => $amountFrom,
                    'currency' => $fromCurrency,
+                   'exchange_rate' => $fromExchangeRate,
                ]);
                $journal->lines()->create([
                    'account_id' => $to->id,
                    'debit' => $amountFrom,
                    'credit' => 0,
                    'currency' => $toCurrency,
+                   'exchange_rate' => $fromExchangeRate,
                ]);
                // الحركات المالية
                $voucher->transactions()->create([
@@ -692,18 +774,23 @@ class VoucherController extends Controller
                $journal->total_debit = $amountFrom;
                $journal->total_credit = $amountFrom;
            } else {
-               // تحويل عملة
+               // تحويل عملة - جلب سعر الصرف لكل عملة
+               $fromExchangeRate = \App\Models\Currency::where('code', $fromCurrency)->value('exchange_rate') ?? 1;
+               $toExchangeRate = \App\Models\Currency::where('code', $toCurrency)->value('exchange_rate') ?? 1;
+               
                $journal->lines()->create([
                    'account_id' => $from->id,
                    'debit' => 0,
                    'credit' => $amountFrom,
                    'currency' => $fromCurrency,
+                   'exchange_rate' => $fromExchangeRate,
                ]);
                $journal->lines()->create([
                    'account_id' => $to->id,
                    'debit' => $amountTo,
                    'credit' => 0,
                    'currency' => $toCurrency,
+                   'exchange_rate' => $toExchangeRate,
                ]);
                // الحركات المالية
                $voucher->transactions()->create([

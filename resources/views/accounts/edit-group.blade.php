@@ -22,7 +22,7 @@
                 </div>
             @endif
 
-            <form action="{{ Route::localizedRoute('accounts.update', ['account' => $account->id, ]) }}" method="POST">
+            <form action="{{ route('accounts.update', ['account' => $account->id]) }}" method="POST">
                 @csrf
                 @method('PUT')
 
@@ -56,8 +56,15 @@
                     <select name="parent_id" class="form-control">
                         <option value="">@lang('messages.none_option')</option>
                         @foreach ($categories as $cat)
-                            <option value="{{ $cat->id }}" {{ $account->parent_id == $cat->id ? 'selected' : '' }}>
+                            <option value="{{ $cat->id }}" {{ $account->parent_id == $cat->id ? 'selected' : '' }}
+                                    data-currency="{{ $cat->currency ?? '' }}"
+                                    style="color: {{ ($cat->currency ?? '') == 'IQD' ? '#1976d2' : (($cat->currency ?? '') == 'USD' ? '#388e3c' : '#5e35b1') }};">
                                 {{ $cat->name }}
+                                @if($cat->currency)
+                                    <span style="font-weight: bold; background: {{ ($cat->currency ?? '') == 'IQD' ? '#e3f2fd' : (($cat->currency ?? '') == 'USD' ? '#e8f5e8' : '#f3e5f5') }}; padding: 2px 6px; border-radius: 3px; font-size: 0.85em;">
+                                        {{ strtoupper($cat->currency) }}
+                                    </span>
+                                @endif
                             </option>
                         @endforeach
                     </select>

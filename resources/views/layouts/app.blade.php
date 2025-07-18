@@ -26,6 +26,15 @@
 
     <!-- SweetAlert2 -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.5/dist/sweetalert2.min.css">
+    
+    <!-- Account Currency Display Enhancement -->
+    <link rel="stylesheet" href="{{ asset('assets/css/account-currency-display.css') }}">
+
+    <!-- Enhanced Sidebar Styles -->
+    <link rel="stylesheet" href="{{ asset('assets/css/enhanced-sidebar.css') }}">
+    
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="{{ asset('plugins/fontawesome-free/css/all.min.css') }}">
 
     <style>
         /* Dark & Light mode variables */
@@ -272,6 +281,11 @@
             background: rgba(0, 0, 0, 0.15);
         }
         
+        .user-profile-content {
+            display: flex;
+            align-items: center;
+        }
+
         .user-avatar {
             width: 45px;
             height: 45px;
@@ -309,754 +323,363 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
+
+        .user-status {
+            display: flex;
+            align-items: center;
+            margin-top: 0.5rem;
+        }
+
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: var(--success-color);
+            margin-right: 0.5rem;
+        }
+
+        .status-text {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.8);
+        }
         
         /* Main sidebar styling */
         .main-sidebar {
-            background: #2c3e50;
-            background: linear-gradient(to bottom, #2c3e50, #1a252f);
-            box-shadow: 0 0 15px rgba(0,0,0,0.1);
-            transition: width 0.3s ease;
-            width: 250px;
-            position: fixed;
-            height: 100%;
-            z-index: 1038;
-            border-right: none;
+            background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.2);
         }
         
-        .sidebar {
-            height: calc(100% - 65px);
-            overflow-y: auto;
-            padding-top: 10px;
-            scrollbar-width: thin;
-            scrollbar-color: rgba(255,255,255,0.1) transparent;
-            position: relative;
-        }
-        
-        .sidebar::-webkit-scrollbar {
-            width: 6px;
-        }
-        
-        .sidebar::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        
-        .sidebar::-webkit-scrollbar-thumb {
-            background-color: rgba(255,255,255,0.1);
-            border-radius: 3px;
-        }
-        
-        /* Nav sidebar styling */
-        .nav-sidebar {
-            padding: 0 0.5rem;
-        }
-        
-        .nav-sidebar .nav-item {
-            margin-bottom: 1px;
-            position: relative;
-        }
-        
-        .nav-sidebar .nav-link {
-            color: #ecf0f1;
-            border-radius: 6px;
-            margin: 0 0.3rem;
-            padding: 0.5rem 0.8rem;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            position: relative;
-            display: flex;
-            align-items: center;
-            overflow: hidden;
-            font-size: {{ app()->getLocale() == 'ar' ? '0.92rem' : '0.85rem' }};
-            letter-spacing: {{ app()->getLocale() == 'ar' ? '0' : '0.2px' }};
-        }
-        
-        .nav-sidebar .nav-link::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 4px;
-            height: 100%;
-            background: transparent;
-            transition: all 0.3s ease;
-        }
-        
-        .nav-sidebar .nav-link:hover {
-            color: #ffffff;
-            background: rgba(255,255,255,0.1);
-            transform: translateX(3px);
-        }
-        
-        .nav-sidebar .nav-link:hover::before {
-            background: #3498db;
-        }
-        
-        .nav-sidebar .nav-link.active {
-            background: rgba(52, 152, 219, 0.2);
-            color: #ffffff;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-        }
-        
-        .nav-sidebar .nav-link.active::before {
-            background: #3498db;
-        }
-        
-        .nav-sidebar .nav-link i.nav-icon {
-            font-size: {{ app()->getLocale() == 'ar' ? '1.05rem' : '1.05rem' }};
-            margin-right: {{ app()->getLocale() == 'ar' ? '0.65rem' : '0.75rem' }};
-            margin-left: {{ app()->getLocale() == 'ar' ? '0.2rem' : '0' }};
-            width: 20px;
-            text-align: center;
-            color: #bdc3c7;
-            transition: all 0.3s ease;
-            opacity: 0.9;
-        }
-        
-        .nav-sidebar .nav-link:hover i.nav-icon,
-        .nav-sidebar .nav-link.active i.nav-icon {
-            color: #3498db;
-            opacity: 1;
-            transform: scale(1.1);
-        }
-        
-        .nav-sidebar .nav-treeview {
-            display: none;
-            padding-left: 14px;
-            margin-top: 3px;
-            margin-bottom: 3px;
-            border-left: 1px dashed rgba(255, 255, 255, 0.2);
-            margin-left: 8px;
-        }
-        
-        .nav-sidebar .menu-open > .nav-treeview {
-            display: block;
-        }
-        
-        .nav-sidebar .nav-treeview .nav-item {
-            margin-bottom: 1px;
-        }
-        
-        .nav-sidebar .nav-treeview .nav-link {
-            font-size: {{ app()->getLocale() == 'ar' ? '0.85rem' : '0.8rem' }};
-            padding: 0.4rem 0.8rem;
-            border-radius: 4px;
-            color: rgba(255, 255, 255, 0.8);
-            margin-left: 0;
-            line-height: 1.4;
-        }
-        
-        .nav-sidebar .nav-treeview .nav-link:hover {
-            background: rgba(255, 255, 255, 0.1);
-            color: #ffffff;
-        }
-        
-        .nav-sidebar .nav-treeview .nav-link.active {
-            background: rgba(52, 152, 219, 0.2);
-            color: #3498db;
-        }
-        
-        .nav-sidebar .nav-link p {
-            margin-bottom: 0;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            font-size: {{ app()->getLocale() == 'ar' ? '0.85rem' : '0.8rem' }};
-        }
-        
-        /* Angle icon animation */
-        .nav-sidebar .nav-link .fa-angle-left {
-            transition: transform 0.3s ease;
-            position: absolute;
-            right: 1rem;
-        }
-        
-        .nav-sidebar .menu-open > .nav-link .fa-angle-left {
-            transform: rotate(-90deg);
-        }
-        
-        /* Nav headers styling */
-        .nav-header {
-            color: rgba(255, 255, 255, 0.7);
-            font-size: {{ app()->getLocale() == 'ar' ? '0.75rem' : '0.7rem' }};
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: {{ app()->getLocale() == 'ar' ? '0' : '0.8px' }};
-            padding: 0.7rem 1rem 0.3rem;
-            margin-top: 0.4rem;
+        .brand-link {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%) !important;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            margin-bottom: 0.4rem;
+            transition: all 0.3s ease;
         }
         
-        /* Content wrapper */
-        .content-wrapper {
-            background: var(--content-bg);
-            min-height: 100vh;
-            padding-bottom: 2rem;
-            transition: margin-left 0.3s, margin-right 0.3s;
-            margin-left: 0;
-            margin-right: 0;
-            width: calc(100% - 250px);
+        .brand-link:hover {
+            background: linear-gradient(135deg, #2980b9 0%, #3498db 100%) !important;
+            transform: scale(1.02);
         }
         
-        /* Cards styling */
-        .card {
-            border: none;
-            border-radius: 12px;
-            box-shadow: 0 3px 15px rgba(0, 0, 0, 0.06);
-            transition: transform 0.3s, box-shadow 0.3s;
-            overflow: hidden;
+        .user-profile {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 0 0 15px 15px;
+            margin: 10px;
+            padding: 20px 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
         }
         
-        .card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        .user-profile:hover {
+            background: rgba(52, 152, 219, 0.1);
         }
         
-        .card-header {
-            background: white;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-            padding: 1.2rem 1.5rem;
-            font-weight: 600;
-        }
-        
-        .card-primary.card-outline {
-            border-top: 3px solid var(--primary-color);
-        }
-        
-        /* Buttons styling */
-        .btn {
-            font-weight: 500;
-            border-radius: 6px;
-            padding: 0.5rem 1rem;
-            transition: all 0.2s;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .btn::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 100%;
-            height: 0;
-            background: rgba(255, 255, 255, 0.1);
+        .user-avatar {
+            width: 50px;
+            height: 50px;
             border-radius: 50%;
-            transform: translate(-50%, -50%);
-            opacity: 0;
-            transition: all 0.3s;
-        }
-        
-        .btn:active::after {
-            height: 300%;
-            opacity: 1;
-        }
-        
-        .btn-primary {
-            background: var(--primary-color);
-            border-color: var(--primary-color);
-        }
-        
-        .btn-primary:hover, .btn-primary:focus {
-            background: var(--primary-hover);
-            border-color: var(--primary-hover);
-            box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3);
-        }
-        
-        .btn-success {
-            background: var(--success-color);
-            border-color: var(--success-color);
-        }
-        
-        .btn-success:hover, .btn-success:focus {
-            background: #0ca678;
-            border-color: #0ca678;
-            box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
-        }
-        
-        .btn-danger {
-            background: var(--danger-color);
-            border-color: var(--danger-color);
-        }
-        
-        .btn-danger:hover, .btn-danger:focus {
-            background: #dc2626;
-            border-color: #dc2626;
-            box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3);
-        }
-        
-        /* Forms styling */
-        .form-control {
-            border-radius: 6px;
-            border: 1px solid #e2e8f0;
-            padding: 0.65rem 1rem;
-            height: auto;
-            font-size: 0.95rem;
-            transition: all 0.2s;
-        }
-        
-        .form-control:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
-        }
-        
-        /* Table styling */
-        .table {
-            border-collapse: separate;
-            border-spacing: 0;
-            width: 100%;
-            border-radius: 8px;
-            overflow: hidden;
-        }
-        
-        .table th {
-            background: #f8fafc;
-            font-weight: 600;
-            text-transform: uppercase;
-            font-size: 0.8rem;
-            padding: 0.85rem 1rem;
-            color: #475569;
-            letter-spacing: 0.5px;
-            border-top: none;
-            border-bottom: 1px solid #e2e8f0;
-        }
-        
-        .table td {
-            padding: 1rem;
-            vertical-align: middle;
-            border-top: none;
-            border-bottom: 1px solid #f1f5f9;
-            color: #1e293b;
-            font-size: 0.95rem;
-        }
-        
-        .table-striped tbody tr:nth-of-type(odd) {
-            background-color: #fafafa;
-        }
-        
-        .table-hover tbody tr:hover {
-            background-color: #f1f5f9;
-        }
-        
-        /* Footer styling */
-        .main-footer {
-            background: white;
-            border-top: 1px solid rgba(0, 0, 0, 0.05);
-            padding: 1rem 0;
-            font-size: 0.9rem;
-            color: #64748b;
-            margin-left: 0;
-            margin-right: 0;
-            width: calc(100% - 250px);
-        }
-        
-        /* Badges styling */
-        .badge {
-            font-size: 75%;
-            font-weight: 500;
-            padding: 0.4em 0.65em;
-            border-radius: 6px;
-        }
-        
-        .badge-primary {
-            background: var(--primary-light);
-            color: var(--primary-color);
-        }
-        
-        .badge-success {
-            background: rgba(16, 185, 129, 0.1);
-            color: var(--success-color);
-        }
-        
-        .badge-danger {
-            background: rgba(239, 68, 68, 0.1);
-            color: var(--danger-color);
-        }
-        
-        .badge-warning {
-            background: rgba(245, 158, 11, 0.1);
-            color: var(--warning-color);
-        }
-        
-        /* RTL specific styles */
-        @if(app()->getLocale() == 'ar')
-        .sidebar {
-            right: 0;
-            left: auto;
-        }
-        
-        .main-sidebar {
-            right: 0;
-            left: auto;
-        }
-        
-        /* Special adjustments for Arabic menu */
-        .nav-sidebar .nav-link p {
-            font-size: 0.9rem;
-        }
-        
-        .nav-sidebar .menu-open > .nav-link .fa-angle-left {
-            margin-top: 4px;
-        }
-        
-        .content-wrapper {
-            margin-right: 250px;
-            margin-left: 0 !important;
-            float: left;
-        }
-        
-        .main-footer {
-            margin-right: 250px;
-            margin-left: 0 !important;
-            float: left;
-        }
-        
-        .sidebar-collapse .content-wrapper {
-            margin-right: 4.6rem !important;
-            margin-left: 0 !important;
-        }
-        
-        .sidebar-collapse .main-footer {
-            margin-right: 4.6rem !important;
-            margin-left: 0 !important;
-        }
-        
-        .main-header {
-            margin-right: 250px !important;
-            margin-left: 0 !important;
-        }
-        
-        .sidebar-collapse .main-header {
-            margin-right: 4.6rem !important;
-        }
-        
-        .nav-sidebar .nav-link.active::before {
-            right: -7px;
-            left: auto;
-            border-color: transparent transparent transparent var(--primary-color);
-        }
-        
-        .nav-sidebar .nav-link i.nav-icon {
-            margin-right: 0;
-            margin-left: 0.7rem;
-        }
-        
-        /* Fix for mobile view in RTL */
-        @media (max-width: 767.98px) {
-            .main-sidebar, .main-sidebar::before {
-                box-shadow: none !important;
-                margin-right: -250px;
-                margin-left: 0;
-            }
-            
-            .sidebar-open .main-sidebar, .sidebar-open .main-sidebar::before {
-                margin-right: 0;
-            }
-            
-            .content-wrapper,
-            .main-footer,
-            .main-header {
-                margin-right: 0 !important;
-            margin-left: 0 !important;
-        }
-        }
-        
-        @else
-        .sidebar {
-            left: 0;
-            right: auto;
-        }
-        
-        .main-sidebar {
-            left: 0;
-            right: auto;
-        }
-        
-        .content-wrapper {
-            margin-left: 250px;
-            margin-right: 0;
-            float: right;
-        }
-        
-        .main-footer {
-            margin-left: 250px;
-            margin-right: 0;
-            float: right;
-        }
-        
-        .sidebar-collapse .content-wrapper {
-            margin-left: 4.6rem;
-            margin-right: 0;
-        }
-        
-        .sidebar-collapse .main-footer {
-            margin-left: 4.6rem;
-            margin-right: 0;
-        }
-        
-        .main-header {
-            margin-left: 250px;
-            margin-right: 0;
-        }
-        
-        .sidebar-collapse .main-header {
-            margin-left: 4.6rem;
-        }
-        
-        /* Fix for mobile view in LTR */
-        @media (max-width: 767.98px) {
-            .main-sidebar, .main-sidebar::before {
-                box-shadow: none !important;
-                margin-left: -250px;
-                margin-right: 0;
-            }
-            
-            .sidebar-open .main-sidebar, .sidebar-open .main-sidebar::before {
-                margin-left: 0;
-            }
-            
-            .content-wrapper,
-            .main-footer,
-            .main-header {
-                margin-left: 0 !important;
-                margin-right: 0 !important;
-            }
-        }
-        @endif
-        
-        /* تخصيص صفحة تسجيل الدخول فقط */
-        @if (request()->routeIs('login'))
-        .wrapper {
-            min-height: 100vh;
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%) !important;
+            font-weight: bold;
+            font-size: 1.4rem;
+            margin-left: 12px;
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
+            border: 3px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
         }
         
-        .login-box {
-            width: 400px;
-            background: white;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        .user-profile:hover .user-avatar {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(52, 152, 219, 0.6);
         }
         
-        .login-box .card {
-            box-shadow: none;
-            margin-bottom: 0;
-        }
-        
-        .login-logo {
-            font-weight: 700;
-            font-size: 1.8rem;
-            margin-bottom: 0;
-            padding: 2rem 1rem 1rem;
-            text-align: center;
-            color: #1e293b;
-        }
-        @endif
-        
-        /* Dashboard cards */
-        .info-box {
-            display: flex;
-            min-height: 100px;
-            background: #fff;
-            width: 100%;
-            border-radius: 12px;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 3px 15px rgba(0, 0, 0, 0.06);
-            transition: transform 0.3s, box-shadow 0.3s;
-        }
-        
-        .info-box:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-        }
-        
-        .info-box-icon {
-            width: 90px;
-            background-color: rgba(0, 0, 0, 0.04);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.875rem;
-            color: var(--primary-color);
-        }
-        
-        .info-box-content {
-            padding: 15px 10px;
+        .user-info {
             flex: 1;
-        }
-        
-        .info-box-text {
-            display: block;
-            font-size: 1rem;
-            white-space: nowrap;
             overflow: hidden;
-            text-overflow: ellipsis;
-            font-weight: 600;
-            color: #475569;
-        }
-        
-        .info-box-number {
-            display: block;
-            font-weight: 700;
-            font-size: 1.5rem;
-            color: #1e293b;
-        }
-        
-        /* Animation */
-        @keyframes pulse {
-            0% {
-                box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.5);
-            }
-            70% {
-                box-shadow: 0 0 0 10px rgba(37, 99, 235, 0);
-            }
-            100% {
-                box-shadow: 0 0 0 0 rgba(37, 99, 235, 0);
-            }
-        }
-        
-        .pulse-animation {
-            animation: pulse 2s infinite;
-        }
-        
-        /* Media queries for responsive layout */
-        @media (max-width: 991.98px) {
-            .content-wrapper, .main-footer {
-                width: 100%;
-            }
-            
-            .main-header {
-                width: 100%;
-            }
-        }
-        
-        /* تحسينات خاصة للخط العربي */
-        @if(app()->getLocale() == 'ar')
-        * {
-            font-family: 'Tajawal', sans-serif !important;
-            text-rendering: optimizeLegibility;
-            -webkit-font-smoothing: antialiased;
-        }
-        
-        /* استثناء الأيقونات من خط Tajawal */
-        .fa, .fas, .far, .fab, .fal, .fad,
-        i[class*=" fa-"],
-        i.nav-icon,
-        .nav-icon:before,
-        .nav-icon:after {
-            font-family: "Font Awesome 5 Free" !important;
-        }
-        
-        .far, i.far {
-            font-family: "Font Awesome 5 Regular" !important;
-        }
-        
-        .fab, i.fab {
-            font-family: "Font Awesome 5 Brands" !important;
-        }
-        
-        .nav-sidebar .nav-link p {
-            font-weight: 500;
-            letter-spacing: 0.2px;
-            font-size: 0.92rem !important;
-            padding-right: 2px;
-        }
-        
-        .nav-sidebar .nav-link.active p {
-            font-weight: 600;
-        }
-        
-        .nav-sidebar .nav-header {
-            font-weight: 700;
-            letter-spacing: 0.3px;
-            font-size: 0.85rem !important;
-            color: rgba(255, 255, 255, 0.85);
-        }
-        
-        .nav-sidebar .nav-treeview .nav-link {
-            font-weight: 400;
-            font-size: 0.88rem !important;
-        }
-        
-        .brand-text {
-            font-weight: 700;
-            letter-spacing: 0.5px;
-            font-size: 1.3rem;
         }
         
         .user-name {
-            font-weight: 500;
-            font-size: 0.95rem;
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: #ecf0f1;
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         
-        .nav-sidebar .nav-link:hover p {
-            color: white;
+        .user-role {
+            font-size: 0.85rem;
+            color: #bdc3c7;
+            background: rgba(52, 152, 219, 0.2);
+            padding: 2px 8px;
+            border-radius: 12px;
+            display: inline-block;
+            border: 1px solid rgba(52, 152, 219, 0.3);
         }
-        @endif
+        
+        .sidebar-nav {
+            height: calc(100vh - 250px);
+            overflow-y: auto;
+            padding-bottom: 120px; /* Space for footer */
+        }
+        
+        .nav-header {
+            color: #bdc3c7;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 20px 15px 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 0.4rem;
+            display: flex;
+            align-items: center;
+        }
 
-        /* تصميم زر تسجيل الخروج الثابت في أسفل القائمة */
-        .sidebar-logout {
-            position: sticky;
+        .nav-header i {
+            margin-right: 0.5rem;
+            font-size: 1.1rem;
+        }
+        
+        .nav-link {
+            color: #ecf0f1 !important;
+            border-radius: 12px;
+            margin: 2px 5px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .nav-link:hover {
+            background: linear-gradient(90deg, rgba(52, 152, 219, 0.1) 0%, rgba(52, 152, 219, 0.05) 100%) !important;
+            color: #ecf0f1 !important;
+            transform: translateX(5px);
+            border-left: 3px solid #3498db;
+        }
+        
+        .nav-link.active {
+            background: linear-gradient(135deg, rgba(52, 152, 219, 0.2) 0%, rgba(41, 128, 185, 0.2) 100%) !important;
+            color: white !important;
+            border-left: 4px solid #3498db;
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+        }
+        
+        .nav-icon {
+            width: 20px;
+            margin-left: 12px;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-link:hover .nav-icon {
+            color: #3498db;
+            transform: scale(1.2);
+        }
+        
+        .nav-badge {
+            position: absolute;
+            top: 8px;
+            left: 25px;
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 10px;
+            min-width: 18px;
+            text-align: center;
+        }
+        
+        /* Sidebar collapsed state adjustments */
+        .sidebar-collapse .user-profile {
+            padding: 15px 5px;
+            text-align: center;
+            margin-left: 0;
+        }
+
+        /* Enhanced Sidebar Search */
+        .sidebar-search {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .search-container {
+            position: relative;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 0.75rem 2.5rem 0.75rem 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #ecf0f1;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            border-color: var(--primary-color);
+            background-color: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .search-icon {
+            position: absolute;
+            top: 50%;
+            left: 1rem;
+            transform: translateY(-50%);
+            color: #bdc3c7;
+            font-size: 1rem;
+        }
+
+        .search-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            width: 100%;
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            max-height: 200px;
+            overflow-y: auto;
+            display: none; /* Hidden by default */
+        }
+
+        .search-results.show {
+            display: block;
+        }
+
+        .search-results .search-item {
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            display: flex;
+            align-items: center;
+        }
+
+        .search-results .search-item:hover {
+            background-color: #f1f5f9;
+        }
+
+        .search-results .search-item i {
+            margin-right: 0.75rem;
+            font-size: 0.9rem;
+            color: #3498db;
+        }
+
+        .search-results .search-item p {
+            margin-bottom: 0;
+            font-size: 0.9rem;
+            color: #475569;
+        }
+
+        .search-results .search-item .badge {
+            margin-left: 0.5rem;
+        }
+
+        /* Enhanced Sidebar Footer */
+        .sidebar-footer {
+            position: absolute;
             bottom: 0;
             left: 0;
             right: 0;
-            padding: 10px;
-            background: rgba(220, 53, 69, 0.8);
+            padding: 1rem 1.5rem;
+            background: rgba(0, 0, 0, 0.3);
             border-top: 1px solid rgba(255, 255, 255, 0.1);
-            z-index: 10;
-            margin-top: 20px;
+            text-align: center;
+            backdrop-filter: blur(10px);
         }
 
-        .sidebar-logout a {
+        .system-info {
+            color: #bdc3c7;
+            font-size: 0.75rem;
+            margin-bottom: 8px;
+        }
+
+        .logout-btn {
+            width: 100%;
+            padding: 10px;
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
             color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            text-decoration: none;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 10px;
-            border-radius: 5px;
-            transition: all 0.3s;
-            font-weight: bold;
+            gap: 8px;
         }
 
-        .sidebar-logout a:hover {
-            background: rgba(255, 255, 255, 0.2);
+        .logout-btn:hover {
+            background: linear-gradient(135deg, #c0392b, #a93226);
             transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(231, 76, 60, 0.4);
+            color: white;
+            text-decoration: none;
         }
 
-        .sidebar-logout i {
-            margin-right: 10px;
-            font-size: 1.2em;
+        .logout-btn i {
+            margin-right: 0.5rem;
         }
 
-        /* RTL adjustments for logout button */
-        html[dir="rtl"] .sidebar-logout i {
-            margin-right: 0;
-            margin-left: 10px;
+        /* Mobile Sidebar Backdrop */
+        .sidebar-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1037;
+            display: none; /* Hidden by default */
         }
 
-        /* تخصيص شكل الزر عند طي القائمة */
-        .sidebar-collapse .sidebar-logout span {
+        .sidebar-open .sidebar-backdrop {
+            display: block;
+        }
+
+        /* Collapsed sidebar adjustments */
+        .sidebar-collapse .user-info,
+        .sidebar-collapse .sidebar-search,
+        .sidebar-collapse .nav-header,
+        .sidebar-collapse .nav-link p {
             display: none;
         }
 
-        .sidebar-collapse .sidebar-logout {
-            padding: 5px;
-        }
-
-        .sidebar-collapse .sidebar-logout a {
+        .sidebar-collapse .nav-link {
             justify-content: center;
+            padding: 12px;
         }
 
-        .sidebar-collapse .sidebar-logout i {
-            margin-right: 0;
-            margin-left: 0;
+        .sidebar-collapse .nav-icon {
+            margin: 0;
+        }
+
+        .sidebar-collapse .user-avatar {
+            margin: 0;
         }
     </style>
+
+    <script>
+        // Sidebar toggle function
+        function toggleSidebar() {
+            const sidebar = document.querySelector('.main-sidebar');
+            const sidebarBackdrop = document.querySelector('.sidebar-backdrop');
+            
+            if (window.innerWidth <= 768) {
+                document.body.classList.toggle('sidebar-open');
+            } else {
+                document.body.classList.toggle('sidebar-collapse');
+            }
+        }
+    </script>
 </head>
 
 <body class="hold-transition sidebar-mini layout-fixed">
@@ -1132,6 +755,7 @@
 
 <!-- Sidebar -->
 <aside class="main-sidebar elevation-4">
+    <!-- Enhanced Brand Section -->
     <a href="{{ route('dashboard') }}" class="brand-link">
         @if($companyLogo)
         <img src="{{ asset('storage/logos/'.$companyLogo) }}" alt="Logo" class="brand-image">
@@ -1140,27 +764,49 @@
     </a>
 
     <div class="sidebar">
-        <!-- ملف تعريف المستخدم -->
+        <!-- Enhanced User Profile -->
         <div class="user-profile">
-            <div class="user-avatar">
-                {{ substr(auth()->user()->name, 0, 1) }}
-            </div>
-            <div class="user-info">
-                <div class="user-name">{{ auth()->user()->name }}</div>
-                <div class="user-role">
-                    @if($isSuperAdmin)
-                        @lang('messages.super_admin')
-                    @else
-                        {{ auth()->user()->roles->first()->name ?? __('messages.user') }}
-                    @endif
+            <div class="user-profile-content">
+                <div class="user-avatar">
+                    {{ substr(auth()->user()->name, 0, 1) }}
+                </div>
+                <div class="user-info">
+                    <div class="user-name">{{ auth()->user()->name }}</div>
+                    <div class="user-role">
+                        @if($isSuperAdmin)
+                            @lang('messages.super_admin')
+                        @else
+                            {{ auth()->user()->roles->first()->name ?? __('messages.user') }}
+                        @endif
+                    </div>
+                    <div class="user-status">
+                        <div class="status-indicator"></div>
+                        <span class="status-text">متصل</span>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <nav class="mt-2">
+        <!-- Enhanced Search Section -->
+        <div class="sidebar-search">
+            <div class="search-container">
+                <input type="text" class="search-input" placeholder="البحث في القائمة..." id="sidebarSearch">
+                <i class="fas fa-search search-icon"></i>
+                <div class="search-results" id="searchResults"></div>
+            </div>
+        </div>
+
+
+
+        <!-- Enhanced Navigation -->
+        <nav class="sidebar-nav">
             <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
 
-                <li class="nav-header">@lang('sidebar.dashboard')</li>
+                <!-- Dashboard Section -->
+                <li class="nav-header">
+                    <i class="fas fa-tachometer-alt"></i>
+                    @lang('sidebar.dashboard')
+                </li>
                 @if($isSuperAdmin || auth()->user()->can('view_dashboard'))
                 <li class="nav-item">
                     <a href="{{ route('dashboard') }}" class="nav-link {{ Request::routeIs('dashboard') ? 'active' : '' }}">
@@ -1170,15 +816,19 @@
                 </li>
                 @endif
 
+                <!-- Accounts Section -->
                 @if($isSuperAdmin || auth()->user()->can('view_accounts'))
-                <li class="nav-header">@lang('sidebar.accounts')</li>
+                <li class="nav-header">
+                    <i class="fas fa-chart-pie"></i>
+                    @lang('sidebar.accounts')
+                </li>
                 <li class="nav-item has-treeview {{ Request::routeIs('accounts.*') ? 'menu-open' : '' }}">
                     <a href="#" class="nav-link {{ Request::routeIs('accounts.*') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-wallet"></i>
-                        <p>
-                            @lang('sidebar.accounts_management')
-                            <i class="right fas fa-angle-left"></i>
-                        </p>
+                        <p>@lang('sidebar.accounts_management')</p>
+                        @if(Request::routeIs('accounts.*'))
+                            <span class="nav-badge">{{ \App\Models\Account::count() }}</span>
+                        @endif
                     </a>
                     <ul class="nav nav-treeview">
                         <li class="nav-item">
@@ -1215,15 +865,22 @@
                 </li>
                 @endif
 
+                <!-- Vouchers Section -->
                 @if($isSuperAdmin || auth()->user()->can('view_vouchers'))
-                <li class="nav-header">@lang('sidebar.vouchers')</li>
+                <li class="nav-header">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                    @lang('sidebar.vouchers')
+                </li>
                 <li class="nav-item has-treeview {{ Request::routeIs('vouchers.*') ? 'menu-open' : '' }}">
                     <a href="#" class="nav-link {{ Request::routeIs('vouchers.*') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-file-invoice-dollar"></i>
-                        <p>
-                            @lang('sidebar.vouchers_management')
-                            <i class="right fas fa-angle-left"></i>
-                        </p>
+                        <p>@lang('sidebar.vouchers_management')</p>
+                        @php
+                            $todayVouchers = \App\Models\Voucher::whereDate('created_at', today())->count();
+                        @endphp
+                        @if($todayVouchers > 0)
+                            <span class="nav-badge">{{ $todayVouchers }}</span>
+                        @endif
                     </a>
                     <ul class="nav nav-treeview">
                         <li class="nav-item">
@@ -1248,8 +905,34 @@
                 </li>
                 @endif
 
+                <!-- Journal Entries -->
+                @if($isSuperAdmin || auth()->user()->can('view_journal_entries'))
+                <li class="nav-item">
+                    <a class="nav-link {{ Request::routeIs('journal-entries.*') ? 'active' : '' }}" href="{{ route('journal-entries.index') }}">
+                        <i class="nav-icon fas fa-book"></i>
+                        <p>@lang('sidebar.accounting_entries')</p>
+                        @php
+                            $todayEntries = \App\Models\JournalEntry::whereDate('created_at', today())->count();
+                        @endphp
+                        @if($todayEntries > 0)
+                            <span class="nav-badge">{{ $todayEntries }}</span>
+                        @endif
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ Request::routeIs('ledger.*') ? 'active' : '' }}" href="{{ route('ledger.index') }}">
+                        <i class="nav-icon fas fa-book-open"></i>
+                        <p>@lang('sidebar.ledger')</p>
+                    </a>
+                </li>
+                @endif
+
+                <!-- Transactions -->
                 @if($isSuperAdmin || auth()->user()->can('view_transactions'))
-                <li class="nav-header">@lang('sidebar.transactions')</li>
+                <li class="nav-header">
+                    <i class="fas fa-exchange-alt"></i>
+                    @lang('sidebar.transactions')
+                </li>
                 <li class="nav-item">
                     <a href="{{ route('transactions.index') }}" class="nav-link {{ Request::routeIs('transactions.*') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-exchange-alt"></i>
@@ -1258,8 +941,12 @@
                 </li>
                 @endif
 
+                <!-- Currencies -->
                 @if($isSuperAdmin || auth()->user()->can('view_currencies'))
-                <li class="nav-header">@lang('sidebar.currencies')</li>
+                <li class="nav-header">
+                    <i class="fas fa-coins"></i>
+                    @lang('sidebar.currencies')
+                </li>
                 <li class="nav-item">
                     <a href="{{ route('currencies.index') }}" class="nav-link {{ Request::routeIs('currencies.*') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-coins"></i>
@@ -1268,31 +955,32 @@
                 </li>
                 @endif
 
+                <!-- Invoices -->
                 @if($isSuperAdmin || auth()->user()->can('view_invoices'))
-                <li class="nav-header">@lang('sidebar.invoices')</li>
+                <li class="nav-header">
+                    <i class="fas fa-receipt"></i>
+                    @lang('sidebar.invoices')
+                </li>
                 <li class="nav-item has-treeview {{ Request::routeIs('invoices.*') || Request::routeIs('invoice-payments.*') ? 'menu-open' : '' }}">
                     <a href="#" class="nav-link {{ Request::routeIs('invoices.*') || Request::routeIs('invoice-payments.*') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-receipt"></i>
-                        <p>
-                            @lang('sidebar.invoices_management')
-                            <i class="right fas fa-angle-left"></i>
-                        </p>
+                        <p>@lang('sidebar.invoices_management')</p>
                     </a>
                     <ul class="nav nav-treeview">
                         <li class="nav-item">
-                            <a href="{{ route('invoices.index') }}" class="nav-link">
+                            <a href="{{ route('invoices.index') }}" class="nav-link {{ Request::routeIs('invoices.index') ? 'active' : '' }}">
                                 <i class="far fa-circle nav-icon"></i>
                                 <p>@lang('sidebar.invoices_list')</p>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a href="{{ route('invoices.create') }}" class="nav-link">
+                            <a href="{{ route('invoices.create') }}" class="nav-link {{ Request::routeIs('invoices.create') ? 'active' : '' }}">
                                 <i class="far fa-circle nav-icon"></i>
                                 <p>@lang('sidebar.new_invoice')</p>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a href="{{ route('invoice-payments.create') }}" class="nav-link">
+                            <a href="{{ route('invoice-payments.create') }}" class="nav-link {{ Request::routeIs('invoice-payments.create') ? 'active' : '' }}">
                                 <i class="far fa-circle nav-icon"></i>
                                 <p>@lang('sidebar.pay_invoice')</p>
                             </a>
@@ -1301,12 +989,16 @@
                 </li>
                 @endif
 
+                <!-- Customers -->
                 @if($isSuperAdmin || auth()->user()->can('view_customers'))
-                <li class="nav-header">@lang('sidebar.customers')</li>
+                <li class="nav-header">
+                    <i class="fas fa-users"></i>
+                    @lang('sidebar.customers')
+                </li>
                 <li class="nav-item has-treeview {{ Request::routeIs('customers.*') ? 'menu-open' : '' }}">
                     <a href="#" class="nav-link {{ Request::routeIs('customers.*') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-users"></i>
-                        <p>@lang('sidebar.customers_management')<i class="right fas fa-angle-left"></i></p>
+                        <p>@lang('sidebar.customers_management')</p>
                     </a>
                     <ul class="nav nav-treeview">
                         <li class="nav-item">
@@ -1325,12 +1017,16 @@
                 </li>
                 @endif
 
+                <!-- Items -->
                 @if($isSuperAdmin || auth()->user()->can('view_items'))
-                <li class="nav-header">@lang('sidebar.items')</li>
+                <li class="nav-header">
+                    <i class="fas fa-box-open"></i>
+                    @lang('sidebar.items')
+                </li>
                 <li class="nav-item has-treeview {{ Request::routeIs('items.*') ? 'menu-open' : '' }}">
                     <a href="#" class="nav-link {{ Request::routeIs('items.*') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-box-open"></i>
-                        <p>@lang('sidebar.items_management')<i class="right fas fa-angle-left"></i></p>
+                        <p>@lang('sidebar.items_management')</p>
                     </a>
                     <ul class="nav nav-treeview">
                         <li class="nav-item">
@@ -1349,34 +1045,15 @@
                 </li>
                 @endif
 
-                @if($isSuperAdmin || auth()->user()->can('view_journal_entries'))
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ route('journal-entries.index') }}">
-                        <i class="fas fa-book"></i>
-                        <span>@lang('sidebar.accounting_entries')</span>
-                    </a>
+                <!-- HR Section -->
+                @if($isSuperAdmin || auth()->user()->can('view_employees') || auth()->user()->can('view_salaries') || auth()->user()->can('view_salary_payments'))
+                <li class="nav-header">
+                    <i class="fas fa-user-tie"></i>
+                    @lang('sidebar.hr')
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ route('ledger.index') }}">
-                        <i class="fas fa-book-open"></i>
-                        <span>@lang('sidebar.ledger')</span>
-                    </a>
-                </li>
-                @endif
-
-                @if($isSuperAdmin || auth()->user()->can('view_salary_payments'))
-                <li class="nav-item">
-                    <a href="{{ route('salary-payments.index') }}" class="nav-link">
-                        <i class="nav-icon fas fa-money-check-alt"></i>
-                        <p>@lang('sidebar.salary_payments')</p>
-                    </a>
-                </li>
-                @endif
-
                 @if($isSuperAdmin || auth()->user()->can('view_employees'))
-                <li class="nav-header">@lang('sidebar.hr')</li>
                 <li class="nav-item">
-                    <a href="{{ route('employees.index') }}" class="nav-link">
+                    <a href="{{ route('employees.index') }}" class="nav-link {{ Request::routeIs('employees.*') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-user-tie"></i>
                         <p>@lang('sidebar.employees')</p>
                     </a>
@@ -1384,7 +1061,7 @@
                 @endif
                 @if($isSuperAdmin || auth()->user()->can('view_salaries'))
                 <li class="nav-item">
-                    <a href="{{ route('salaries.index') }}" class="nav-link">
+                    <a href="{{ route('salaries.index') }}" class="nav-link {{ Request::routeIs('salaries.*') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-money-bill-wave"></i>
                         <p>@lang('sidebar.salaries')</p>
                     </a>
@@ -1392,7 +1069,7 @@
                 @endif
                 @if($isSuperAdmin || auth()->user()->can('view_salary_payments'))
                 <li class="nav-item">
-                    <a href="{{ route('salary-payments.index') }}" class="nav-link">
+                    <a href="{{ route('salary-payments.index') }}" class="nav-link {{ Request::routeIs('salary-payments.*') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-money-check-alt"></i>
                         <p>@lang('sidebar.salary_payments')</p>
                     </a>
@@ -1400,15 +1077,21 @@
                 @endif
                 @if($isSuperAdmin || auth()->user()->can('view_salary_batches'))
                 <li class="nav-item">
-                    <a href="{{ route('salary-batches.index') }}" class="nav-link">
+                    <a href="{{ route('salary-batches.index') }}" class="nav-link {{ Request::routeIs('salary-batches.*') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-file-invoice-dollar"></i>
                         <p>@lang('sidebar.salary_sheets')</p>
                     </a>
                 </li>
                 @endif
+                @endif
 
+                <!-- System Settings -->
+                @if($isSuperAdmin || auth()->user()->can('view_roles') || auth()->user()->can('view_permissions') || auth()->user()->can('view_users'))
+                <li class="nav-header">
+                    <i class="fas fa-cogs"></i>
+                    @lang('sidebar.system_settings')
+                </li>
                 @if($isSuperAdmin || auth()->user()->can('view_roles'))
-                <li class="nav-header">@lang('sidebar.system_settings')</li>
                 <li class="nav-item">
                     <a href="{{ route('admin.roles.index') }}" class="nav-link {{ Request::routeIs('admin.roles.*') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-user-shield"></i>
@@ -1464,37 +1147,42 @@
                     </a>
                 </li>
                 @endif
+                @endif
 
+                <!-- Reports Section -->
                 @if($isSuperAdmin || auth()->user()->can('view_reports'))
-                <li class="nav-header">@lang('sidebar.reports')</li>
+                <li class="nav-header">
+                    <i class="fas fa-chart-bar"></i>
+                    @lang('sidebar.reports')
+                </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="{{ route('reports.trial-balance') }}">
-                        <i class="fas fa-balance-scale"></i>
-                        <span>@lang('sidebar.trial_balance')</span>
+                    <a class="nav-link {{ Request::routeIs('reports.trial-balance') ? 'active' : '' }}" href="{{ route('reports.trial-balance') }}">
+                        <i class="nav-icon fas fa-balance-scale"></i>
+                        <p>@lang('sidebar.trial_balance')</p>
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="{{ route('reports.balance-sheet') }}">
-                        <i class="fas fa-file-invoice-dollar"></i>
-                        <span>@lang('sidebar.balance_sheet')</span>
+                    <a class="nav-link {{ Request::routeIs('reports.balance-sheet') ? 'active' : '' }}" href="{{ route('reports.balance-sheet') }}">
+                        <i class="nav-icon fas fa-file-invoice-dollar"></i>
+                        <p>@lang('sidebar.balance_sheet')</p>
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="{{ route('reports.income-statement') }}">
-                        <i class="fas fa-chart-line"></i>
-                        <span>@lang('sidebar.income_statement')</span>
+                    <a class="nav-link {{ Request::routeIs('reports.income-statement') ? 'active' : '' }}" href="{{ route('reports.income-statement') }}">
+                        <i class="nav-icon fas fa-chart-line"></i>
+                        <p>@lang('sidebar.income_statement')</p>
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="{{ route('reports.payroll') }}">
-                        <i class="fas fa-money-check-alt"></i>
-                        <span>@lang('sidebar.payroll_report')</span>
+                    <a class="nav-link {{ Request::routeIs('reports.payroll') ? 'active' : '' }}" href="{{ route('reports.payroll') }}">
+                        <i class="nav-icon fas fa-money-check-alt"></i>
+                        <p>@lang('sidebar.payroll_report')</p>
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="{{ route('reports.expenses-revenues') }}">
-                        <i class="fas fa-receipt"></i>
-                        <span>@lang('sidebar.expenses_revenues')</span>
+                    <a class="nav-link {{ Request::routeIs('reports.expenses-revenues') ? 'active' : '' }}" href="{{ route('reports.expenses-revenues') }}">
+                        <i class="nav-icon fas fa-receipt"></i>
+                        <p>@lang('sidebar.expenses_revenues')</p>
                     </a>
                 </li>
                 @endif
@@ -1502,15 +1190,24 @@
             </ul>
         </nav>
 
-        {{-- إضافة زر تسجيل الخروج الثابت في أسفل القائمة --}}
-        <div class="sidebar-logout">
-            <a href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-                <i class="fas fa-sign-out-alt"></i>
-                <span>@lang('sidebar.logout')</span>
-            </a>
+        <!-- Enhanced Sidebar Footer -->
+        <div class="sidebar-footer">
+            <div class="system-info">
+                النظام المحاسبي الاحترافي v2.2.3
+            </div>
+            <form method="POST" action="{{ route('logout') }}" style="display: inline;">
+                @csrf
+                <button type="submit" class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>@lang('sidebar.logout')</span>
+                </button>
+            </form>
         </div>
     </div>
 </aside>
+
+<!-- Mobile Sidebar Backdrop -->
+<div class="sidebar-backdrop d-lg-none" onclick="toggleSidebar()"></div>
 @endauth
 
 <!-- Content Wrapper -->
@@ -1555,6 +1252,9 @@
 <script src="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/js/adminlte.min.js"></script>
 <!-- SweetAlert2 -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.5/dist/sweetalert2.all.min.js"></script>
+
+<!-- Account Currency Enhancement -->
+<script src="{{ asset('assets/js/account-currency-enhancement.js') }}"></script>
 
 <script>
     // إعادة تنشيط Tooltips وPopovers
@@ -1608,5 +1308,8 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+
+<!-- Enhanced Sidebar JavaScript -->
+<script src="{{ asset('assets/js/enhanced-sidebar.js') }}"></script>
 </body>
 </html>

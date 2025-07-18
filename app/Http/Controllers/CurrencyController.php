@@ -93,7 +93,7 @@ class CurrencyController extends Controller
      */
     public function destroy(Currency $currency)
     {
-        $usedInAccounts = \App\Models\Account::where('currency', $currency->code)->exists();
+        $usedInAccounts = \App\Models\Account::where('default_currency', $currency->code)->exists();
         $usedInInvoices = \App\Models\Invoice::where('currency', $currency->code)->exists();
         $usedInVouchers = \App\Models\Voucher::where('currency', $currency->code)->exists();
         $usedInSettings = \App\Models\AccountingSetting::where('currency', $currency->code)->exists();

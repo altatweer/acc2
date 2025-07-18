@@ -257,8 +257,8 @@ class SalaryBatchController extends Controller
         
         // Add journal entry lines for each currency
         foreach ($byCurrency as $currency => $rows) {
-            $expenseAccountId = \App\Models\AccountingSetting::get('salary_expense_account', $currency);
-            $liabilityAccountId = \App\Models\AccountingSetting::get('employee_payables_account', $currency);
+            $expenseAccountId = \App\Models\AccountingSetting::get('salary_expense_account');
+            $liabilityAccountId = \App\Models\AccountingSetting::get('employee_payables_account');
             
             if (!$expenseAccountId || !$liabilityAccountId) {
                 continue;
@@ -302,7 +302,7 @@ class SalaryBatchController extends Controller
             
             // Add deductions line if needed
             if ($totalDeductions > 0) {
-                $deductionAccountId = \App\Models\AccountingSetting::get('deductions_account_id', $currency);
+                $deductionAccountId = \App\Models\AccountingSetting::get('deductions_account');
                 if ($deductionAccountId) {
                     $journal->lines()->create([
                         'account_id' => $deductionAccountId,
@@ -337,5 +337,52 @@ class SalaryBatchController extends Controller
         $salaryBatch->salaryPayments()->delete();
         $salaryBatch->delete();
         return redirect()->route('salary-batches.index')->with('success', 'تم حذف كشف الرواتب بنجاح.');
+    }
+
+    /**
+     * طباعة كشف الرواتب
+     */
+    public function print(SalaryBatch $salaryBatch)
+    {
+        $salaryBatch->load(['salaryPayments.employee']);
+        
+        // Group payments by currency
+        $paymentsByCurrency = $salaryBatch->salaryPayments->groupBy(function($payment) {
+            return $payment->employee->currency;
+        });
+        
+        // Calculate totals by currency
+        $totalsByCurrency = [];
+        $grandTotal = [
+            'gross' => 0,
+            'allowances' => 0,
+            'deductions' => 0,
+            'net' => 0,
+        ];
+        
+        foreach ($paymentsByCurrency as $currency => $payments) {
+            $totalsByCurrency[$currency] = [
+                'gross' => $payments->sum('gross_salary'),
+                'allowances' => $payments->sum('total_allowances'),
+                'deductions' => $payments->sum('total_deductions'),
+                'net' => $payments->sum('net_salary'),
+                'count' => $payments->count(),
+            ];
+        }
+        
+        // Calculate overall statistics
+        $statistics = [
+            'total_employees' => $salaryBatch->salaryPayments->count(),
+            'paid_employees' => $salaryBatch->salaryPayments->where('status', 'paid')->count(),
+            'pending_employees' => $salaryBatch->salaryPayments->where('status', 'pending')->count(),
+            'total_currencies' => $paymentsByCurrency->count(),
+        ];
+        
+        return view('salary_batches.print', compact(
+            'salaryBatch', 
+            'paymentsByCurrency', 
+            'totalsByCurrency', 
+            'statistics'
+        ));
     }
 } 

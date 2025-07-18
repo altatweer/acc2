@@ -19,9 +19,21 @@
                 <dt class="col-sm-2">@lang('messages.currency')</dt>
                 <dd class="col-sm-4">{{ $journalEntry->currency }}</dd>
                 <dt class="col-sm-2">@lang('messages.debit')</dt>
-                <dd class="col-sm-4">{{ number_format($journalEntry->total_debit,2) }}</dd>
+                <dd class="col-sm-4">
+                    @if($journalEntry->currency == 'MIX' || $journalEntry->is_multi_currency)
+                        <span class="text-info font-weight-bold">متعدد العملات</span>
+                    @else
+                        {{ number_format($journalEntry->total_debit,2) }}
+                    @endif
+                </dd>
                 <dt class="col-sm-2">@lang('messages.credit')</dt>
-                <dd class="col-sm-4">{{ number_format($journalEntry->total_credit,2) }}</dd>
+                <dd class="col-sm-4">
+                    @if($journalEntry->currency == 'MIX' || $journalEntry->is_multi_currency)
+                        <span class="text-info font-weight-bold">متعدد العملات</span>
+                    @else
+                        {{ number_format($journalEntry->total_credit,2) }}
+                    @endif
+                </dd>
                 <dt class="col-sm-2">@lang('messages.status')</dt>
                 <dd class="col-sm-4">
                     @if($journalEntry->status == 'active')

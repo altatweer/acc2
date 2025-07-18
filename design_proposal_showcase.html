@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مقترحات تطوير تصميم النظام المحاسبي 2025</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Primary Colors */
+            --primary-blue: #2563eb;
+            --primary-green: #059669;
+            --primary-red: #dc2626;
+            --primary-orange: #ea580c;
+            
+            /* Currency Colors */
+            --currency-iqd: #1976d2;
+            --currency-usd: #388e3c;
+            --currency-eur: #5e35b1;
+            
+            /* Semantic Colors */
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #3b82f6;
+            
+            /* Neutral Colors */
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-400: #9ca3af;
+            --gray-500: #6b7280;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
+            --gray-900: #111827;
+            
+            /* Gradients */
+            --gradient-blue: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --gradient-green: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            --gradient-purple: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: var(--gray-800);
+            line-height: 1.6;
+        }
+
+        /* Header */
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 2rem 0;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            font-weight: 900;
+            background: var(--gradient-blue);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            color: var(--gray-600);
+            font-weight: 300;
+        }
+
+        /* Container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        /* Navigation */
+        .nav-pills {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin: 2rem 0;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .nav-pill {
+            padding: 0.8rem 1.5rem;
+            background: var(--gray-100);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            text-decoration: none;
+            color: var(--gray-700);
+        }
+
+        .nav-pill:hover, .nav-pill.active {
+            background: var(--primary-blue);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(37, 99, 235, 0.3);
+        }
+
+        /* Main Content */
+        .main-content {
+            margin: 2rem 0;
+        }
+
+        /* Section */
+        .section {
+            background: rgba(255, 255, 255, 0.95);
+            margin: 2rem 0;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .section-header {
+            background: var(--gradient-blue);
+            padding: 2rem;
+            color: white;
+            text-align: center;
+        }
+
+        .section-header h2 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .section-header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .section-content {
+            padding: 2rem;
+        }
+
+        /* Dashboard Preview */
+        .dashboard-preview {
+            background: var(--gray-50);
+            border-radius: 15px;
+            padding: 2rem;
+            margin: 2rem 0;
+        }
+
+        .dashboard-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding: 1rem;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .dashboard-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--gray-800);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .stat-card.revenue {
+            border-color: var(--currency-iqd);
+        }
+
+        .stat-card.expenses {
+            border-color: var(--danger);
+        }
+
+        .stat-card.cash {
+            border-color: var(--currency-usd);
+        }
+
+        .stat-card.customers {
+            border-color: var(--currency-eur);
+        }
+
+        .stat-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .revenue .stat-icon { color: var(--currency-iqd); }
+        .expenses .stat-icon { color: var(--danger); }
+        .cash .stat-icon { color: var(--currency-usd); }
+        .customers .stat-icon { color: var(--currency-eur); }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: var(--gray-600);
+            font-weight: 500;
+        }
+
+        /* Charts Section */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 2rem;
+            margin: 2rem 0;
+        }
+
+        .chart-container {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .chart-placeholder {
+            height: 300px;
+            background: linear-gradient(45deg, var(--gray-100), var(--gray-50));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--gray-500);
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        /* Navigation Sidebar Preview */
+        .sidebar-preview {
+            background: var(--gray-800);
+            color: white;
+            width: 280px;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .sidebar-header {
+            padding: 2rem;
+            text-align: center;
+            background: var(--primary-blue);
+        }
+
+        .sidebar-logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .sidebar-menu {
+            padding: 1rem;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            margin: 0.5rem 0;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .menu-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .menu-item.active {
+            background: var(--primary-blue);
+        }
+
+        /* Color Palette */
+        .color-palette {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+
+        .color-item {
+            text-align: center;
+            padding: 1rem;
+            border-radius: 10px;
+            background: white;
+            box-shadow: 0 3px 15px rgba(0, 0, 0, 0.08);
+        }
+
+        .color-swatch {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            margin: 0 auto 1rem;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .color-iqd { background: var(--currency-iqd); }
+        .color-usd { background: var(--currency-usd); }
+        .color-eur { background: var(--currency-eur); }
+        .color-success { background: var(--success); }
+        .color-warning { background: var(--warning); }
+        .color-danger { background: var(--danger); }
+
+        /* Table Preview */
+        .table-preview {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .table-header {
+            background: var(--gray-50);
+            padding: 1rem 2rem;
+            border-bottom: 1px solid var(--gray-200);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modern-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .modern-table th,
+        .modern-table td {
+            padding: 1rem;
+            text-align: right;
+            border-bottom: 1px solid var(--gray-100);
+        }
+
+        .modern-table th {
+            background: var(--gray-50);
+            font-weight: 600;
+            color: var(--gray-700);
+        }
+
+        .modern-table tr:hover {
+            background: var(--gray-50);
+        }
+
+        /* Form Preview */
+        .form-preview {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--gray-700);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid var(--gray-200);
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .btn {
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: var(--primary-blue);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #1d4ed8;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(37, 99, 235, 0.3);
+        }
+
+        /* Progress Indicator */
+        .progress-indicator {
+            display: flex;
+            justify-content: center;
+            margin: 2rem 0;
+        }
+
+        .step {
+            padding: 0.5rem 1rem;
+            background: var(--gray-200);
+            margin: 0 0.5rem;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .step.active {
+            background: var(--primary-blue);
+            color: white;
+        }
+
+        /* Toast Notification */
+        .toast-demo {
+            position: relative;
+            margin: 2rem 0;
+        }
+
+        .toast {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem 1.5rem;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+            border-left: 4px solid var(--success);
+        }
+
+        .toast-icon {
+            font-size: 1.5rem;
+            color: var(--success);
+        }
+
+        .toast-content {
+            flex: 1;
+        }
+
+        .toast-title {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .toast-message {
+            color: var(--gray-600);
+            font-size: 0.9rem;
+        }
+
+        /* Features Grid */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin: 2rem 0;
+        }
+
+        .feature-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: var(--primary-blue);
+        }
+
+        .feature-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--gray-800);
+        }
+
+        .feature-description {
+            color: var(--gray-600);
+            line-height: 1.6;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .nav-pills {
+                flex-wrap: wrap;
+            }
+            
+            .dashboard-header {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Animation */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .section {
+            animation: fadeInUp 0.6s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="container">
+            <h1><i class="fas fa-palette"></i> مقترحات التصميم</h1>
+            <p>تطوير وتحسين تصميم النظام المحاسبي 2025</p>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <div class="container">
+        <div class="nav-pills">
+            <a href="#dashboard" class="nav-pill active"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            <a href="#navigation" class="nav-pill"><i class="fas fa-bars"></i> التنقل</a>
+            <a href="#colors" class="nav-pill"><i class="fas fa-palette"></i> الألوان</a>
+            <a href="#tables" class="nav-pill"><i class="fas fa-table"></i> الجداول</a>
+            <a href="#forms" class="nav-pill"><i class="fas fa-edit"></i> النماذج</a>
+            <a href="#features" class="nav-pill"><i class="fas fa-star"></i> المميزات</a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container main-content">
+        
+        <!-- Dashboard Section -->
+        <div id="dashboard" class="section">
+            <div class="section-header">
+                <h2><i class="fas fa-tachometer-alt"></i> Dashboard محسن</h2>
+                <p>تصميم لوحة تحكم عصرية وتفاعلية</p>
+            </div>
+            <div class="section-content">
+                <div class="dashboard-preview">
+                    <div class="dashboard-header">
+                        <div class="dashboard-title">
+                            <i class="fas fa-building"></i> النظام المحاسبي 2025
+                        </div>
+                        <div class="user-info">
+                            <i class="fas fa-user-circle"></i>
+                            <span>أحمد محمد</span>
+                            <i class="fas fa-bell"></i>
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                    </div>
+
+                    <!-- Stats Cards -->
+                    <div class="stats-grid">
+                        <div class="stat-card revenue">
+                            <div class="stat-icon"><i class="fas fa-money-bill-wave"></i></div>
+                            <div class="stat-value">2,450,000 IQD</div>
+                            <div class="stat-label">إجمالي الإيرادات</div>
+                        </div>
+                        <div class="stat-card expenses">
+                            <div class="stat-icon"><i class="fas fa-credit-card"></i></div>
+                            <div class="stat-value">1,340,000 IQD</div>
+                            <div class="stat-label">إجمالي المصروفات</div>
+                        </div>
+                        <div class="stat-card cash">
+                            <div class="stat-icon"><i class="fas fa-wallet"></i></div>
+                            <div class="stat-value">15,600 USD</div>
+                            <div class="stat-label">أرصدة الصناديق</div>
+                        </div>
+                        <div class="stat-card customers">
+                            <div class="stat-icon"><i class="fas fa-users"></i></div>
+                            <div class="stat-value">847</div>
+                            <div class="stat-label">العملاء النشطون</div>
+                        </div>
+                    </div>
+
+                    <!-- Charts -->
+                    <div class="charts-grid">
+                        <div class="chart-container">
+                            <h3><i class="fas fa-chart-line"></i> الإيرادات الشهرية</h3>
+                            <div class="chart-placeholder">
+                                <i class="fas fa-chart-area"></i> مخطط تفاعلي للإيرادات
+                            </div>
+                        </div>
+                        <div class="chart-container">
+                            <h3><i class="fas fa-exchange-alt"></i> التدفق النقدي</h3>
+                            <div class="chart-placeholder">
+                                <i class="fas fa-chart-bar"></i> مخطط التدفق النقدي
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation Section -->
+        <div id="navigation" class="section">
+            <div class="section-header">
+                <h2><i class="fas fa-bars"></i> نظام التنقل المطور</h2>
+                <p>تجربة تنقل سلسة وبديهية</p>
+            </div>
+            <div class="section-content">
+                <div style="display: flex; gap: 2rem; align-items: flex-start;">
+                    <div class="sidebar-preview">
+                        <div class="sidebar-header">
+                            <div class="sidebar-logo">
+                                <i class="fas fa-building"></i> المحاسبة
+                            </div>
+                        </div>
+                        <div class="sidebar-menu">
+                            <div class="menu-item active">
+                                <i class="fas fa-home"></i>
+                                <span>Dashboard</span>
+                            </div>
+                            <div class="menu-item">
+                                <i class="fas fa-calculator"></i>
+                                <span>المحاسبة</span>
+                            </div>
+                            <div class="menu-item">
+                                <i class="fas fa-chart-pie"></i>
+                                <span>دليل الحسابات</span>
+                            </div>
+                            <div class="menu-item">
+                                <i class="fas fa-file-invoice"></i>
+                                <span>القيود</span>
+                            </div>
+                            <div class="menu-item">
+                                <i class="fas fa-receipt"></i>
+                                <span>السندات</span>
+                            </div>
+                            <div class="menu-item">
+                                <i class="fas fa-chart-line"></i>
+                                <span>التقارير</span>
+                            </div>
+                            <div class="menu-item">
+                                <i class="fas fa-users"></i>
+                                <span>العملاء</span>
+                            </div>
+                            <div class="menu-item">
+                                <i class="fas fa-user-tie"></i>
+                                <span>الموظفين</span>
+                            </div>
+                            <div class="menu-item">
+                                <i class="fas fa-cog"></i>
+                                <span>الإعدادات</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="flex: 1;">
+                        <h3><i class="fas fa-search"></i> البحث السريع</h3>
+                        <div class="form-group">
+                            <input type="text" class="form-input" placeholder="البحث في جميع أنحاء النظام... (Ctrl+K)">
+                        </div>
+                        
+                        <h3><i class="fas fa-star"></i> المفضلة والإجراءات السريعة</h3>
+                        <div style="display: flex; gap: 1rem; margin: 1rem 0;">
+                            <button class="btn btn-primary">إضافة قيد</button>
+                            <button class="btn btn-primary">سند قبض</button>
+                            <button class="btn btn-primary">تقرير سريع</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Colors Section -->
+        <div id="colors" class="section">
+            <div class="section-header">
+                <h2><i class="fas fa-palette"></i> نظام الألوان</h2>
+                <p>ألوان متناسقة ومعبرة للعملات والحالات</p>
+            </div>
+            <div class="section-content">
+                <h3>ألوان العملات</h3>
+                <div class="color-palette">
+                    <div class="color-item">
+                        <div class="color-swatch color-iqd"></div>
+                        <div class="color-name"><strong>IQD</strong></div>
+                        <div class="color-code">#1976d2</div>
+                        <div class="color-label">الدينار العراقي</div>
+                    </div>
+                    <div class="color-item">
+                        <div class="color-swatch color-usd"></div>
+                        <div class="color-name"><strong>USD</strong></div>
+                        <div class="color-code">#388e3c</div>
+                        <div class="color-label">الدولار الأمريكي</div>
+                    </div>
+                    <div class="color-item">
+                        <div class="color-swatch color-eur"></div>
+                        <div class="color-name"><strong>EUR</strong></div>
+                        <div class="color-code">#5e35b1</div>
+                        <div class="color-label">اليورو</div>
+                    </div>
+                </div>
+
+                <h3>ألوان الحالات</h3>
+                <div class="color-palette">
+                    <div class="color-item">
+                        <div class="color-swatch color-success"></div>
+                        <div class="color-name"><strong>نجاح</strong></div>
+                        <div class="color-code">#10b981</div>
+                        <div class="color-label">العمليات الناجحة</div>
+                    </div>
+                    <div class="color-item">
+                        <div class="color-swatch color-warning"></div>
+                        <div class="color-name"><strong>تحذير</strong></div>
+                        <div class="color-code">#f59e0b</div>
+                        <div class="color-label">التحذيرات</div>
+                    </div>
+                    <div class="color-item">
+                        <div class="color-swatch color-danger"></div>
+                        <div class="color-name"><strong>خطر</strong></div>
+                        <div class="color-code">#ef4444</div>
+                        <div class="color-label">الأخطاء</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tables Section -->
+        <div id="tables" class="section">
+            <div class="section-header">
+                <h2><i class="fas fa-table"></i> الجداول المتقدمة</h2>
+                <p>جداول تفاعلية مع إمكانيات متقدمة</p>
+            </div>
+            <div class="section-content">
+                <div class="table-preview">
+                    <div class="table-header">
+                        <h3><i class="fas fa-list"></i> دليل الحسابات</h3>
+                        <div>
+                            <button class="btn btn-primary">
+                                <i class="fas fa-plus"></i> إضافة حساب
+                            </button>
+                        </div>
+                    </div>
+                    <table class="modern-table">
+                        <thead>
+                            <tr>
+                                <th><i class="fas fa-sort"></i> رقم الحساب</th>
+                                <th><i class="fas fa-sort"></i> اسم الحساب</th>
+                                <th><i class="fas fa-filter"></i> النوع</th>
+                                <th><i class="fas fa-sort"></i> الرصيد</th>
+                                <th>العملة</th>
+                                <th>الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>1001</td>
+                                <td>صندوق النقدية الرئيسي</td>
+                                <td><span style="color: var(--currency-iqd);">أصل</span></td>
+                                <td>2,450,000</td>
+                                <td><span style="background: var(--currency-iqd); color: white; padding: 0.25rem 0.5rem; border-radius: 5px; font-size: 0.8rem;">IQD</span></td>
+                                <td>
+                                    <i class="fas fa-edit" style="color: var(--primary-blue); cursor: pointer;"></i>
+                                    <i class="fas fa-eye" style="color: var(--success); cursor: pointer; margin: 0 0.5rem;"></i>
+                                    <i class="fas fa-trash" style="color: var(--danger); cursor: pointer;"></i>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>1002</td>
+                                <td>صندوق النقدية بالدولار</td>
+                                <td><span style="color: var(--currency-usd);">أصل</span></td>
+                                <td>15,600</td>
+                                <td><span style="background: var(--currency-usd); color: white; padding: 0.25rem 0.5rem; border-radius: 5px; font-size: 0.8rem;">USD</span></td>
+                                <td>
+                                    <i class="fas fa-edit" style="color: var(--primary-blue); cursor: pointer;"></i>
+                                    <i class="fas fa-eye" style="color: var(--success); cursor: pointer; margin: 0 0.5rem;"></i>
+                                    <i class="fas fa-trash" style="color: var(--danger); cursor: pointer;"></i>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>2001</td>
+                                <td>حسابات العملاء</td>
+                                <td><span style="color: var(--currency-eur);">أصل</span></td>
+                                <td>890,000</td>
+                                <td><span style="background: var(--currency-iqd); color: white; padding: 0.25rem 0.5rem; border-radius: 5px; font-size: 0.8rem;">IQD</span></td>
+                                <td>
+                                    <i class="fas fa-edit" style="color: var(--primary-blue); cursor: pointer;"></i>
+                                    <i class="fas fa-eye" style="color: var(--success); cursor: pointer; margin: 0 0.5rem;"></i>
+                                    <i class="fas fa-trash" style="color: var(--danger); cursor: pointer;"></i>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Forms Section -->
+        <div id="forms" class="section">
+            <div class="section-header">
+                <h2><i class="fas fa-edit"></i> النماذج المحسنة</h2>
+                <p>نماذج ذكية وسهلة الاستخدام</p>
+            </div>
+            <div class="section-content">
+                <div class="form-preview">
+                    <h3><i class="fas fa-plus"></i> إضافة حساب جديد</h3>
+                    
+                    <div class="progress-indicator">
+                        <span class="step active">المعلومات الأساسية</span>
+                        <span class="step">الإعدادات</span>
+                        <span class="step">المراجعة</span>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">اسم الحساب</label>
+                        <input type="text" class="form-input" placeholder="أدخل اسم الحساب">
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label class="form-label">رقم الحساب</label>
+                            <input type="text" class="form-input" placeholder="سيتم توليده تلقائياً">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">نوع الحساب</label>
+                            <select class="form-input">
+                                <option>-- اختر نوع الحساب --</option>
+                                <option>أصل</option>
+                                <option>خصم</option>
+                                <option>إيراد</option>
+                                <option>مصروف</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label class="form-label">العملة الافتراضية</label>
+                            <select class="form-input">
+                                <option style="color: var(--currency-iqd);">IQD - الدينار العراقي</option>
+                                <option style="color: var(--currency-usd);">USD - الدولار الأمريكي</option>
+                                <option style="color: var(--currency-eur);">EUR - اليورو</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">الرصيد الافتتاحي</label>
+                            <input type="number" class="form-input" placeholder="0.00">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">نوع الرصيد</label>
+                            <select class="form-input">
+                                <option>مدين</option>
+                                <option>دائن</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div style="text-align: center; margin-top: 2rem;">
+                        <button class="btn btn-primary">
+                            <i class="fas fa-save"></i> حفظ الحساب
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Toast Notification Demo -->
+                <div class="toast-demo">
+                    <h3><i class="fas fa-bell"></i> نظام الإشعارات</h3>
+                    <div class="toast">
+                        <div class="toast-icon">✅</div>
+                        <div class="toast-content">
+                            <div class="toast-title">تم الحفظ بنجاح</div>
+                            <div class="toast-message">تم إضافة الحساب الجديد بنجاح إلى دليل الحسابات</div>
+                        </div>
+                        <button class="toast-close" style="background: none; border: none; font-size: 1.2rem; cursor: pointer;">×</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Features Section -->
+        <div id="features" class="section">
+            <div class="section-header">
+                <h2><i class="fas fa-star"></i> المميزات المتقدمة</h2>
+                <p>إمكانيات حديثة لتجربة مستخدم استثنائية</p>
+            </div>
+            <div class="section-content">
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon"><i class="fas fa-mobile-alt"></i></div>
+                        <div class="feature-title">تصميم متجاوب</div>
+                        <div class="feature-description">واجهة تتكيف مع جميع أحجام الشاشات من الموبايل إلى سطح المكتب</div>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon"><i class="fas fa-moon"></i></div>
+                        <div class="feature-title">الوضع الليلي</div>
+                        <div class="feature-description">تجربة مريحة للعين مع إمكانية التبديل بين الوضع الليلي والنهاري</div>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon"><i class="fas fa-search"></i></div>
+                        <div class="feature-title">البحث الذكي</div>
+                        <div class="feature-description">بحث سريع وذكي في جميع أنحاء النظام مع اختصارات لوحة المفاتيح</div>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon"><i class="fas fa-chart-line"></i></div>
+                        <div class="feature-title">مخططات تفاعلية</div>
+                        <div class="feature-description">رسوم بيانية حديثة وتفاعلية لعرض البيانات المالية بوضوح</div>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon"><i class="fas fa-bolt"></i></div>
+                        <div class="feature-title">أداء عالي</div>
+                        <div class="feature-description">تحميل سريع وأداء محسن مع تقنيات التخزين المؤقت المتقدمة</div>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon"><i class="fas fa-shield-alt"></i></div>
+                        <div class="feature-title">أمان محسن</div>
+                        <div class="feature-description">نظام صلاحيات متقدم وحماية شاملة للبيانات المالية الحساسة</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Smooth scrolling for navigation
+        document.querySelectorAll('.nav-pill').forEach(pill => {
+            pill.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // Remove active class from all pills
+                document.querySelectorAll('.nav-pill').forEach(p => p.classList.remove('active'));
+                // Add active class to clicked pill
+                this.classList.add('active');
+                
+                // Smooth scroll to target
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Add some interactive effects
+        document.querySelectorAll('.stat-card').forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-10px) scale(1.02)';
+            });
+            
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0) scale(1)';
+            });
+        });
+
+        // Toast notification close
+        document.querySelector('.toast-close')?.addEventListener('click', function() {
+            this.closest('.toast').style.opacity = '0';
+            setTimeout(() => {
+                this.closest('.toast').style.display = 'none';
+            }, 300);
+        });
+
+        // Form input focus effects
+        document.querySelectorAll('.form-input').forEach(input => {
+            input.addEventListener('focus', function() {
+                this.parentElement.style.transform = 'scale(1.02)';
+            });
+            
+            input.addEventListener('blur', function() {
+                this.parentElement.style.transform = 'scale(1)';
+            });
+        });
+    </script>
+</body>
+</html> 

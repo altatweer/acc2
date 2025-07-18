@@ -21,6 +21,30 @@ class JournalEntryLine extends Model
         'tenant_id',
     ];
 
+    protected $casts = [
+        'debit' => 'decimal:2',
+        'credit' => 'decimal:2',
+        'exchange_rate' => 'decimal:6',
+    ];
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        // حذف cache الرصيد عند إضافة أو تعديل أو حذف سطر قيد
+        static::created(function ($line) {
+            \Cache::forget('account_balance_' . $line->account_id);
+        });
+
+        static::updated(function ($line) {
+            \Cache::forget('account_balance_' . $line->account_id);
+        });
+
+        static::deleted(function ($line) {
+            \Cache::forget('account_balance_' . $line->account_id);
+        });
+    }
+
     public function journalEntry()
     {
         return $this->belongsTo(JournalEntry::class);

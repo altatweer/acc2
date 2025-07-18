@@ -13,68 +13,98 @@ class FixTenantIds extends Command
      *
      * @var string
      */
-    protected $signature = 'tenant:fix-ids {--tenant_id=1 : معرف المستأجر المراد استخدامه}';
+    protected $signature = 'tenant:fix-ids {--tenant-id=1 : The tenant ID to assign to NULL records}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'تحديث كافة السجلات التي تحتوي على tenant_id فارغ (null) وتعيين القيمة المحددة لها';
+    protected $description = 'Fix tenant_id for all tables - set NULL tenant_id records to specified tenant ID';
 
     /**
      * Execute the console command.
      */
     public function handle()
     {
-        $defaultTenantId = $this->option('tenant_id');
+        $tenantId = $this->option('tenant-id');
         
-        $this->info('جاري تحديث السجلات بـ tenant_id = ' . $defaultTenantId);
+        $this->info("🔧 بدء إصلاح tenant_id لجميع الجداول...");
+        $this->info("📋 tenant_id المستهدف: {$tenantId}");
         
-        // الحصول على جميع الجداول في قاعدة البيانات
-        $tables = DB::select('SHOW TABLES');
-        $updatedTables = 0;
-        $totalRecordsUpdated = 0;
+        // الحصول على جميع الجداول التي تحتوي على عمود tenant_id
+        $tablesWithTenantId = $this->getTablesWithTenantId();
         
-        $this->output->progressStart(count($tables));
-        
-        foreach ($tables as $table) {
-            $tableName = reset($table);
-            
-            // تخطي بعض الجداول الخاصة
-            if (in_array($tableName, ['migrations', 'password_reset_tokens', 'failed_jobs'])) {
-                $this->output->progressAdvance();
-                continue;
-            }
-            
-            // التحقق مما إذا كان الجدول يحتوي على عمود tenant_id
-            $columns = Schema::getColumnListing($tableName);
-            
-            if (in_array('tenant_id', $columns)) {
-                // إحصاء السجلات التي تحتاج للتحديث
-                $nullCount = DB::table($tableName)->whereNull('tenant_id')->count();
-                
-                if ($nullCount > 0) {
-                    // تحديث السجلات التي لا تحتوي على tenant_id أو قيمتها null
-                    DB::table($tableName)
-                        ->whereNull('tenant_id')
-                        ->update(['tenant_id' => $defaultTenantId]);
-                    
-                    $updatedTables++;
-                    $totalRecordsUpdated += $nullCount;
-                    
-                    $this->info("تم تحديث {$nullCount} سجلاً في جدول {$tableName}");
-                }
-            }
-            
-            $this->output->progressAdvance();
+        if (empty($tablesWithTenantId)) {
+            $this->warn("⚠️ لم يتم العثور على جداول تحتوي على عمود tenant_id");
+            return;
         }
         
-        $this->output->progressFinish();
+        $this->info("📊 تم العثور على " . count($tablesWithTenantId) . " جدول");
         
-        $this->info('===== تم اكتمال العملية =====');
-        $this->info("تم تحديث {$totalRecordsUpdated} سجلاً في {$updatedTables} جدول");
+        $totalUpdated = 0;
+        
+        foreach ($tablesWithTenantId as $table) {
+            $this->line("🔄 معالجة جدول: {$table}");
+            
+            try {
+                // تحديث السجلات التي لها tenant_id = NULL أو مختلف عن المطلوب
+                $updated = DB::table($table)
+                    ->where(function($query) use ($tenantId) {
+                        $query->whereNull('tenant_id')
+                              ->orWhere('tenant_id', '!=', $tenantId);
+                    })
+                    ->update(['tenant_id' => $tenantId]);
+                
+                if ($updated > 0) {
+                    $this->info("✅ تم تحديث {$updated} سجل في جدول {$table}");
+                    $totalUpdated += $updated;
+                } else {
+                    $this->comment("ℹ️ جدول {$table} - لا توجد سجلات تحتاج تحديث");
+                }
+                
+            } catch (\Exception $e) {
+                $this->error("❌ خطأ في معالجة جدول {$table}: " . $e->getMessage());
+            }
+        }
+        
+        $this->newLine();
+        $this->info("🎉 تم الانتهاء!");
+        $this->info("📈 إجمالي السجلات المحدثة: {$totalUpdated}");
+        
+        // التحقق من النتائج
+        $this->newLine();
+        $this->info("📋 التحقق من النتائج:");
+        
+        foreach ($tablesWithTenantId as $table) {
+            try {
+                $count = DB::table($table)->where('tenant_id', $tenantId)->count();
+                $nullCount = DB::table($table)->whereNull('tenant_id')->count();
+                $this->line("  {$table}: {$count} سجل مع tenant_id={$tenantId}, {$nullCount} سجل NULL");
+            } catch (\Exception $e) {
+                $this->comment("  {$table}: تعذر التحقق");
+            }
+        }
         
         return 0;
+    }
+    
+    /**
+     * Get all tables that have tenant_id column
+     * 
+     * @return array
+     */
+    private function getTablesWithTenantId(): array
+    {
+        $database = config('database.connections.mysql.database');
+        
+        $tables = DB::select("
+            SELECT TABLE_NAME 
+            FROM information_schema.COLUMNS 
+            WHERE TABLE_SCHEMA = ? 
+            AND COLUMN_NAME = 'tenant_id'
+        ", [$database]);
+        
+        return array_column($tables, 'TABLE_NAME');
     }
 } 

@@ -45,8 +45,19 @@ trait BelongsToTenant
                 // فقط إذا كان عمود tenant_id موجوداً في الجدول
                 $table = $model->getTable();
                 
-                if (Schema::hasColumn($table, 'tenant_id') && (!isset($model->tenant_id) || is_null($model->tenant_id))) {
-                    $model->tenant_id = app()->bound('tenant_id') ? app('tenant_id') : 1;
+                if (Schema::hasColumn($table, 'tenant_id')) {
+                    // إذا لم يكن tenant_id محدد أو كان NULL، نعيّن 1
+                    if (!isset($model->tenant_id) || is_null($model->tenant_id)) {
+                        $model->tenant_id = self::getTenantId();
+                    }
+                    // إذا كان multi-tenancy مفعل ولكن tenant_id مختلف عن المستخدم الحالي، نصحح
+                    elseif (config('app.multi_tenancy_enabled', false)) {
+                        $currentTenantId = self::getTenantId();
+                        if ($model->tenant_id != $currentTenantId) {
+                            Log::warning("BelongsToTenant: تصحيح tenant_id من {$model->tenant_id} إلى {$currentTenantId} للموديل " . get_class($model));
+                            $model->tenant_id = $currentTenantId;
+                        }
+                    }
                 }
             } catch (\Exception $e) {
                 Log::error("BelongsToTenant creating error: " . $e->getMessage());
@@ -54,6 +65,30 @@ trait BelongsToTenant
                 if (Schema::hasColumn($model->getTable(), 'tenant_id')) {
                     $model->tenant_id = 1;
                 }
+            }
+        });
+
+        // حدث التحديث: التأكد من عدم تغيير tenant_id بطريقة خاطئة
+        static::updating(function ($model) {
+            try {
+                $table = $model->getTable();
+                
+                if (Schema::hasColumn($table, 'tenant_id') && config('app.multi_tenancy_enabled', false)) {
+                    $currentTenantId = self::getTenantId();
+                    
+                    // إذا كان tenant_id مختلف عن المستخدم الحالي، نمنع التحديث أو نصحح
+                    if (isset($model->tenant_id) && $model->tenant_id != $currentTenantId) {
+                        Log::warning("BelongsToTenant: محاولة تحديث tenant_id إلى {$model->tenant_id} بينما المستخدم الحالي له tenant_id = {$currentTenantId}");
+                        $model->tenant_id = $currentTenantId;
+                    }
+                    
+                    // إذا كان NULL، نعيّن القيمة الصحيحة
+                    if (is_null($model->tenant_id)) {
+                        $model->tenant_id = $currentTenantId;
+                    }
+                }
+            } catch (\Exception $e) {
+                Log::error("BelongsToTenant updating error: " . $e->getMessage());
             }
         });
     }

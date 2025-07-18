@@ -18,7 +18,17 @@ class InvoiceItem extends Model
         'quantity', 
         'unit_price', 
         'line_total',
+        'currency',
+        'exchange_rate',
+        'base_currency_total',
         'tenant_id',
+    ];
+
+    protected $casts = [
+        'unit_price' => 'decimal:2',
+        'line_total' => 'decimal:2', 
+        'exchange_rate' => 'decimal:10',
+        'base_currency_total' => 'decimal:4',
     ];
 
     public function invoice()

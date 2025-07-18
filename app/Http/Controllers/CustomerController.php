@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Customer;
 use App\Models\Account;
+use App\Services\CustomerAccountService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class CustomerController extends Controller
 {
@@ -30,8 +32,7 @@ class CustomerController extends Controller
      */
     public function create()
     {
-        $accounts = Account::where('is_group', false)->get();
-        return view('customers.create', compact('accounts'));
+        return view('customers.create');
     }
 
     /**
@@ -45,11 +46,28 @@ class CustomerController extends Controller
             'phone'      => 'nullable|string|max:50',
             'address'    => 'nullable|string',
         ]);
-        $defaultCurrency = \App\Models\Currency::where('is_default', true)->first();
-        $accountId = \App\Models\AccountingSetting::get('default_customers_account', $defaultCurrency->code);
-        $validated['account_id'] = $accountId;
-        Customer::create($validated);
-        return redirect()->route('customers.index')->with('success', __('messages.created_success'));
+
+        try {
+            DB::transaction(function () use ($validated) {
+                // إنشاء حساب محاسبي أولاً مع اسم مؤقت
+                $tempCustomer = (object) $validated; // تحويل البيانات لكائن مؤقت
+                $account = CustomerAccountService::createAccountForCustomer($tempCustomer);
+                
+                // إنشاء العميل مع ربطه بالحساب
+                $validated['account_id'] = $account->id;
+                $customer = Customer::create($validated);
+                
+                // تحديث اسم الحساب ليطابق id العميل الفعلي
+                $account->update([
+                    'name' => $customer->name,
+                    'code' => $account->code // الاحتفاظ بنفس الكود
+                ]);
+            });
+
+            return redirect()->route('customers.index')->with('success', 'تم إنشاء العميل وحسابه المحاسبي بنجاح');
+        } catch (\Exception $e) {
+            return back()->withInput()->withErrors(['error' => $e->getMessage()]);
+        }
     }
 
     /**
@@ -59,7 +77,18 @@ class CustomerController extends Controller
     {
         $balance = $customer->account ? $customer->account->balance() : 0;
         $invoices = $customer->invoices()->orderByDesc('date')->get();
-        return view('customers.show', compact('customer', 'balance', 'invoices'));
+        
+        // جلب حركات الحساب المحاسبي
+        $accountTransactions = [];
+        if ($customer->account) {
+            $accountTransactions = $customer->account->journalEntryLines()
+                ->with(['journalEntry'])
+                ->orderByDesc('created_at')
+                ->take(10)
+                ->get();
+        }
+        
+        return view('customers.show', compact('customer', 'balance', 'invoices', 'accountTransactions'));
     }
 
     /**
@@ -67,7 +96,12 @@ class CustomerController extends Controller
      */
     public function edit(Customer $customer)
     {
-        $accounts = Account::where('is_group', false)->get();
+        // جلب جميع الحسابات المحاسبية للعملاء لاختيار حساب مختلف
+        $accounts = Account::where('is_group', false)
+            ->where('type', 'asset')
+            ->orderBy('name')
+            ->get();
+            
         return view('customers.edit', compact('customer', 'accounts'));
     }
 
@@ -81,10 +115,20 @@ class CustomerController extends Controller
             'email'      => 'required|email|unique:customers,email,' . $customer->id,
             'phone'      => 'nullable|string|max:50',
             'address'    => 'nullable|string',
-            'account_id' => 'required|exists:accounts,id',
         ]);
-        $customer->update($validated);
-        return redirect()->route('customers.index')->with('success', __('messages.updated_success'));
+
+        try {
+            DB::transaction(function () use ($validated, $customer) {
+                $customer->update($validated);
+                
+                // تحديث اسم الحساب المحاسبي ليطابق اسم العميل
+                CustomerAccountService::updateAccountName($customer);
+            });
+
+            return redirect()->route('customers.index')->with('success', 'تم تحديث بيانات العميل بنجاح');
+        } catch (\Exception $e) {
+            return back()->withInput()->withErrors(['error' => $e->getMessage()]);
+        }
     }
 
     /**
@@ -92,13 +136,26 @@ class CustomerController extends Controller
      */
     public function destroy(Customer $customer)
     {
-        // منع الحذف إذا كان هناك فواتير أو حركات مالية
-        $hasInvoices = $customer->invoices()->exists();
-        $hasAccountTransactions = $customer->account && ($customer->account->journalEntryLines()->exists() || $customer->account->transactions()->exists());
-        if ($hasInvoices || $hasAccountTransactions) {
-            return redirect()->route('customers.index')->with('error', __('messages.error_general'));
+        try {
+            // التحقق من إمكانية حذف العميل
+            if (!CustomerAccountService::canDeleteCustomer($customer)) {
+                return redirect()->route('customers.index')
+                    ->with('error', 'لا يمكن حذف هذا العميل لوجود فواتير أو حركات محاسبية مرتبطة به');
+            }
+
+            DB::transaction(function () use ($customer) {
+                // حذف الحساب المحاسبي إذا كان موجوداً
+                if ($customer->account) {
+                    $customer->account->delete();
+                }
+                
+                // حذف العميل
+                $customer->delete();
+            });
+
+            return redirect()->route('customers.index')->with('success', 'تم حذف العميل وحسابه المحاسبي بنجاح');
+        } catch (\Exception $e) {
+            return redirect()->route('customers.index')->with('error', 'حدث خطأ أثناء حذف العميل: ' . $e->getMessage());
         }
-        $customer->delete();
-        return redirect()->route('customers.index')->with('success', __('messages.deleted_success'));
     }
 }

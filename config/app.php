@@ -141,7 +141,7 @@ return [
     |
     */
 
-    'multi_tenancy_enabled' => env('MULTI_TENANCY_ENABLED', false),
+    'multi_tenancy_enabled' => env('MULTI_TENANCY_ENABLED', true),
 
     /*
     |--------------------------------------------------------------------------

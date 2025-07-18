@@ -51,7 +51,16 @@
                                 <select name="parent_id" class="form-control">
                                     <option value="">@lang('messages.select_category')</option>
                                     @foreach($categories as $category)
-                                        <option value="{{ $category->id }}">{{ $category->name }}</option>
+                                        <option value="{{ $category->id }}"
+                                                data-currency="{{ $category->currency ?? '' }}"
+                                                style="color: {{ ($category->currency ?? '') == 'IQD' ? '#1976d2' : (($category->currency ?? '') == 'USD' ? '#388e3c' : '#5e35b1') }};">
+                                            {{ $category->name }}
+                                            @if($category->currency)
+                                                <span style="font-weight: bold; background: {{ ($category->currency ?? '') == 'IQD' ? '#e3f2fd' : (($category->currency ?? '') == 'USD' ? '#e8f5e8' : '#f3e5f5') }}; padding: 2px 6px; border-radius: 3px; font-size: 0.85em;">
+                                                    {{ strtoupper($category->currency) }}
+                                                </span>
+                                            @endif
+                                        </option>
                                     @endforeach
                                 </select>
                             </div>

@@ -115,9 +115,10 @@ class AppServiceProvider extends ServiceProvider
         // Only run DB-dependent code if not in installer
         if (!request()->is('install*') && file_exists(base_path('.env')) && env('DB_DATABASE')) {
             Schema::defaultStringLength(191);
-            if (config('app.env') !== 'local') {
-                URL::forceScheme('https');
-            }
+            // فرض HTTPS فقط في البيئة السحابية (production)
+            // if (config('app.env') === 'production') {
+            //     URL::forceScheme('https');
+            // }
             Route::macro('localizedRoute', function ($name, $parameters = [], $absolute = true) {
                 return route($name, $parameters, $absolute);
             });

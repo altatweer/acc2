@@ -67,7 +67,7 @@
                         </div>
                         <div class="form-group col-md-4" id="exchange_rate_group" style="display:none;">
                             <label>@lang('messages.exchange_rate')</label>
-                            <input type="number" name="exchange_rate" id="exchange_rate" class="form-control" readonly>
+                            <input type="number" name="exchange_rate" id="exchange_rate" class="form-control" step="0.0000000001" readonly>
                         </div>
                         <div class="form-group col-md-4" id="amount_to_group" style="display:none;">
                             <label id="amount_to_label">@lang('messages.received_amount')</label>
@@ -76,6 +76,10 @@
                     </div>
                     <div id="same-currency-alert" class="alert alert-warning mt-2" style="display:none;">@lang('messages.same_account_alert')</div>
                     <div id="no-cashbox-alert" class="alert alert-warning mt-2" style="display:none;"></div>
+                    <div id="exchange-rate-info" class="alert alert-info mt-2" style="display:none;">
+                        <i class="fas fa-info-circle"></i> 
+                        <strong>معلومات معدل الصرف:</strong> <span id="exchange-rate-details"></span>
+                    </div>
                     <div class="form-group text-center mt-3">
                         <button type="submit" class="btn btn-success" id="save-btn">@lang('messages.save_transfer_voucher')</button>
                     </div>
@@ -144,24 +148,53 @@ $(document).ready(function(){
     let cashAccounts = @json($cashAccountsFrom->concat($cashAccountsTo));
     let exchangeRates = @json($exchangeRates);
     
-    // Agregar información de saldo a los cashAccounts
+    console.log('Initial cashAccounts data:', cashAccounts);
+    
+    // Agregar información de saldo a los cashAccounts (ya están cargados del servidor)
     cashAccounts = cashAccounts.map(account => {
-        // Esta información se cargará a través de Ajax
-        account.balance = 0;
+        // El balance ya viene del servidor, pero añadimos validación
+        if (account.balance === undefined || account.balance === null) {
+            account.balance = 0;
+            console.warn('Account without balance loaded:', account);
+        }
         return account;
     });
     
-    // Función para cargar el saldo de la cuenta seleccionada
+    console.log('Processed cashAccounts:', cashAccounts);
+    
+    // Función para cargar el saldo de la cuenta seleccionada (فقط للحسابات غير المحملة)
     function loadAccountBalance(accountId) {
         if (!accountId) return;
+        
+        const account = cashAccounts.find(a => a.id == accountId);
+        
+        // إذا كان الرصيد محمل مسبقاً، لا نحتاج لطلب AJAX
+        if (account && account.balance !== undefined && account.balance !== null) {
+            console.log('Balance already loaded from server:', account.balance);
+            if ($('#from-account').val() == accountId) {
+                updateBalanceDisplay();
+                validateAmount();
+            }
+            return;
+        }
+        
+        const currency = account ? account.currency : null;
+        
+        console.log('Loading balance for account via AJAX:', {
+            accountId: accountId,
+            currency: currency,
+            account: account
+        });
         
         $.ajax({
             url: '/api/accounts/' + accountId + '/balance',
             method: 'GET',
+            data: { currency: currency },
             headers: {
                 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
             },
             success: function(response) {
+                console.log('Balance response:', response);
                 const account = cashAccounts.find(a => a.id == accountId);
                 if (account) {
                     account.balance = response.balance;
@@ -171,6 +204,23 @@ $(document).ready(function(){
                         validateAmount();
                     }
                 }
+            },
+            error: function(xhr, status, error) {
+                console.error('خطأ في جلب رصيد الحساب:', {
+                    status: status,
+                    error: error,
+                    responseText: xhr.responseText,
+                    accountId: accountId,
+                    currency: currency
+                });
+                
+                // عرض رسالة خطأ للمستخدم
+                $('#balance-error-alert').remove();
+                const errorAlert = $('<div id="balance-error-alert" class="alert alert-warning mt-2">' + 
+                    '<i class="fas fa-exclamation-triangle"></i> ' +
+                    'خطأ في تحميل رصيد الحساب. يرجى المحاولة مرة أخرى.' + 
+                    '</div>');
+                $('#amount_from_group').after(errorAlert);
             }
         });
     }
@@ -183,12 +233,19 @@ $(document).ready(function(){
         if (account) {
             // Eliminar mensaje anterior si existe
             $('#current-balance-info').remove();
+            $('#balance-error-alert').remove();
             
-            // Agregar información de saldo
-            const balanceInfo = $('<div id="current-balance-info" class="alert alert-info mt-2">' + 
-                'الرصيد الحالي: ' + account.balance + ' ' + account.currency + 
-                '</div>');
-            $('#amount_from_group').after(balanceInfo);
+            // إذا كان الرصيد محمل من الـ server، استخدمه مباشرة
+            if (account.balance !== undefined && account.balance !== null) {
+                const balanceInfo = $('<div id="current-balance-info" class="alert alert-info mt-2">' + 
+                    '<i class="fas fa-info-circle"></i> ' +
+                    'الرصيد الحالي: <strong>' + account.balance.toFixed(2) + ' ' + account.currency + '</strong>' +
+                    '</div>');
+                $('#amount_from_group').after(balanceInfo);
+            } else {
+                // إذا لم يكن الرصيد محمل، حمله عبر AJAX
+                loadAccountBalance(fromVal);
+            }
         }
     }
     
@@ -198,11 +255,13 @@ $(document).ready(function(){
         const account = cashAccounts.find(a => a.id == fromVal);
         const amount = parseFloat($('#amount_from').val()) || 0;
         
-        if (account && amount > account.balance) {
+        if (account && account.balance !== undefined && account.balance !== null && amount > account.balance) {
             // Mostrar alerta
             $('#insufficient-balance-alert').remove();
             const alert = $('<div id="insufficient-balance-alert" class="alert alert-danger mt-2">' + 
-                'تنبيه: المبلغ المطلوب تحويله يتجاوز الرصيد المتاح في الصندوق.' + 
+                '<i class="fas fa-exclamation-triangle"></i> ' +
+                '<strong>تنبيه:</strong> المبلغ المطلوب تحويله (' + amount.toFixed(2) + ' ' + account.currency + ') ' +
+                'يتجاوز الرصيد المتاح في الصندوق (' + account.balance.toFixed(2) + ' ' + account.currency + ').' + 
                 '</div>');
             $('#amount_from_group').after(alert);
             
@@ -214,7 +273,7 @@ $(document).ready(function(){
             
             // Habilitar botón de guardar si no hay otros problemas
             if ($('#from-account').val() && $('#to-account').val() && 
-                $('#from-account').val() !== $('#to-account').val()) {
+                $('#from-account').val() !== $('#to-account').val() && amount > 0) {
                 $('#save-btn').prop('disabled', false);
             }
         }
@@ -270,9 +329,9 @@ $(document).ready(function(){
             sameAlert.hide();
         }
         
-        // Si hay una cuenta de origen seleccionada, cargar su saldo
+        // Si hay una cuenta de origen seleccionada, عرض الرصيد بدلاً من تحميله عبر AJAX
         if (fromVal) {
-            loadAccountBalance(fromVal);
+            updateBalanceDisplay();
         }
         
         // إذا العملة مختلفة: أظهر سعر الصرف والمبلغ المستلم
@@ -280,17 +339,23 @@ $(document).ready(function(){
             let key = fromCurrency + '_' + toCurrency;
             if (exchangeRates[key]) {
                 const rate = exchangeRates[key];
-                rateInput.val(rate.toFixed(4));
+                rateInput.val(rate.toFixed(10)); // زيادة الدقة إلى 10 أرقام عشرية
                 rateGroup.show();
                 amountToGroup.show();
+                
+                // عرض معلومات معدل الصرف
+                $('#exchange-rate-details').text(`1 ${fromCurrency} = ${rate.toFixed(10)} ${toCurrency}`);
+                $('#exchange-rate-info').show();
             } else {
                 rateGroup.hide();
                 amountToGroup.hide();
+                $('#exchange-rate-info').hide();
             }
         } else {
             // نفس العملة: أخفِ سعر الصرف
             rateGroup.hide();
             amountToGroup.hide();
+            $('#exchange-rate-info').hide();
         }
     }
 
@@ -305,12 +370,13 @@ $(document).ready(function(){
         if (fromCurrency && toCurrency && fromCurrency !== toCurrency) {
             let key = fromCurrency + '_' + toCurrency;
             if (exchangeRates[key]) {
-                amountTo = amountFrom / exchangeRates[key];
+                // استخدام دقة أعلى في الحساب
+                amountTo = amountFrom * parseFloat(exchangeRates[key]);
             } else {
                 amountTo = amountFrom;
             }
         }
-        $('#amount_to').val(amountTo ? amountTo.toFixed(2) : '');
+        $('#amount_to').val(amountTo ? amountTo.toFixed(6) : ''); // زيادة الدقة لعرض أفضل
         
         // Validar monto
         validateAmount();

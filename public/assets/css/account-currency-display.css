@@ -1,0 +1,128 @@
+/* تحسين عرض العملات في القوائم المنسدلة */
+.currency-enhanced-select {
+    font-family: 'Arial', sans-serif;
+}
+
+.currency-enhanced-select option {
+    padding: 8px 12px !important;
+    margin: 2px 0 !important;
+    line-height: 1.4 !important;
+}
+
+/* ألوان مخصصة للعملات */
+.currency-enhanced-select option[data-currency="IQD"] {
+    background-color: #e3f2fd !important;
+    color: #1976d2 !important;
+    border-left: 4px solid #2196f3 !important;
+}
+
+.currency-enhanced-select option[data-currency="USD"] {
+    background-color: #e8f5e8 !important;
+    color: #388e3c !important;
+    border-left: 4px solid #4caf50 !important;
+}
+
+.currency-enhanced-select option[data-currency="EUR"] {
+    background-color: #f3e5f5 !important;
+    color: #5e35b1 !important;
+    border-left: 4px solid #9c27b0 !important;
+}
+
+/* تحسين شارات العملة */
+.currency-badge {
+    font-weight: bold !important;
+    padding: 2px 8px !important;
+    border-radius: 4px !important;
+    font-size: 0.8em !important;
+    margin-left: 8px !important;
+    display: inline-block !important;
+    min-width: 40px !important;
+    text-align: center !important;
+}
+
+.currency-badge-iqd {
+    background-color: #1976d2 !important;
+    color: white !important;
+}
+
+.currency-badge-usd {
+    background-color: #388e3c !important;
+    color: white !important;
+}
+
+.currency-badge-eur {
+    background-color: #5e35b1 !important;
+    color: white !important;
+}
+
+/* تحسين Focus للقوائم */
+.currency-enhanced-select:focus {
+    border-color: #2196f3 !important;
+    box-shadow: 0 0 0 0.2rem rgba(33, 150, 243, 0.25) !important;
+}
+
+/* أيقونات العملات (إضافية) */
+.currency-icon::before {
+    margin-right: 5px;
+    font-weight: bold;
+}
+
+.currency-icon-iqd::before {
+    content: "🪙";
+}
+
+.currency-icon-usd::before {
+    content: "💵";
+}
+
+.currency-icon-eur::before {
+    content: "💶";
+}
+
+/* تحسين عرض الفئات في الموبايل */
+@media (max-width: 768px) {
+    .currency-enhanced-select option {
+        font-size: 14px !important;
+        padding: 10px !important;
+    }
+    
+    .currency-badge {
+        font-size: 0.75em !important;
+        padding: 1px 4px !important;
+    }
+}
+
+/* تحسين الـ Select2 إذا كان مستخدماً */
+.select2-container .select2-results__option[data-currency="IQD"] {
+    background-color: #e3f2fd !important;
+    color: #1976d2 !important;
+}
+
+.select2-container .select2-results__option[data-currency="USD"] {
+    background-color: #e8f5e8 !important;
+    color: #388e3c !important;
+}
+
+.select2-container .select2-results__option[data-currency="EUR"] {
+    background-color: #f3e5f5 !important;
+    color: #5e35b1 !important;
+}
+
+/* تحسين الـ hover effect */
+.currency-enhanced-select option:hover {
+    opacity: 0.8;
+    transform: translateX(2px);
+    transition: all 0.2s ease;
+}
+
+/* التمييز بين الفئات والحسابات */
+.account-category-option {
+    font-weight: bold !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+}
+
+.account-subcategory-option {
+    padding-left: 20px !important;
+    font-style: italic !important;
+} 

@@ -87,14 +87,26 @@ class InvoiceController extends Controller
         DB::transaction(function() use ($validated, $mergedItems) {
             // Persist invoice
             $invoice = Invoice::create($validated);
+            
+            // الحصول على معدل الصرف للعملة المختارة
+            $exchangeRate = $validated['exchange_rate'];
+            $currency = $validated['currency'];
+            
             // Save invoice items
             foreach ($mergedItems as $itm) {
                 $lineTotal = $itm['quantity'] * $itm['unit_price'];
+                
+                // حساب المبلغ بالعملة الأساسية (IQD)
+                $baseCurrencyTotal = $lineTotal * $exchangeRate;
+                
                 $invoice->invoiceItems()->create([
-                    'item_id'    => $itm['item_id'],
-                    'quantity'   => $itm['quantity'],
-                    'unit_price' => $itm['unit_price'],
-                    'line_total' => $lineTotal,
+                    'item_id'             => $itm['item_id'],
+                    'quantity'            => $itm['quantity'],
+                    'unit_price'          => $itm['unit_price'],
+                    'line_total'          => $lineTotal,
+                    'currency'            => $currency,
+                    'exchange_rate'       => $exchangeRate,
+                    'base_currency_total' => $baseCurrencyTotal,
                 ]);
             }
             // لا يتم إنشاء أي قيد محاسبي هنا
@@ -109,21 +121,27 @@ class InvoiceController extends Controller
     {
         // load invoice items and customer
         $invoice->load('invoiceItems.item', 'customer');
-        // previous payments
-        $payments = Voucher::where('recipient_name', $invoice->invoice_number)
+        // إصلاح: البحث عن الدفعات بناءً على invoice_id وليس recipient_name
+        $payments = Voucher::where('invoice_id', $invoice->id)
+            ->where('type', 'receipt')
+            ->with(['transactions', 'journalEntry.lines']) // تحميل العلاقات المطلوبة
             ->latest()->get();
         // Cash accounts matching the invoice currency
         $user = auth()->user();
         if ($user->isSuperAdmin() || $user->hasRole('admin')) {
-            $cashAccounts = Account::where('is_cash_box', 1)
-                ->where('currency', $invoice->currency)
-                ->get();
+            $cashAccounts = Account::where('is_cash_box', 1)->get();
         } else {
             $cashAccounts = $user->cashBoxes()
                 ->where('is_cash_box', 1)
-                ->where('currency', $invoice->currency)
                 ->get();
         }
+        
+        // إضافة رصيد كل صندوق نقدي
+        $cashAccounts = $cashAccounts->map(function($account) {
+            $account->balance = $account->balance($account->default_currency);
+            return $account;
+        });
+        
         // available currencies
         $currencies = Currency::all();
         return view('invoices.show', compact('invoice', 'payments', 'cashAccounts', 'currencies'));
@@ -172,9 +190,9 @@ class InvoiceController extends Controller
         DB::transaction(function() use ($invoice) {
             $invoice->status = 'unpaid';
             $invoice->save();
-            // إنشاء قيد محاسبي آجل (مدين: حساب العملاء الافتراضي حسب العملة، دائن: حساب المبيعات الافتراضي حسب العملة)
-            $receivablesAccountId = \App\Models\AccountingSetting::get('default_customers_account', $invoice->currency);
-            $salesAccountId = \App\Models\AccountingSetting::get('default_sales_account', $invoice->currency);
+            // إنشاء قيد محاسبي آجل (مدين: حساب العميل المحدد، دائن: حساب المبيعات الافتراضي)
+            $receivablesAccountId = $invoice->customer->account_id;
+            $salesAccountId = \App\Models\AccountingSetting::get('default_sales_account');
             if ($receivablesAccountId && $salesAccountId) {
                 $lines = [
                     [
