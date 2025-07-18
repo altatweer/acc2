@@ -566,4 +566,15 @@ return [
     'assets' => 'الأصول',
     'liabilities' => 'الخصوم',
     'equity' => 'حقوق الملكية',
+    
+    // User types and roles
+    'super_admin' => 'مدير النظام',
+    'user' => 'مستخدم',
+    'admin' => 'مدير',
+    'accounting_system' => 'نظام الحسابات',
+    
+    // Authentication and user status
+    'logged_in' => 'متصل',
+    'online' => 'متصل',
+    'offline' => 'غير متصل',
 ]; 
