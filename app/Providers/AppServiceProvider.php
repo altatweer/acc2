@@ -56,10 +56,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // إضافة tenant_id افتراضي عند تفعيل نظام تعدد المستأجرين
-        if (config('app.multi_tenancy_enabled', false)) {
-            app()->instance('tenant_id', 1);
-        }
+
         
         // تعطيل تتبع التغييرات في Eloquent للتحسين
         Model::preventLazyLoading(!app()->isProduction());

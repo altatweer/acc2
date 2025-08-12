@@ -4,24 +4,20 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Traits\BelongsToTenant;
-
 class Currency extends Model
 {
-    use HasFactory, BelongsToTenant;
+    use HasFactory;
 
     protected $fillable = [
         'name',
         'code',
         'symbol',
         'exchange_rate',
-        'is_default',
-    ];
+        'is_default'];
 
     protected $casts = [
         'is_default' => 'boolean',
-        'exchange_rate' => 'decimal:6',
-    ];
+        'exchange_rate' => 'decimal:6'];
 
     /**
      * Get account balances for this currency

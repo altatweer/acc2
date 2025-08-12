@@ -5,11 +5,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Invoice;
-use App\Traits\BelongsToTenant;
-
 class Voucher extends Model
 {
-    use HasFactory, BelongsToTenant;
+    use HasFactory;
 
     protected $fillable = [
         'voucher_number',
@@ -21,12 +19,10 @@ class Voucher extends Model
         'currency',
         'exchange_rate',
         'invoice_id',
-        'status',
-    ];
+        'status'];
 
     protected $casts = [
-        'date' => 'date',
-    ];
+        'date' => 'date'];
 
     public function transactions()
     {

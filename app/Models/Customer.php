@@ -5,11 +5,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Account;
-use App\Traits\BelongsToTenant;
-
 class Customer extends Model
 {
-    use HasFactory, BelongsToTenant;
+    use HasFactory;
 
     protected $fillable = ['name', 'email', 'phone', 'address', 'account_id'];
 

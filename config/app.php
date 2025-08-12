@@ -141,7 +141,7 @@ return [
     |
     */
 
-    'multi_tenancy_enabled' => env('MULTI_TENANCY_ENABLED', true),
+
 
     /*
     |--------------------------------------------------------------------------
@@ -198,7 +198,7 @@ return [
         App\Providers\AppServiceProvider::class,
         App\Providers\AuthServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
-        App\Providers\MultiTenancyServiceProvider::class,
+
     ],
 
 ];

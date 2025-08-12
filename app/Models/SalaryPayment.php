@@ -1,14 +1,12 @@
 <?php
 namespace App\Models;
 
-use App\Traits\BelongsToTenant;
-
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class SalaryPayment extends Model
 {
-    use HasFactory, BelongsToTenant;
+    use HasFactory;
 
     protected $fillable = [
         'salary_batch_id',
@@ -25,7 +23,6 @@ class SalaryPayment extends Model
         'status', 
         'journal_entry_id', 
         'voucher_id',
-        'tenant_id',
     ];
 
     public function employee()

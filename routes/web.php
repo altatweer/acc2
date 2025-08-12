@@ -307,6 +307,7 @@ Route::get('/test-arabic-mpdf', [ReportsController::class, 'testArabicMpdf']);
 
 // Installer routes
 Route::group(['middleware' => ['web'], 'prefix' => 'install'], function () {
+    // التثبيت الأساسي
     Route::get('/', [\App\Http\Controllers\InstallController::class, 'index'])->name('install.index');
     Route::post('/', [\App\Http\Controllers\InstallController::class, 'processStep'])->name('install.process');
     Route::get('/database', [\App\Http\Controllers\InstallController::class, 'database'])->name('install.database');
@@ -319,6 +320,13 @@ Route::group(['middleware' => ['web'], 'prefix' => 'install'], function () {
     Route::post('/currencies', [\App\Http\Controllers\InstallController::class, 'saveCurrencies'])->name('install.saveCurrencies');
     Route::get('/chart', [\App\Http\Controllers\InstallController::class, 'chart'])->name('install.chart');
     Route::post('/chart/import', [\App\Http\Controllers\InstallController::class, 'importChart'])->name('install.importChart');
+    
+    // أدوات الصيانة والإدارة
+    Route::get('/maintenance', [\App\Http\Controllers\InstallController::class, 'maintenance'])->name('install.maintenance');
+    Route::match(['get', 'post'], '/system-check', [\App\Http\Controllers\InstallController::class, 'systemCheck'])->name('install.system_check');
+    Route::match(['get', 'post'], '/backup', [\App\Http\Controllers\InstallController::class, 'backup'])->name('install.backup');
+    Route::match(['get', 'post'], '/update', [\App\Http\Controllers\InstallController::class, 'update'])->name('install.update');
+    Route::post('/clear-cache', [\App\Http\Controllers\InstallController::class, 'clearCache'])->name('install.clear_cache');
     Route::post('/chart/skip', [\App\Http\Controllers\InstallController::class, 'skipChart'])->name('install.skipChart');
     Route::get('/finish', [\App\Http\Controllers\InstallController::class, 'finish'])->name('install.finish');
 });

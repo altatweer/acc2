@@ -4,18 +4,15 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Traits\BelongsToTenant;
-
 class JournalEntry extends Model
 {
-    use HasFactory, BelongsToTenant;
+    use HasFactory;
     
     protected $casts = [
         'is_multi_currency' => 'boolean',
         'exchange_rate' => 'float',
         'total_debit' => 'float',
-        'total_credit' => 'float',
-    ];
+        'total_credit' => 'float'];
 
     protected $fillable = [
         'date',
@@ -28,9 +25,7 @@ class JournalEntry extends Model
         'is_multi_currency',
         'total_debit',
         'total_credit',
-        'status',
-        'tenant_id',
-    ];
+        'status'];
 
     public function lines()
     {

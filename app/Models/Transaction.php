@@ -4,11 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Traits\BelongsToTenant;
-
 class Transaction extends Model
 {
-   use HasFactory, BelongsToTenant;
+   use HasFactory;
 
    protected $fillable = [
        'voucher_id',
@@ -21,8 +19,7 @@ class Transaction extends Model
        'exchange_rate',
        'description',
        'user_id', // ✅ أضفنا user_id هنا
-       'invoice_id',
-   ];
+       'invoice_id'];
 
    /**
     * العلاقة مع السند (Voucher)

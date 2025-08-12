@@ -6,11 +6,9 @@ use Illuminate\Database\Eloquent\Model;
 use App\Models\Voucher;
 use App\Models\Transaction;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use App\Traits\BelongsToTenant;
-
 class Invoice extends Model
 {
-    use HasFactory, BelongsToTenant;
+    use HasFactory;
 
     protected $fillable = [
         'invoice_number',
@@ -20,14 +18,12 @@ class Invoice extends Model
         'currency',
         'exchange_rate',
         'status',
-        'created_by',
-    ];
+        'created_by'];
 
     protected $casts = [
         'date' => 'date',
         'total' => 'decimal:2',
-        'exchange_rate' => 'decimal:6',
-    ];
+        'exchange_rate' => 'decimal:6'];
 
     public function customer()
     {

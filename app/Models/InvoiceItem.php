@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Invoice;
@@ -10,7 +9,7 @@ use App\Models\Item;
 
 class InvoiceItem extends Model
 {
-    use HasFactory, BelongsToTenant;
+    use HasFactory;
     
     protected $fillable = [
         'invoice_id', 
@@ -20,16 +19,13 @@ class InvoiceItem extends Model
         'line_total',
         'currency',
         'exchange_rate',
-        'base_currency_total',
-        'tenant_id',
-    ];
+        'base_currency_total'];
 
     protected $casts = [
         'unit_price' => 'decimal:2',
         'line_total' => 'decimal:2', 
         'exchange_rate' => 'decimal:10',
-        'base_currency_total' => 'decimal:4',
-    ];
+        'base_currency_total' => 'decimal:4'];
 
     public function invoice()
     {

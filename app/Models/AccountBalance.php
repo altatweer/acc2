@@ -4,11 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use App\Traits\BelongsToTenant;
-
 class AccountBalance extends Model
 {
-    use HasFactory, BelongsToTenant;
+    use HasFactory;
 
     /**
      * The attributes that are mass assignable.
@@ -18,9 +16,7 @@ class AccountBalance extends Model
     protected $fillable = [
         'account_id',
         'currency_id',
-        'balance',
-        'tenant_id',
-    ];
+        'balance'];
 
     /**
      * Get the account that owns this balance.

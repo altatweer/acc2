@@ -1,24 +1,20 @@
 <?php
 namespace App\Models;
 
-use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class SalaryBatch extends Model
 {
-    use HasFactory, BelongsToTenant;
+    use HasFactory;
 
     protected $fillable = [
-        'month', 'status', 'created_by', 'approved_by', 'approved_at',
-        'tenant_id',
-    ];
+        'month', 'status', 'created_by', 'approved_by', 'approved_at'];
 
     protected $casts = [
         'approved_at' => 'datetime',
         'created_at' => 'datetime',
-        'updated_at' => 'datetime',
-    ];
+        'updated_at' => 'datetime'];
 
     public function salaryPayments()
     {

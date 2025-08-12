@@ -11,11 +11,17 @@ class InstallController extends Controller
 {
     public function __construct()
     {
-        // Protect all install routes except finish
+        // Protect all install routes except finish and maintenance tools
         $this->middleware(function ($request, $next) {
-            if (!in_array($request->route()->getName(), ['install.finish'])) {
+            $allowedRoutes = ['install.finish', 'install.maintenance', 'install.system_check', 'install.backup'];
+            
+            if (!in_array($request->route()->getName(), $allowedRoutes)) {
                 if (file_exists(storage_path('app/install.lock'))) {
-                    abort(403, 'تم تثبيت النظام بالفعل. لا يمكنك إعادة التثبيت.');
+                    // إذا تم التثبيت، فقط اسمح بأدوات الصيانة
+                    if (in_array($request->route()->getName(), $allowedRoutes)) {
+                        return $next($request);
+                    }
+                    abort(403, 'تم تثبيت النظام بالفعل. للصيانة، استخدم أدوات الصيانة المتاحة.');
                 }
             }
             return $next($request);
@@ -135,33 +141,7 @@ class InstallController extends Controller
         try {
             \Artisan::call('migrate:fresh', ['--force' => true]);
             
-            // إضافة تهيئة المستأجر الافتراضي
-            if (config('app.multi_tenancy_enabled', false)) {
-                // إنشاء مستأجر افتراضي إذا لم يكن موجودًا
-                if (Schema::hasTable('tenants')) {
-                    DB::table('tenants')->updateOrInsert(
-                        ['id' => 1],
-                        [
-                            'name' => 'Default Tenant',
-                            'domain' => 'default',
-                            'subdomain' => 'default',
-                            'contact_email' => 'admin@aursuite.com',
-                            'is_active' => true,
-                            'created_at' => now(),
-                            'updated_at' => now()
-                        ]
-                    );
-                    
-                    // تحديث جميع السجلات لتكون مرتبطة بالمستأجر الافتراضي
-                    $tables = DB::select('SHOW TABLES');
-                    foreach ($tables as $table) {
-                        $tableName = reset($table);
-                        if (Schema::hasColumn($tableName, 'tenant_id')) {
-                            DB::table($tableName)->whereNull('tenant_id')->update(['tenant_id' => 1]);
-                        }
-                    }
-                }
-            }
+
             
             // وضع رسالة نجاح في الجلسة
             Session::flash('success', 'تم ترحيل قاعدة البيانات بنجاح.');
@@ -247,21 +227,12 @@ class InstallController extends Controller
         $user->name = $request->name;
         $user->email = $request->email;
         $user->password = bcrypt($request->password);
-        
-        // تعيين tenant_id للمستخدم المدير
-        if (config('app.multi_tenancy_enabled', false) && Schema::hasColumn('users', 'tenant_id')) {
-            $user->tenant_id = 1; // المستأجر الافتراضي
-        }
-        
         $user->save();
 
         // Assign super-admin role (or create it if it doesn't exist)
         $adminRole = \Spatie\Permission\Models\Role::firstOrCreate(
             ['name' => 'super-admin'],
-            [
-                'guard_name' => 'web',
-                'tenant_id' => config('app.multi_tenancy_enabled', false) ? 1 : null
-            ]
+            ['guard_name' => 'web']
         );
         
         $user->assignRole($adminRole);
@@ -424,5 +395,289 @@ class InstallController extends Controller
         if (file_exists(storage_path('app/install.lock'))) {
             abort(403, 'تم تثبيت النظام بالفعل.');
         }
+    }
+
+    // ============== أدوات الصيانة والإدارة ==============
+    
+    /**
+     * صفحة أدوات الصيانة الرئيسية
+     */
+    public function maintenance(Request $request)
+    {
+        // التحقق من أن النظام مثبت
+        if (!file_exists(storage_path('app/install.lock'))) {
+            return redirect()->route('install.index')->with('install_notice', 'يجب تثبيت النظام أولاً');
+        }
+
+        $systemInfo = $this->getSystemInfo();
+        return view('install.maintenance', compact('systemInfo'));
+    }
+
+    /**
+     * فحص صحة النظام
+     */
+    public function systemCheck(Request $request)
+    {
+        if (!file_exists(storage_path('app/install.lock'))) {
+            return redirect()->route('install.index');
+        }
+
+        $checks = $this->performSystemChecks();
+        return view('install.system-check', compact('checks'));
+    }
+
+    /**
+     * إنشاء نسخة احتياطية
+     */
+    public function backup(Request $request)
+    {
+        if (!file_exists(storage_path('app/install.lock'))) {
+            return redirect()->route('install.index');
+        }
+
+        if ($request->isMethod('post')) {
+            $result = $this->createDatabaseBackup();
+            return response()->json($result);
+        }
+
+        $backups = $this->getAvailableBackups();
+        return view('install.backup', compact('backups'));
+    }
+
+    /**
+     * تحديث النظام
+     */
+    public function update(Request $request)
+    {
+        if (!file_exists(storage_path('app/install.lock'))) {
+            return redirect()->route('install.index');
+        }
+
+        if ($request->isMethod('post')) {
+            $result = $this->runSystemUpdate();
+            return response()->json($result);
+        }
+
+        $updateInfo = $this->getUpdateInfo();
+        return view('install.update', compact('updateInfo'));
+    }
+
+    /**
+     * مسح الكاش
+     */
+    public function clearCache(Request $request)
+    {
+        try {
+            \Artisan::call('cache:clear');
+            \Artisan::call('config:clear');
+            \Artisan::call('view:clear');
+            \Artisan::call('route:clear');
+
+            return response()->json([
+                'success' => true,
+                'message' => 'تم مسح جميع ملفات الكاش بنجاح'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'فشل في مسح الكاش: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    // ============== دوال المساعدة ==============
+
+    private function getSystemInfo()
+    {
+        return [
+            'php_version' => PHP_VERSION,
+            'laravel_version' => app()->version(),
+            'database_connection' => $this->testDatabaseConnection(),
+            'storage_writable' => is_writable(storage_path()),
+            'install_date' => file_exists(storage_path('app/install.lock')) 
+                ? date('Y-m-d H:i:s', filemtime(storage_path('app/install.lock'))) 
+                : null,
+            'accounts_count' => Schema::hasTable('accounts') ? DB::table('accounts')->count() : 0,
+            'users_count' => Schema::hasTable('users') ? DB::table('users')->count() : 0,
+            'currencies_count' => Schema::hasTable('currencies') ? DB::table('currencies')->count() : 0,
+        ];
+    }
+
+    private function performSystemChecks()
+    {
+        $checks = [
+            'php_version' => [
+                'name' => 'إصدار PHP',
+                'status' => version_compare(PHP_VERSION, '8.1', '>='),
+                'message' => 'PHP ' . PHP_VERSION . ' (المطلوب: 8.1+)'
+            ],
+            'database_connection' => [
+                'name' => 'اتصال قاعدة البيانات',
+                'status' => $this->testDatabaseConnection(),
+                'message' => $this->testDatabaseConnection() ? 'متصل بنجاح' : 'فشل الاتصال'
+            ],
+            'storage_writable' => [
+                'name' => 'أذونات التخزين',
+                'status' => is_writable(storage_path()),
+                'message' => is_writable(storage_path()) ? 'قابل للكتابة' : 'غير قابل للكتابة'
+            ],
+            'env_file' => [
+                'name' => 'ملف الإعدادات',
+                'status' => file_exists(base_path('.env')),
+                'message' => file_exists(base_path('.env')) ? 'موجود' : 'غير موجود'
+            ],
+            'install_lock' => [
+                'name' => 'حالة التثبيت',
+                'status' => file_exists(storage_path('app/install.lock')),
+                'message' => file_exists(storage_path('app/install.lock')) ? 'مثبت' : 'غير مثبت'
+            ]
+        ];
+
+        // فحص الإضافات المطلوبة
+        $requiredExtensions = ['pdo', 'pdo_mysql', 'mbstring', 'tokenizer', 'xml', 'ctype', 'json', 'bcmath', 'fileinfo', 'openssl'];
+        foreach ($requiredExtensions as $extension) {
+            $checks["ext_$extension"] = [
+                'name' => "إضافة $extension",
+                'status' => extension_loaded($extension),
+                'message' => extension_loaded($extension) ? 'متاحة' : 'مفقودة'
+            ];
+        }
+
+        return $checks;
+    }
+
+    private function testDatabaseConnection()
+    {
+        try {
+            DB::connection()->getPdo();
+            return true;
+        } catch (\Exception $e) {
+            return false;
+        }
+    }
+
+    private function createDatabaseBackup()
+    {
+        try {
+            $backupFile = 'backup_' . date('Y-m-d_H-i-s') . '.sql';
+            $backupPath = storage_path('app/backups/' . $backupFile);
+            
+            // إنشاء مجلد النسخ الاحتياطية إذا لم يكن موجوداً
+            if (!is_dir(dirname($backupPath))) {
+                mkdir(dirname($backupPath), 0755, true);
+            }
+
+            $dbConfig = config('database.connections.' . config('database.default'));
+            $command = "mysqldump -h{$dbConfig['host']} -P{$dbConfig['port']} -u{$dbConfig['username']}";
+            
+            if (!empty($dbConfig['password'])) {
+                $command .= " -p'{$dbConfig['password']}'";
+            }
+            
+            $command .= " {$dbConfig['database']} > $backupPath 2>/dev/null";
+            
+            exec($command, $output, $returnCode);
+            
+            if ($returnCode === 0 && file_exists($backupPath) && filesize($backupPath) > 0) {
+                return [
+                    'success' => true,
+                    'message' => 'تم إنشاء النسخة الاحتياطية بنجاح',
+                    'file' => $backupFile,
+                    'size' => $this->formatBytes(filesize($backupPath))
+                ];
+            } else {
+                return [
+                    'success' => false,
+                    'message' => 'فشل في إنشاء النسخة الاحتياطية'
+                ];
+            }
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'خطأ: ' . $e->getMessage()
+            ];
+        }
+    }
+
+    private function getAvailableBackups()
+    {
+        $backupsPath = storage_path('app/backups');
+        if (!is_dir($backupsPath)) {
+            return [];
+        }
+
+        $backups = [];
+        $files = glob($backupsPath . '/backup_*.sql');
+        
+        foreach ($files as $file) {
+            $backups[] = [
+                'name' => basename($file),
+                'date' => date('Y-m-d H:i:s', filemtime($file)),
+                'size' => $this->formatBytes(filesize($file))
+            ];
+        }
+
+        // ترتيب حسب التاريخ (الأحدث أولاً)
+        usort($backups, function($a, $b) {
+            return strcmp($b['date'], $a['date']);
+        });
+
+        return $backups;
+    }
+
+    private function runSystemUpdate()
+    {
+        try {
+            // تشغيل الترحيلات الجديدة
+            \Artisan::call('migrate', ['--force' => true]);
+            
+            // مسح الكاش
+            \Artisan::call('cache:clear');
+            \Artisan::call('config:clear');
+            \Artisan::call('view:clear');
+            \Artisan::call('route:clear');
+
+            return [
+                'success' => true,
+                'message' => 'تم تحديث النظام بنجاح'
+            ];
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'فشل في تحديث النظام: ' . $e->getMessage()
+            ];
+        }
+    }
+
+    private function getUpdateInfo()
+    {
+        return [
+            'current_version' => config('app.version', '2.2.1'),
+            'has_pending_migrations' => $this->hasPendingMigrations(),
+            'last_update' => file_exists(storage_path('app/last_update')) 
+                ? file_get_contents(storage_path('app/last_update'))
+                : null
+        ];
+    }
+
+    private function hasPendingMigrations()
+    {
+        try {
+            $output = \Artisan::call('migrate:status');
+            return strpos(\Artisan::output(), 'Pending') !== false;
+        } catch (\Exception $e) {
+            return false;
+        }
+    }
+
+    private function formatBytes($bytes, $precision = 2)
+    {
+        $units = array('B', 'KB', 'MB', 'GB', 'TB');
+        
+        for ($i = 0; $bytes > 1024 && $i < count($units) - 1; $i++) {
+            $bytes /= 1024;
+        }
+        
+        return round($bytes, $precision) . ' ' . $units[$i];
     }
 } 

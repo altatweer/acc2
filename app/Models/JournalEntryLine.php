@@ -4,11 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Traits\BelongsToTenant;
-
 class JournalEntryLine extends Model
 {
-    use HasFactory, BelongsToTenant;
+    use HasFactory;
 
     protected $fillable = [
         'journal_entry_id',
@@ -17,15 +15,12 @@ class JournalEntryLine extends Model
         'debit',
         'credit',
         'currency',
-        'exchange_rate',
-        'tenant_id',
-    ];
+        'exchange_rate'];
 
     protected $casts = [
         'debit' => 'decimal:2',
         'credit' => 'decimal:2',
-        'exchange_rate' => 'decimal:6',
-    ];
+        'exchange_rate' => 'decimal:6'];
 
     protected static function boot()
     {

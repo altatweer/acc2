@@ -4,15 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Traits\BelongsToTenant;
-
 class PrintSetting extends Model
 {
-    use HasFactory, BelongsToTenant;
+    use HasFactory;
 
-    protected $fillable = [
-        'tenant_id',
-        // Company Information
+    protected $fillable = [        // Company Information
         'company_name',
         'company_address',
         'company_phone',
@@ -68,8 +64,7 @@ class PrintSetting extends Model
         'enable_watermark',
         'watermark_text',
         'watermark_color',
-        'watermark_opacity',
-    ];
+        'watermark_opacity'];
 
     protected $casts = [
         'show_company_logo' => 'boolean',
@@ -85,8 +80,7 @@ class PrintSetting extends Model
         'show_payment_terms' => 'boolean',
         'show_notes_section' => 'boolean',
         'show_signature_section' => 'boolean',
-        'enable_watermark' => 'boolean',
-    ];
+        'enable_watermark' => 'boolean'];
 
     /**
      * Get the current print settings for the tenant
@@ -151,8 +145,7 @@ class PrintSetting extends Model
             'show_notes_section' => true,
             'show_signature_section' => true,
             'enable_watermark' => false,
-            'watermark_opacity' => 10,
-        ]);
+            'watermark_opacity' => 10]);
     }
 
     /**
@@ -172,8 +165,7 @@ class PrintSetting extends Model
             '--print-font-size' => $this->font_size . 'px',
             '--print-header-font-size' => $this->header_font_size . 'px',
             '--print-watermark-color' => $this->watermark_color ?? '#f8f9fa',
-            '--print-watermark-opacity' => ($this->watermark_opacity ?? 10) / 100,
-        ];
+            '--print-watermark-opacity' => ($this->watermark_opacity ?? 10) / 100];
     }
 
     /**
@@ -200,7 +192,6 @@ class PrintSetting extends Model
             'top' => $this->margin_top . 'mm',
             'bottom' => $this->margin_bottom . 'mm',
             'left' => $this->margin_left . 'mm',
-            'right' => $this->margin_right . 'mm',
-        ];
+            'right' => $this->margin_right . 'mm'];
     }
 }

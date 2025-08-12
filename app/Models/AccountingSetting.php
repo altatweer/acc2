@@ -2,20 +2,17 @@
 
 namespace App\Models;
 
-use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class AccountingSetting extends Model
 {
-    use HasFactory, BelongsToTenant;
+    use HasFactory;
     
     protected $fillable = [
         'key',
         'value',
-        'currency',
-        'tenant_id',
-    ];
+        'currency'];
 
     public static function get($key, $currency = null)
     {
@@ -31,9 +28,7 @@ class AccountingSetting extends Model
     {
         return static::updateOrCreate([
             'key' => $key,
-            'currency' => $currency,
-        ], [
-            'value' => $value,
-        ]);
+            'currency' => $currency], [
+            'value' => $value]);
     }
 } 
