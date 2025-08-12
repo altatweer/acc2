@@ -1,0 +1,49 @@
+🚀 AurSuite Accounting System - Complete Package
+===============================================
+
+📦 PACKAGE DETAILS:
+- Version: 2.2.1 Complete
+- Release Date: January 2025
+- Package Type: Full System with Dependencies
+- Installation: Web Browser Based
+- Size: ~580MB (Complete with all libraries)
+
+✅ WHAT'S INCLUDED:
+- Complete Laravel Framework
+- All PHP Dependencies (vendor/)
+- Built CSS/JS Assets (public/build/)
+- Web-based Installer (web_installer.php)
+- Multi-currency Support
+- Complete Chart of Accounts
+- Print System with Professional Templates
+- User Management & Permissions
+- Comprehensive Reports
+
+🎯 INSTALLATION STEPS:
+1. Extract all files to your web directory
+2. Set permissions for storage/ and bootstrap/cache/ (755)
+3. Open http://yoursite.com/web_installer.php
+4. Follow the 5-step installation wizard
+5. Delete installer files when prompted
+
+⚡ REQUIREMENTS:
+- PHP 8.1+ with extensions: pdo, pdo_mysql, mbstring, openssl, etc.
+- MySQL 5.7+ or 8.0+
+- Web server (Apache/Nginx)
+- ~200MB disk space
+
+🔐 SECURITY:
+- No multi-tenancy (Each client = separate database)
+- Clean codebase (4000+ lines removed)
+- Production ready
+- Secure by design
+
+📞 SUPPORT:
+- Website: https://aursuite.com
+- Email: support@aursuite.com
+- GitHub: https://github.com/altatweer/acc2
+
+⚠️  IMPORTANT:
+After installation, delete web_installer.php and web_installer_ajax.php files for security.
+
+🎉 ENJOY YOUR NEW ACCOUNTING SYSTEM!
