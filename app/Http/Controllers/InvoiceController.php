@@ -278,6 +278,10 @@ class InvoiceController extends Controller
     {
         $invoice->load('customer', 'invoiceItems.item');
         $payments = $invoice->vouchers()->with('transactions')->get();
-        return view('invoices.print', compact('invoice', 'payments'));
+        
+        // Use the new customized print template
+        $printSettings = \App\Models\PrintSetting::current();
+        
+        return view('settings.print-preview-invoice', compact('invoice', 'payments', 'printSettings'));
     }
 }

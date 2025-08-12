@@ -188,11 +188,21 @@
         </div>
     @endif
     
-    @if(isset($sectionsByCurrency) && count($sectionsByCurrency) > 0 && (!isset($displayCurrency) || !$displayCurrency))
+    @if(isset($sectionsByCurrency) && count($sectionsByCurrency) > 0 && (!isset($displayCurrency) || !$displayCurrency))        
         @foreach($sectionsByCurrency as $currencyCode => $currencySections)
             <div class="card mb-4">
                 <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">@lang('messages.currency'): {{ $currencyCode }}</h5>
+                    <h5 class="mb-0">
+                        <i class="fas fa-coins"></i>
+                        العملة: {{ $currencyCode }}
+                        @php
+                            $currencyInfo = \App\Models\Currency::where('code', $currencyCode)->first();
+                        @endphp
+                        @if($currencyInfo)
+                            - {{ $currencyInfo->name }}
+                        @endif
+                        <span class="badge badge-light ml-2">{{ count($currencySections) }} أقسام</span>
+                    </h5>
                 </div>
                 <div class="card-body">
                     <div class="row">

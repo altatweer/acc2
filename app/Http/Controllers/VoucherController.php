@@ -836,8 +836,11 @@ class VoucherController extends Controller
            ->orderByDesc('id')
            ->get();
 
+       // Use the new customized print template
+       $printSettings = \App\Models\PrintSetting::current();
+
        // Debug: سجل النتائج في اللوج
        \Log::info('Voucher ID: ' . $voucher->id);
-       return view('vouchers.print', compact('voucher', 'transactions'));
+       return view('settings.print-preview-voucher', compact('voucher', 'transactions', 'printSettings'));
    }
 }

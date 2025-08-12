@@ -1,5 +1,60 @@
 @extends('layouts.print')
 
+@push('styles')
+<style>
+/* Apply custom print settings colors */
+:root {
+    @php
+        $cssVars = $printSettings->getCssVariables();
+        foreach($cssVars as $key => $value) {
+            echo $key . ': ' . $value . ";\n        ";
+        }
+    @endphp
+}
+
+/* Journal entry specific styling using custom colors */
+.document-title h3 {
+    color: var(--primary-color);
+    border-bottom: 2px solid var(--primary-color);
+    padding-bottom: 10px;
+}
+
+.document-info {
+    background: var(--background-color);
+    border: 1px solid var(--primary-color);
+    border-radius: 8px;
+}
+
+.badge-success {
+    background-color: var(--secondary-color) !important;
+}
+
+.badge-danger {
+    background-color: var(--accent-color) !important;
+}
+
+.table thead th {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+}
+
+.table tbody tr:nth-child(even) {
+    background-color: var(--background-color);
+}
+
+.total-row {
+    background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    font-weight: bold;
+}
+
+.journal-footer {
+    border-top: 2px solid var(--primary-color);
+    background: var(--background-color);
+}
+</style>
+@endpush
+
 @section('print-content')
 <div class="no-print print-actions text-center mb-3">
     <button onclick="window.print()" class="btn btn-primary">

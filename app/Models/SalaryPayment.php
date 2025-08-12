@@ -12,7 +12,19 @@ class SalaryPayment extends Model
 
     protected $fillable = [
         'salary_batch_id',
-        'employee_id', 'salary_month', 'gross_salary', 'total_allowances', 'total_deductions', 'net_salary', 'payment_date', 'status', 'journal_entry_id', 'voucher_id',
+        'employee_id', 
+        'salary_month', 
+        'gross_salary', 
+        'total_allowances', 
+        'total_deductions', 
+        'net_salary', 
+        'currency',
+        'exchange_rate',
+        'base_currency_net_salary',
+        'payment_date', 
+        'status', 
+        'journal_entry_id', 
+        'voucher_id',
         'tenant_id',
     ];
 

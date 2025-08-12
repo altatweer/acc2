@@ -160,12 +160,13 @@
                     </thead>
                     <tbody>
                         @php
-                            // تجميع الصفوف حسب العملة
-                            if (isset($rowsByCurrency)) {
+                            // استخدام التجميع من Controller بدلاً من إعادة التجميع
+                            if (isset($rowsByCurrency) && $rowsByCurrency->isNotEmpty()) {
                                 $groupedRows = $rowsByCurrency;
                             } else {
+                                // fallback للعرض العادي
                                 $groupedRows = collect($rows)->groupBy(function($row) {
-                                    return $row['account']->currency ?? 'Unknown';
+                                    return $row['currency'] ?? 'غير محدد';
                                 });
                             }
                         @endphp
@@ -174,29 +175,42 @@
                             @forelse($groupedRows as $currencyCode => $currencyRows)
                                 <!-- عنوان العملة -->
                                 <tr class="bg-light">
-                                    <td colspan="5" class="fw-bold">{{ $currencyCode }}</td>
+                                    <td colspan="5" class="fw-bold">
+                                        <i class="fas fa-coins"></i>
+                                        {{ $currencyCode }}
+                                        @php
+                                            $currencyInfo = \App\Models\Currency::where('code', $currencyCode)->first();
+                                        @endphp
+                                        @if($currencyInfo)
+                                            - {{ $currencyInfo->name }}
+                                        @endif
+                                    </td>
                                 </tr>
                                 
                                 @foreach($currencyRows as $row)
                                 <tr>
                                     <td>{{ $row['account']->name }}</td>
-                                    <td>{{ $row['account']->currency ?? 'Unknown' }}</td>
+                                    <td>
+                                        <span class="badge badge-info">{{ $row['currency'] ?? $currencyCode }}</span>
+                                    </td>
                                     <td class="text-end">
                                         @if(in_array($row['type'], ['إيراد', 'revenue']))
-                                            {{ number_format(abs($row['balance']), 2) }}
+                                            <span class="text-success">{{ number_format(abs($row['balance']), 2) }}</span>
                                         @else
-                                            -
+                                            <span class="text-muted">-</span>
                                         @endif
                                     </td>
                                     <td class="text-end">
                                         @if(in_array($row['type'], ['مصروف', 'expense']))
-                                            {{ number_format(abs($row['balance']), 2) }}
+                                            <span class="text-danger">{{ number_format(abs($row['balance']), 2) }}</span>
                                         @else
-                                            -
+                                            <span class="text-muted">-</span>
                                         @endif
                                     </td>
-                                    <td class="text-end {{ in_array($row['type'], ['إيراد', 'revenue']) ? 'text-success' : 'text-danger' }}">
-                                        {{ number_format(abs($row['balance']), 2) }}
+                                    <td class="text-end">
+                                        <span class="badge {{ in_array($row['type'], ['إيراد', 'revenue']) ? 'badge-success' : 'badge-danger' }}">
+                                            {{ in_array($row['type'], ['إيراد', 'revenue']) ? 'إيراد' : 'مصروف' }}
+                                        </span>
                                     </td>
                                 </tr>
                                 @endforeach

@@ -1,6 +1,7 @@
 @extends('layouts.app')
 @section('title', __('messages.income_statement'))
 @section('content')
+
 @if(isset($export) && $export)
     <style>
         * {
@@ -191,138 +192,192 @@ if (!isset($totalBalance)) $totalBalance = 0;
                             </tr>
                         </thead>
                         <tbody>
-                            @php
-                                // تجميع الصفوف حسب العملة
-                                $rowsByCurrency = collect($rows)->groupBy(function($row) {
-                                    return $row['account']->currency ?? 'Unknown';
-                                });
-                            @endphp
-                            
                             @if(!isset($displayCurrency) || !$displayCurrency)
-                                @foreach($rowsByCurrency as $currency => $currencyRows)
-                                    <!-- عنوان العملة -->
-                                    <tr class="bg-light">
-                                        <td colspan="6" class="fw-bold">{{ $currency }}</td>
+                                {{-- DEBUG INFO - مؤقت --}}
+                                @if(true)
+                                    <tr class="bg-warning text-dark">
+                                        <td colspan="6">
+                                            <strong>🔍 DEBUG:</strong>
+                                            @if(isset($rowsByCurrency))
+                                                العملات المتاحة: {{ implode(', ', $rowsByCurrency->keys()->toArray()) }}
+                                                | عدد الصفوف الكلي: {{ $rowsByCurrency->flatten(1)->count() }}
+                                                @foreach($rowsByCurrency as $debugCurrency => $debugRows)
+                                                    <br>- {{ $debugCurrency }}: {{ $debugRows->count() }} صف
+                                                @endforeach
+                                            @else
+                                                ❌ rowsByCurrency غير موجود
+                                            @endif
+                                        </td>
                                     </tr>
-                                    
-                                    @foreach($currencyRows as $row)
-                                    <tr>
-                                        <td>{{ $row['account']->name }}</td>
-                                        <td>{{ $row['type'] }}</td>
-                                        <td>{{ $row['account']->currency ?? 'Unknown' }}</td>
-                                        <td class="text-end">{{ number_format(abs($row['debit']), 2) }}</td>
-                                        <td class="text-end">{{ number_format(abs($row['credit']), 2) }}</td>
-                                        <td class="text-end">{{ number_format(abs($row['balance']), 2) }}</td>
-                                    </tr>
+                                @endif
+                                
+                                @if(isset($rowsByCurrency) && $rowsByCurrency->isNotEmpty())
+                                    @foreach($rowsByCurrency as $currency => $currencyRows)
+                                        <!-- عنوان العملة -->
+                                        <tr class="bg-light">
+                                            <td colspan="6" class="fw-bold">
+                                                <i class="fas fa-coins"></i>
+                                                {{ $currency }}
+                                                @php
+                                                    $currencyInfo = \App\Models\Currency::where('code', $currency)->first();
+                                                @endphp
+                                                @if($currencyInfo)
+                                                    - {{ $currencyInfo->name }}
+                                                @endif
+                                            </td>
+                                        </tr>
+                                        
+                                        @foreach($currencyRows as $row)
+                                            @if($row['debit'] != 0 || $row['credit'] != 0 || $row['balance'] != 0)
+                                            <tr>
+                                                <td>{{ $row['account']->name }}</td>
+                                                <td>
+                                                    <span class="badge badge-info">{{ $row['currency'] }}</span>
+                                                    @if($row['currency'] !== $row['account']->default_currency)
+                                                        <small class="text-muted d-block">حساب: {{ $row['account']->default_currency ?: 'غير محدد' }}</small>
+                                                    @endif
+                                                </td>
+                                                <td class="text-end">
+                                                    @if(in_array($row['type'], ['إيراد', 'revenue']))
+                                                        <span class="text-success">{{ number_format(abs($row['balance']), 2) }}</span>
+                                                    @else
+                                                        <span class="text-muted">-</span>
+                                                    @endif
+                                                </td>
+                                                <td class="text-end">
+                                                    @if(in_array($row['type'], ['مصروف', 'expense']))
+                                                        <span class="text-danger">{{ number_format(abs($row['balance']), 2) }}</span>
+                                                    @else
+                                                        <span class="text-muted">-</span>
+                                                    @endif
+                                                </td>
+                                                <td class="text-end">
+                                                    <span class="badge {{ in_array($row['type'], ['إيراد', 'revenue']) ? 'badge-success' : 'badge-danger' }}">
+                                                        {{ in_array($row['type'], ['إيراد', 'revenue']) ? 'إيراد' : 'مصروف' }}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                            @endif
+                                        @endforeach
                                     @endforeach
-                                @endforeach
+                                @else
+                                    @foreach($rows as $row)
+                                        <tr>
+                                            <td>{{ $row['account']->name }}</td>
+                                            <td>
+                                                @if($row['type'] == 'إيراد' || $row['type'] == 'revenue')
+                                                    <span class="badge badge-success">إيراد</span>
+                                                @elseif($row['type'] == 'مصروف' || $row['type'] == 'expense')
+                                                    <span class="badge badge-danger">مصروف</span>
+                                                @else
+                                                    <span class="badge badge-secondary">{{ $row['type'] ?? 'غير محدد' }}</span>
+                                                @endif
+                                            </td>
+                                            <td>
+                                                <span class="badge badge-info">{{ $row['currency'] }}</span>
+                                            </td>
+                                            <td class="text-end">{{ number_format(abs($row['debit']), 2) }}</td>
+                                            <td class="text-end">{{ number_format(abs($row['credit']), 2) }}</td>
+                                            <td class="text-end {{ $row['balance'] >= 0 ? 'text-success' : 'text-danger' }}">
+                                                {{ number_format(abs($row['balance']), 2) }}
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                @endif
                             @endif
                         </tbody>
                         <tfoot class="table-light">
                             @php
-                                // حساب المجاميع لكل عملة
-                                $revenueByCurrency = [];
-                                $expenseByCurrency = [];
-                                $netByCurrency = [];
-                                
-                                foreach($rowsByCurrency as $currency => $currencyRows) {
-                                    $revenueRows = $currencyRows->filter(function($row) {
-                                        return in_array($row['type'], ['إيراد', 'revenue']);
-                                    });
-                                    
-                                    $expenseRows = $currencyRows->filter(function($row) {
-                                        return in_array($row['type'], ['مصروف', 'expense']);
-                                    });
-                                    
-                                    $revenueByCurrency[$currency] = $revenueRows->sum(function($row) {
-                                        return abs($row['balance']);
-                                    });
-                                    
-                                    $expenseByCurrency[$currency] = $expenseRows->sum(function($row) {
-                                        return abs($row['balance']);
-                                    });
-                                    
-                                    $netByCurrency[$currency] = $revenueByCurrency[$currency] - $expenseByCurrency[$currency];
-                                }
-                                
-                                // العملة الافتراضية للتحويل
+                                // استخدام المجاميع المحسوبة في Controller
                                 $defaultCurrency = \App\Models\Currency::getDefaultCode();
-                                
-                                // تحويل جميع القيم إلى العملة الافتراضية
-                                $totalRevenueDefaultCurr = 0;
-                                $totalExpenseDefaultCurr = 0;
-                                
-                                foreach($revenueByCurrency as $currency => $amount) {
-                                    if ($currency != $defaultCurrency) {
-                                        $totalRevenueDefaultCurr += \App\Helpers\CurrencyHelper::convert($amount, $currency, $defaultCurrency);
-                                    } else {
-                                        $totalRevenueDefaultCurr += $amount;
-                                    }
-                                }
-                                
-                                foreach($expenseByCurrency as $currency => $amount) {
-                                    if ($currency != $defaultCurrency) {
-                                        $totalExpenseDefaultCurr += \App\Helpers\CurrencyHelper::convert($amount, $currency, $defaultCurrency);
-                                    } else {
-                                        $totalExpenseDefaultCurr += $amount;
-                                    }
-                                }
-                                
-                                $netDefaultCurr = $totalRevenueDefaultCurr - $totalExpenseDefaultCurr;
                             @endphp
                             
                             <!-- مجاميع كل عملة -->
-                            @foreach($rowsByCurrency as $currency => $currencyRows)
-                                <tr>
-                                    <th colspan="3">@lang('messages.revenues') ({{ $currency }})</th>
-                                    <th colspan="3" class="text-end">{{ number_format($revenueByCurrency[$currency] ?? 0, 2) }}</th>
-                                </tr>
-                                <tr>
-                                    <th colspan="3">@lang('messages.expenses') ({{ $currency }})</th>
-                                    <th colspan="3" class="text-end">{{ number_format($expenseByCurrency[$currency] ?? 0, 2) }}</th>
-                                </tr>
-                                <tr class="{{ ($netByCurrency[$currency] ?? 0) >= 0 ? 'table-success' : 'table-danger' }}">
-                                    @if(($netByCurrency[$currency] ?? 0) >= 0)
-                                        <th colspan="3">@lang('messages.net_profit') ({{ $currency }})</th>
-                                        <th colspan="3" class="text-end">{{ number_format($netByCurrency[$currency] ?? 0, 2) }}</th>
-                                    @else
-                                        <th colspan="3">@lang('messages.net_loss') ({{ $currency }})</th>
-                                        <th colspan="3" class="text-end">{{ number_format(abs($netByCurrency[$currency] ?? 0), 2) }}</th>
-                                    @endif
-                                </tr>
-                            @endforeach
+                            @if(isset($revenuesByCurrency) && count($revenuesByCurrency) > 0)
+                                @foreach($revenuesByCurrency as $currency => $revenueAmount)
+                                    <tr>
+                                        <th colspan="3">@lang('messages.revenues') ({{ $currency }})</th>
+                                        <th colspan="3" class="text-end">{{ number_format($revenueAmount, 2) }}</th>
+                                    </tr>
+                                @endforeach
+                            @endif
+                            
+                            @if(isset($expensesByCurrency) && count($expensesByCurrency) > 0)
+                                @foreach($expensesByCurrency as $currency => $expenseAmount)
+                                    <tr>
+                                        <th colspan="3">@lang('messages.expenses') ({{ $currency }})</th>
+                                        <th colspan="3" class="text-end">{{ number_format($expenseAmount, 2) }}</th>
+                                    </tr>
+                                @endforeach
+                            @endif
+                            
+                            @if(isset($netByCurrency) && count($netByCurrency) > 0)
+                                @foreach($netByCurrency as $currency => $netAmount)
+                                    <tr class="{{ $netAmount >= 0 ? 'text-success' : 'text-danger' }}">
+                                        <th colspan="3">{{ $netAmount >= 0 ? __('messages.net_profit') : __('messages.net_loss') }} ({{ $currency }})</th>
+                                        <th colspan="3" class="text-end">{{ number_format(abs($netAmount), 2) }}</th>
+                                    </tr>
+                                @endforeach
+                            @endif
                         </tfoot>
                     </table>
                 </div>
             @endif
             
             <!-- المجموع الكلي بكل العملات المتاحة (يظهر فقط عند عدم اختيار عملة عرض واحدة) -->
-            @if(isset($financialResultsInAllCurrencies) && (!isset($displayCurrency) || !$displayCurrency))
-                <div class="card bg-light mt-4 mb-0">
-                    <div class="card-header bg-dark text-white">
-                        <h5 class="mb-0">@lang('messages.grand_total') (@lang('messages.in_all_currencies'))</h5>
+            @if(isset($financialResultsInAllCurrencies) && count($financialResultsInAllCurrencies) > 0)
+                <div class="card mt-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-chart-line"></i>
+                            المجموع الكلي (بكل العملات)
+                        </h5>
                     </div>
-                    <div class="card-body">
-                        <div class="row">
-                            @foreach($financialResultsInAllCurrencies as $currCode => $results)
-                                <div class="col-md-4 mb-3">
-                                    <div class="card h-100 {{ $currCode == $defaultCurrency ? 'border-primary' : '' }}">
-                                        <div class="card-header {{ $currCode == $defaultCurrency ? 'bg-primary text-white' : 'bg-light' }}">
-                                            <h5 class="mb-0">{{ $currCode }} {{ $currCode == $defaultCurrency ? '(' . __('messages.default_currency') . ')' : '' }}</h5>
+                    <div class="card-body p-0">
+                        <div class="row g-0">
+                            @foreach($financialResultsInAllCurrencies as $currencyCode => $totals)
+                                <div class="col-md-4">
+                                    <div class="card h-100 border-0 {{ $currencyCode == $defaultCurrency ? 'bg-primary text-white' : 'bg-light' }}">
+                                        <div class="card-header {{ $currencyCode == $defaultCurrency ? 'bg-primary text-white border-primary' : 'bg-light border-light' }}">
+                                            <h6 class="mb-0 text-center">
+                                                @php
+                                                    $currencyInfo = \App\Models\Currency::where('code', $currencyCode)->first();
+                                                @endphp
+                                                {{ $currencyInfo ? $currencyInfo->symbol : '' }} {{ $currencyCode }}
+                                                @if($currencyCode == $defaultCurrency)
+                                                    <small class="badge badge-light text-primary ml-1">افتراضي</small>
+                                                @endif
+                                            </h6>
+                                            @if($currencyInfo)
+                                                <small class="d-block text-center opacity-75">{{ $currencyInfo->name }}</small>
+                                            @endif
                                         </div>
-                                        <div class="card-body p-0">
-                                            <table class="table table-sm mb-0">
+                                        <div class="card-body">
+                                            <table class="table table-sm table-borderless mb-0">
                                                 <tr>
-                                                    <th>@lang('messages.revenues')</th>
-                                                    <td class="text-end">{{ number_format($results['revenue'], 2) }}</td>
+                                                    <td class="text-success">
+                                                        <i class="fas fa-arrow-up"></i> الإيرادات
+                                                    </td>
+                                                    <td class="text-end text-success font-weight-bold">
+                                                        {{ number_format($totals['revenue'], 2) }}
+                                                    </td>
                                                 </tr>
                                                 <tr>
-                                                    <th>@lang('messages.expenses')</th>
-                                                    <td class="text-end">{{ number_format($results['expense'], 2) }}</td>
+                                                    <td class="text-danger">
+                                                        <i class="fas fa-arrow-down"></i> المصروفات
+                                                    </td>
+                                                    <td class="text-end text-danger font-weight-bold">
+                                                        {{ number_format($totals['expense'], 2) }}
+                                                    </td>
                                                 </tr>
-                                                <tr class="{{ $results['net'] >= 0 ? 'table-success' : 'table-danger' }}">
-                                                    <th>{{ $results['net'] >= 0 ? __('messages.net_profit') : __('messages.net_loss') }}</th>
-                                                    <td class="text-end fw-bold">{{ number_format(abs($results['net']), 2) }}</td>
+                                                <tr class="border-top">
+                                                    <td class="{{ $totals['net'] >= 0 ? 'text-success' : 'text-danger' }} font-weight-bold">
+                                                        <i class="fas fa-{{ $totals['net'] >= 0 ? 'plus' : 'minus' }}-circle"></i>
+                                                        {{ $totals['net'] >= 0 ? 'ربح صافي' : 'خسارة صافية' }}
+                                                    </td>
+                                                    <td class="text-end {{ $totals['net'] >= 0 ? 'text-success' : 'text-danger' }} font-weight-bold">
+                                                        {{ number_format(abs($totals['net']), 2) }}
+                                                    </td>
                                                 </tr>
                                             </table>
                                         </div>

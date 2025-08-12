@@ -209,7 +209,11 @@ class JournalEntryController extends Controller
     public function print($id)
     {
         $journalEntry = \App\Models\JournalEntry::with('lines.account', 'user')->findOrFail($id);
-        return view('journal_entries.print', compact('journalEntry'));
+        
+        // Add print settings for consistent styling
+        $printSettings = \App\Models\PrintSetting::current();
+        
+        return view('journal_entries.print', compact('journalEntry', 'printSettings'));
     }
 
     public function createSingleCurrency()

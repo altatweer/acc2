@@ -1,5 +1,59 @@
 @extends('layouts.print')
 
+@push('styles')
+<style>
+/* Apply custom print settings colors */
+:root {
+    @php
+        $cssVars = $printSettings->getCssVariables();
+        foreach($cssVars as $key => $value) {
+            echo $key . ': ' . $value . ";\n        ";
+        }
+    @endphp
+}
+
+/* Salary batch specific styling using custom colors */
+.document-title h3 {
+    color: var(--primary-color);
+    border-bottom: 2px solid var(--primary-color);
+    padding-bottom: 10px;
+}
+
+.badge-primary {
+    background-color: var(--primary-color) !important;
+}
+
+.badge-success {
+    background-color: var(--secondary-color) !important;
+}
+
+.table thead th {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+}
+
+.table tbody tr:nth-child(even) {
+    background-color: var(--background-color);
+}
+
+.total-row {
+    background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    font-weight: bold;
+}
+
+.currency-badge {
+    background: var(--accent-color);
+    color: white;
+}
+
+.statistics-card {
+    border-left: 4px solid var(--primary-color);
+    background: var(--background-color);
+}
+</style>
+@endpush
+
 @section('print-content')
 <div class="document-title">
     <h3>كشف رواتب شهر {{ $salaryBatch->month }}</h3>

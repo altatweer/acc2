@@ -67,6 +67,21 @@ class SalaryBatchController extends Controller
                 $totalAllowances = collect($salary->allowances)->sum('amount');
                 $totalDeductions = collect($salary->deductions)->sum('amount');
                 $net = $gross + $totalAllowances - $totalDeductions;
+                
+                // تحديد عملة الراتب (افتراضياً من الموظف أو النظام)
+                $salaryCurrency = $emp->salary_currency ?? \App\Models\Currency::getDefaultCode();
+                $defaultCurrency = \App\Models\Currency::getDefaultCode();
+                $exchangeRate = 1.0;
+                
+                // الحصول على سعر الصرف إذا لم تكن العملة الافتراضية
+                if ($salaryCurrency !== $defaultCurrency) {
+                    $currency = \App\Models\Currency::where('code', $salaryCurrency)->first();
+                    $exchangeRate = $currency ? $currency->exchange_rate : 1.0;
+                }
+                
+                // حساب الراتب الصافي بالعملة الأساسية
+                $baseCurrencyNetSalary = $net * $exchangeRate;
+                
                 SalaryPayment::create([
                     'salary_batch_id' => $batch->id,
                     'employee_id' => $emp->id,
@@ -75,6 +90,9 @@ class SalaryBatchController extends Controller
                     'total_allowances' => $totalAllowances,
                     'total_deductions' => $totalDeductions,
                     'net_salary' => $net,
+                    'currency' => $salaryCurrency,
+                    'exchange_rate' => $exchangeRate,
+                    'base_currency_net_salary' => $baseCurrencyNetSalary,
                     'payment_date' => $monthEnd->toDateString(),
                     'status' => 'pending',
                 ]);
@@ -378,11 +396,15 @@ class SalaryBatchController extends Controller
             'total_currencies' => $paymentsByCurrency->count(),
         ];
         
+        // Add print settings for consistent styling
+        $printSettings = \App\Models\PrintSetting::current();
+        
         return view('salary_batches.print', compact(
             'salaryBatch', 
             'paymentsByCurrency', 
             'totalsByCurrency', 
-            'statistics'
+            'statistics',
+            'printSettings'
         ));
     }
 } 

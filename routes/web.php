@@ -118,6 +118,13 @@ Route::middleware(['auth'])->group(function () {
     Route::get('accounts/create-group', [AccountController::class, 'createGroup'])->name('accounts.createGroup');
     Route::post('accounts/store-group', [AccountController::class, 'storeGroup'])->name('accounts.storeGroup');
     Route::get('accounts/create-account', [AccountController::class, 'createAccount'])->name('accounts.createAccount');
+    
+    // Accounts Tree Export
+    Route::get('accounts/tree', [\App\Http\Controllers\AccountsTreeController::class, 'index'])->name('accounts.tree.index');
+    Route::get('accounts/tree/export', [\App\Http\Controllers\AccountsTreeController::class, 'exportToExcel'])->name('accounts.tree.export');
+    Route::get('accounts/tree/preview', [\App\Http\Controllers\AccountsTreeController::class, 'preview'])->name('accounts.tree.preview');
+    Route::get('accounts/tree/print', [\App\Http\Controllers\AccountsTreeController::class, 'printTree'])->name('accounts.tree.print');
+    Route::get('accounts/tree/json', [\App\Http\Controllers\AccountsTreeController::class, 'getTreeData'])->name('accounts.tree.json');
     Route::post('accounts/store-account', [AccountController::class, 'storeAccount'])->name('accounts.storeAccount');
     Route::post('accounts/next-code', [AccountController::class, 'nextCode'])->name('accounts.nextCode');
     Route::get('accounts/chart', [AccountController::class, 'chart'])->name('accounts.chart');
@@ -186,6 +193,13 @@ Route::middleware(['auth'])->group(function () {
     Route::put('settings/accounting', [AccountingSettingController::class, 'update'])->name('accounting-settings.update');
     Route::get('settings/system', [SettingController::class, 'edit'])->name('settings.system.edit');
     Route::put('settings/system', [SettingController::class, 'update'])->name('settings.system.update');
+    
+    // Print Settings
+    Route::get('settings/print', [\App\Http\Controllers\PrintSettingController::class, 'edit'])->name('print-settings.edit');
+    Route::put('settings/print', [\App\Http\Controllers\PrintSettingController::class, 'update'])->name('print-settings.update');
+    Route::post('settings/print/reset', [\App\Http\Controllers\PrintSettingController::class, 'reset'])->name('print-settings.reset');
+    Route::get('settings/print/preview/invoice/{invoiceId?}', [\App\Http\Controllers\PrintSettingController::class, 'previewInvoice'])->name('print-settings.preview-invoice');
+    Route::get('settings/print/preview/voucher/{voucherId?}', [\App\Http\Controllers\PrintSettingController::class, 'previewVoucher'])->name('print-settings.preview-voucher');
 
     // Language management
     Route::get('languages', [LanguageController::class, 'index'])->name('languages.index');
@@ -213,6 +227,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('income-statement', [ReportsController::class, 'incomeStatement'])->name('income-statement');
         Route::get('payroll', [ReportsController::class, 'payroll'])->name('payroll');
         Route::get('expenses-revenues', [ReportsController::class, 'expensesRevenues'])->name('expenses-revenues');
+        Route::get('currency-comparison', [ReportsController::class, 'currencyComparison'])->name('currency-comparison');
+        Route::get('cash-flow', [ReportsController::class, 'cashFlow'])->name('cash-flow');
         Route::get('balance-sheet/excel', [ReportsController::class, 'exportBalanceSheetExcel'])->name('balance-sheet.excel');
         Route::get('income-statement/excel', [ReportsController::class, 'exportIncomeStatementExcel'])->name('income-statement.excel');
         Route::get('expenses-revenues/excel', [ReportsController::class, 'exportExpensesRevenuesExcel'])->name('expenses-revenues.excel');
@@ -221,6 +237,63 @@ Route::middleware(['auth'])->group(function () {
         Route::get('income-statement/pdf', [ReportsController::class, 'exportIncomeStatementPdf'])->name('income-statement.pdf');
         Route::get('expenses-revenues/pdf', [ReportsController::class, 'exportExpensesRevenuesPdf'])->name('expenses-revenues.pdf');
         Route::get('payroll/pdf', [ReportsController::class, 'exportPayrollPdf'])->name('payroll.pdf');
+    });
+
+    // Test route for debugging income statement
+    Route::get('/debug-income', function() {
+        $defaultCurrency = \App\Models\Currency::getDefaultCode();
+        $accounts = \App\Models\Account::where('is_group', false)
+            ->where(function($q) {
+                $q->whereHas('parent', function($subQ) {
+                    $subQ->whereIn('type', ['إيراد', 'مصروف', 'revenue', 'expense']);
+                })->orWhere(function($subQ) {
+                    $subQ->whereNull('parent_id')->whereIn('type', ['إيراد', 'مصروف', 'revenue', 'expense']);
+                });
+            })->get();
+
+        $rows = [];
+        $rowsByCurrency = collect();
+        
+        foreach ($accounts as $account) {
+            $lines = $account->journalEntryLines()->get();
+            $linesByCurrency = $lines->groupBy('currency');
+            
+            foreach ($linesByCurrency as $currency => $currencyLines) {
+                $debit = $currencyLines->sum('debit');
+                $credit = $currencyLines->sum('credit');
+                $balance = $debit - $credit;
+                
+                if ($debit == 0 && $credit == 0 && $balance == 0) {
+                    continue;
+                }
+                
+                $parentType = $account->parent ? $account->parent->type : $account->type;
+                $actualCurrency = $currency ?: $defaultCurrency;
+                
+                $row = [
+                    'account' => $account->name,
+                    'debit' => $debit,
+                    'credit' => $credit,
+                    'balance' => $balance,
+                    'type' => $parentType,
+                    'currency' => $actualCurrency,
+                ];
+                
+                $rows[] = $row;
+                
+                if (!$rowsByCurrency->has($actualCurrency)) {
+                    $rowsByCurrency[$actualCurrency] = collect();
+                }
+                $rowsByCurrency[$actualCurrency]->push($row);
+            }
+        }
+        
+        return response()->json([
+            'total_rows' => count($rows),
+            'currencies' => $rowsByCurrency->keys()->toArray(),
+            'data_by_currency' => $rowsByCurrency->toArray(),
+            'sample_data' => $rows
+        ]);
     });
 
     // Test route for currency functions

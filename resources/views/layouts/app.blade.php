@@ -1211,6 +1211,12 @@
                                 <p>@lang('sidebar.chart_of_accounts')</p>
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a href="{{ route('accounts.tree.index') }}" class="nav-link {{ Request::routeIs('accounts.tree.*') ? 'active' : '' }}">
+                                <i class="fas fa-sitemap nav-icon"></i>
+                                <p>تصدير شجرة الحسابات</p>
+                            </a>
+                        </li>
                     </ul>
                 </li>
                 @endif
@@ -1456,11 +1462,11 @@
                     </a>
                 </li>
                 @endif
-                @if($isSuperAdmin)
+                @if($isSuperAdmin || auth()->user()->can('manage_system_settings'))
                 <li class="nav-item">
-                    <a href="{{ route('languages.index') }}" class="nav-link {{ Request::routeIs('languages.*') ? 'active' : '' }}">
-                        <i class="nav-icon fas fa-language"></i>
-                        <p>@lang('sidebar.languages_management')</p>
+                    <a href="{{ route('print-settings.edit') }}" class="nav-link {{ Request::routeIs('print-settings.*') ? 'active' : '' }}">
+                        <i class="nav-icon fas fa-print"></i>
+                        <p>إعدادات الطباعة المخصصة</p>
                     </a>
                 </li>
                 @endif
@@ -1495,6 +1501,18 @@
                     <a class="nav-link" href="{{ route('reports.expenses-revenues') }}">
                         <i class="fas fa-receipt"></i>
                         <span>@lang('sidebar.expenses_revenues')</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ route('reports.currency-comparison') }}">
+                        <i class="fas fa-chart-pie"></i>
+                        <span>مقارنة العملات</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ route('reports.cash-flow') }}">
+                        <i class="fas fa-money-bill-wave"></i>
+                        <span>التدفقات النقدية</span>
                     </a>
                 </li>
                 @endif
