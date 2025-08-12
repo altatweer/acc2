@@ -83,17 +83,15 @@ class PrintSetting extends Model
         'enable_watermark' => 'boolean'];
 
     /**
-     * Get the current print settings for the tenant
+     * Get the current print settings
      */
     public static function current()
     {
-        $tenantId = session('tenant_id', 1);
-        
-        $settings = static::where('tenant_id', $tenantId)->first();
+        $settings = static::first();
         
         if (!$settings) {
             // Create default settings if none exist
-            $settings = static::createDefault($tenantId);
+            $settings = static::createDefault();
         }
         
         return $settings;
@@ -102,16 +100,13 @@ class PrintSetting extends Model
     /**
      * Create default print settings
      */
-    public static function createDefault($tenantId = null)
+    public static function createDefault()
     {
-        $tenantId = $tenantId ?? session('tenant_id', 1);
-        
         // Get company info from existing settings
         $companyName = \App\Models\Setting::get('company_name', 'شركة المحاسبة');
         $companyLogo = \App\Models\Setting::get('company_logo');
         
         return static::create([
-            'tenant_id' => $tenantId,
             'company_name' => $companyName,
             'company_logo' => $companyLogo,
             'primary_color' => '#2c3e50',

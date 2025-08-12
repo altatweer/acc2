@@ -18,7 +18,6 @@ return new class extends Migration
             $table->string('phone')->nullable();
             $table->text('address')->nullable();
             $table->foreignId('account_id')->nullable()->constrained('accounts')->onDelete('set null');
-            $table->foreignId('tenant_id')->constrained()->onDelete('cascade');
             $table->timestamps();
         });
     }

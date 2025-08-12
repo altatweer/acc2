@@ -122,7 +122,6 @@ class FixMulticurrencyCompatibility extends Migration
         if (!Schema::hasTable('item_prices')) {
             Schema::create('item_prices', function (Blueprint $table) {
                 $table->id();
-                $table->unsignedBigInteger('tenant_id')->nullable()->index();
                 $table->unsignedBigInteger('item_id');
                 $table->string('currency', 3);
                 $table->decimal('price', 18, 4);
@@ -145,7 +144,6 @@ class FixMulticurrencyCompatibility extends Migration
         if (!Schema::hasTable('customer_balances')) {
             Schema::create('customer_balances', function (Blueprint $table) {
                 $table->id();
-                $table->unsignedBigInteger('tenant_id')->nullable()->index();
                 $table->unsignedBigInteger('customer_id');
                 $table->string('currency', 3);
                 $table->decimal('balance', 18, 4)->default(0);
@@ -166,7 +164,6 @@ class FixMulticurrencyCompatibility extends Migration
         if (!Schema::hasTable('exchange_rate_history')) {
             Schema::create('exchange_rate_history', function (Blueprint $table) {
                 $table->id();
-                $table->unsignedBigInteger('tenant_id')->nullable()->index();
                 $table->string('from_currency', 3);
                 $table->string('to_currency', 3);
                 $table->decimal('rate', 15, 10);

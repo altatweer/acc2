@@ -86,13 +86,12 @@ return new class extends Migration
                 $table->date('effective_date')->comment('تاريخ سريان السعر');
                 $table->boolean('is_active')->default(true);
                 $table->text('notes')->nullable();
-                $table->unsignedBigInteger('tenant_id')->nullable()->index();
                 $table->timestamps();
 
                 // فهارس
                 $table->index(['from_currency', 'to_currency']);
                 $table->index(['effective_date']);
-                $table->unique(['from_currency', 'to_currency', 'effective_date', 'tenant_id'], 'currency_rates_unique');
+                $table->unique(['from_currency', 'to_currency', 'effective_date'], 'currency_rates_unique_clean');
             });
         }
 
@@ -125,7 +124,6 @@ return new class extends Migration
                 $table->json('metadata')->nullable()->comment('بيانات إضافية');
                 $table->unsignedBigInteger('user_id');
                 $table->unsignedBigInteger('branch_id')->nullable();
-                $table->unsignedBigInteger('tenant_id')->nullable()->index();
                 $table->timestamps();
 
                 // المفاتيح الخارجية

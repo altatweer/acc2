@@ -13,7 +13,6 @@ return new class extends Migration
     {
         Schema::create('print_settings', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('tenant_id')->nullable();
             
             // Company Information
             $table->string('company_name')->nullable();
