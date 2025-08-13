@@ -51,13 +51,13 @@
                             <small class="d-block mt-1 text-muted">هذا المفتاح صالح لسنة واحدة للتطوير والاختبار</small>
                         </div>
                         
-                        <form method="POST" action="{{ route('install.process') }}" id="license-form">
+                        <form method="POST" action="{{ route('install.process') }}" id="license-form" novalidate>
                             @csrf
                             <div class="form-group mb-3">
                                 <label for="license_key" class="form-label">مفتاح الترخيص <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control" id="license_key" name="license_key" 
                                        value="{{ old('license_key', 'DEV-2025-INTERNAL') }}" 
-                                       placeholder="DEV-2025-XXXXXXXX" required>
+                                       placeholder="DEV-2025-XXXXXXXX">
                                 <small class="form-text text-muted">يجب إدخال مفتاح ترخيص صحيح للمتابعة</small>
                                 <div id="license-status" class="mt-2"></div>
                                 @if(session('license_error'))
@@ -89,8 +89,13 @@ document.getElementById('license_key').addEventListener('input', function() {
         return; 
     }
     
+    // تحقق خاص للمفتاح الافتراضي
+    if (key === 'DEV-2025-INTERNAL' || key === 'DEV-2025-TESTING') {
+        status.innerHTML = '<span class="text-success"><i class="fas fa-check-circle me-1"></i>مفتاح ترخيص تطوير صحيح</span>';
+        btn.disabled = false;
+    }
     // التحقق من تنسيق مفتاح التطوير
-    if (key.match(/^DEV-\d{4}-[A-Z0-9]{4,}$/i)) {
+    else if (key.match(/^DEV-\d{4}-[A-Z0-9]{4,}$/i)) {
         status.innerHTML = '<span class="text-success"><i class="fas fa-check-circle me-1"></i>مفتاح ترخيص تطوير صحيح</span>';
         btn.disabled = false;
     } 
@@ -99,14 +104,31 @@ document.getElementById('license_key').addEventListener('input', function() {
         status.innerHTML = '<span class="text-success"><i class="fas fa-check-circle me-1"></i>مفتاح ترخيص إنتاج صحيح</span>';
         btn.disabled = false;
     }
+    else if (key.length >= 3) {
+        // السماح بالمفاتيح الأخرى لكن بتحذير
+        status.innerHTML = '<span class="text-info"><i class="fas fa-info-circle me-1"></i>سيتم التحقق من صحة المفتاح عند المتابعة</span>';
+        btn.disabled = false;
+    }
     else {
-        status.innerHTML = '<span class="text-warning"><i class="fas fa-exclamation-triangle me-1"></i>تنسيق مفتاح الترخيص غير صحيح</span>';
+        status.innerHTML = '<span class="text-warning"><i class="fas fa-exclamation-triangle me-1"></i>يرجى إدخال مفتاح الترخيص</span>';
+        btn.disabled = true;
     }
 });
 
 // تحقق أولي عند تحميل الصفحة
 document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('license_key').dispatchEvent(new Event('input'));
+    
+    // آلية احتياطية للـ form submission
+    document.getElementById('license-form').addEventListener('submit', function(e) {
+        var key = document.getElementById('license_key').value.trim();
+        if (!key || key.length < 3) {
+            e.preventDefault();
+            alert('يرجى إدخال مفتاح ترخيص صحيح');
+            return false;
+        }
+        return true;
+    });
 });
 </script>
 @endsection 
