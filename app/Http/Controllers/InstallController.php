@@ -91,42 +91,65 @@ class InstallController extends Controller
     public function processStep(Request $request)
     {
         \Log::info('Install processStep started');
-        $request->validate([
-            'license_key' => 'required',
-        ]);
+        \Log::info('Request data: ', $request->all());
         
-        // التحقق من صحة مفتاح الرخصة
-        $licenseService = app(\App\Services\LicenseService::class);
-        $validation = $licenseService->validateLicenseKey($request->license_key);
-        
-        if (!$validation['valid']) {
-            return back()->withInput()->with('license_error', $validation['message']);
+        try {
+            $request->validate([
+                'license_key' => 'required',
+            ]);
+            \Log::info('Validation passed');
+            
+            // التحقق من صحة مفتاح الرخصة
+            $licenseService = app(\App\Services\LicenseService::class);
+            \Log::info('License service created');
+            
+            $validation = $licenseService->validateLicenseKey($request->license_key);
+            \Log::info('License validation result: ', $validation);
+            
+            if (!$validation['valid']) {
+                \Log::warning('License validation failed', $validation);
+                return back()->withInput()->with('license_error', $validation['message']);
+            }
+            
+            // تنشيط الرخصة للدومين الحالي
+            $domain = $request->getHost();
+            \Log::info('Domain: ' . $domain);
+            
+            $activation = $licenseService->activateLicense($request->license_key, $domain);
+            \Log::info('License activation result: ', $activation);
+            
+            if (!$activation['success']) {
+                \Log::warning('License activation failed', $activation);
+                return back()->withInput()->with('license_error', $activation['message']);
+            }
+            
+            // حفظ معلومات الرخصة في ملف آمن
+            $licenseData = [
+                'license_key' => $request->license_key,
+                'domain' => $domain,
+                'activated_at' => now()->toDateTimeString(),
+                'type' => $validation['type'],
+            ];
+            
+            $privateDir = storage_path('app/private');
+            if (!is_dir($privateDir)) {
+                $created = mkdir($privateDir, 0755, true);
+                \Log::info('Private directory created: ' . ($created ? 'yes' : 'no'));
+            }
+            
+            $licenseFile = storage_path('app/private/license.json');
+            $saved = file_put_contents($licenseFile, json_encode($licenseData));
+            \Log::info('License file saved: ' . ($saved ? 'yes' : 'no') . ' - bytes: ' . $saved);
+            
+            // بعد تحقق الرخصة، انتقل لخطوة إعداد قاعدة البيانات
+            \Log::info('Redirecting to install.database');
+            return redirect()->route('install.database');
+            
+        } catch (\Exception $e) {
+            \Log::error('Install processStep error: ' . $e->getMessage());
+            \Log::error('Exception trace: ' . $e->getTraceAsString());
+            return back()->withInput()->with('license_error', 'حدث خطأ: ' . $e->getMessage());
         }
-        
-        // تنشيط الرخصة للدومين الحالي
-        $domain = $request->getHost();
-        $activation = $licenseService->activateLicense($request->license_key, $domain);
-        
-        if (!$activation['success']) {
-            return back()->withInput()->with('license_error', $activation['message']);
-        }
-        
-        // حفظ معلومات الرخصة في ملف آمن
-        $licenseData = [
-            'license_key' => $request->license_key,
-            'domain' => $domain,
-            'activated_at' => now()->toDateTimeString(),
-            'type' => $validation['type'],
-        ];
-        
-        if (!is_dir(storage_path('app/private'))) {
-            mkdir(storage_path('app/private'), 0755, true);
-        }
-        
-        file_put_contents(storage_path('app/private/license.json'), json_encode($licenseData));
-        
-        // بعد تحقق الرخصة، انتقل لخطوة إعداد قاعدة البيانات
-        return redirect()->route('install.database');
     }
 
     public function database(Request $request)
