@@ -169,8 +169,8 @@ class LicenseService
      */
     public function validateLicenseKey(string $key): array
     {
-        // تنسيق مفاتيح التطوير
-        if (preg_match('/^DEV-\d{4}-[A-Z0-9]{8}$/', $key)) {
+        // تنسيق مفاتيح التطوير (مرن للنص والأرقام)
+        if (preg_match('/^DEV-\d{4}-[A-Z0-9]{4,}$/i', $key)) {
             return [
                 'valid' => true,
                 'type' => 'development',
@@ -179,7 +179,7 @@ class LicenseService
         }
 
         // تنسيق مفاتيح الإنتاج (للمستقبل)
-        if (preg_match('/^PROD-\d{4}-[A-Z0-9]{12}$/', $key)) {
+        if (preg_match('/^PROD-\d{4}-[A-Z0-9]{12}$/i', $key)) {
             return [
                 'valid' => true,
                 'type' => 'production',
