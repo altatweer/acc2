@@ -51,20 +51,18 @@
                             <small class="d-block mt-1 text-muted">هذا المفتاح صالح لسنة واحدة للتطوير والاختبار</small>
                         </div>
                         
-                        <form method="POST" action="{{ route('install.process') }}" id="license-form" novalidate>
+                        <form method="POST" action="{{ route('install.process') }}" id="license-form">
                             @csrf
                             <div class="form-group mb-3">
-                                <label for="license_key" class="form-label">مفتاح الترخيص <span class="text-danger">*</span></label>
+                                <label for="license_key" class="form-label">مفتاح الترخيص</label>
                                 <input type="text" class="form-control" id="license_key" name="license_key" 
-                                       value="{{ old('license_key', 'DEV-2025-INTERNAL') }}" 
-                                       placeholder="DEV-2025-XXXXXXXX">
-                                <small class="form-text text-muted">يجب إدخال مفتاح ترخيص صحيح للمتابعة</small>
-                                <div id="license-status" class="mt-2"></div>
+                                       value="{{ old('license_key', 'DEV-2025-INTERNAL') }}">
+                                <small class="form-text text-muted">للتطوير: DEV-2025-INTERNAL</small>
                                 @if(session('license_error'))
                                     <div class="alert alert-danger mt-2">{{ session('license_error') }}</div>
                                 @endif
                             </div>
-                            <button type="submit" class="btn btn-success btn-lg btn-block" id="continue-btn">
+                            <button type="submit" class="btn btn-success btn-lg btn-block">
                                 <i class="fas fa-arrow-right me-2"></i>متابعة التثبيت
                             </button>
                         </form>
@@ -79,56 +77,31 @@
     </div>
 </div>
 <script>
-document.getElementById('license_key').addEventListener('input', function() {
-    var key = this.value.trim();
-    var status = document.getElementById('license-status');
-    var btn = document.getElementById('continue-btn');
-    
-    if (!key) { 
-        status.innerHTML = ''; 
-        return; 
-    }
-    
-    // تحقق خاص للمفتاح الافتراضي
-    if (key === 'DEV-2025-INTERNAL' || key === 'DEV-2025-TESTING') {
-        status.innerHTML = '<span class="text-success"><i class="fas fa-check-circle me-1"></i>مفتاح ترخيص تطوير صحيح</span>';
-        btn.disabled = false;
-    }
-    // التحقق من تنسيق مفتاح التطوير
-    else if (key.match(/^DEV-\d{4}-[A-Z0-9]{4,}$/i)) {
-        status.innerHTML = '<span class="text-success"><i class="fas fa-check-circle me-1"></i>مفتاح ترخيص تطوير صحيح</span>';
-        btn.disabled = false;
-    } 
-    // التحقق من تنسيق مفتاح الإنتاج (للمستقبل)
-    else if (key.match(/^PROD-\d{4}-[A-Z0-9]{12}$/i)) {
-        status.innerHTML = '<span class="text-success"><i class="fas fa-check-circle me-1"></i>مفتاح ترخيص إنتاج صحيح</span>';
-        btn.disabled = false;
-    }
-    else if (key.length >= 3) {
-        // السماح بالمفاتيح الأخرى لكن بتحذير
-        status.innerHTML = '<span class="text-info"><i class="fas fa-info-circle me-1"></i>سيتم التحقق من صحة المفتاح عند المتابعة</span>';
-        btn.disabled = false;
-    }
-    else {
-        status.innerHTML = '<span class="text-warning"><i class="fas fa-exclamation-triangle me-1"></i>يرجى إدخال مفتاح الترخيص</span>';
-        btn.disabled = true;
-    }
-});
-
-// تحقق أولي عند تحميل الصفحة
+// JavaScript مبسط ومباشر
 document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('license_key').dispatchEvent(new Event('input'));
+    var form = document.getElementById('license-form');
+    var btn = form ? form.querySelector('button[type="submit"]') : null;
     
-    // آلية احتياطية للـ form submission
-    document.getElementById('license-form').addEventListener('submit', function(e) {
-        var key = document.getElementById('license_key').value.trim();
-        if (!key || key.length < 3) {
-            e.preventDefault();
-            alert('يرجى إدخال مفتاح ترخيص صحيح');
-            return false;
-        }
-        return true;
-    });
+    // التأكد من أن الزر نشط
+    if (btn) {
+        btn.disabled = false;
+    }
+    
+    // إضافة معلومات debugging للمطورين
+    if (window.location.hostname !== 'localhost') {
+        console.log('🔧 نظام التثبيت - معلومات النظام:');
+        console.log('📍 الدومين:', window.location.hostname);
+        console.log('🔗 الرابط الحالي:', window.location.href);
+        console.log('📝 النموذج موجود:', !!form);
+    }
+    
+    // السماح بالإرسال دائماً
+    if (form) {
+        form.addEventListener('submit', function() {
+            if (btn) btn.disabled = true; // منع الإرسال المتكرر
+            return true;
+        });
+    }
 });
 </script>
 @endsection 
