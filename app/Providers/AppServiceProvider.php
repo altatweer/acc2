@@ -29,6 +29,11 @@ class AppServiceProvider extends ServiceProvider
         if ($memoryLimitInBytes < 536870912) { // 512MB in bytes
             ini_set('memory_limit', '512M');
         }
+        
+        // تسجيل خدمة الترخيص
+        $this->app->singleton(\App\Services\LicenseService::class, function ($app) {
+            return new \App\Services\LicenseService();
+        });
     }
 
     /**

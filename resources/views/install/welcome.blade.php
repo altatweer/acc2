@@ -6,8 +6,8 @@
         <div class="col-md-8">
             <div class="card shadow-lg">
                 <div class="card-header bg-primary text-white text-center">
-                    <h2>Welcome to the Accounting System Installer</h2>
-                    <p class="mb-0">A step-by-step wizard to install your accounting system easily and professionally.</p>
+                    <h2>مرحباً بك في مثبت نظام المحاسبة المحترف</h2>
+                    <p class="mb-0">معالج تثبيت خطوة بخطوة لتثبيت نظام المحاسبة الخاص بك بسهولة واحترافية</p>
                 </div>
                 <div class="card-body">
                     @if(session('install_notice'))
@@ -44,18 +44,29 @@
                         @endforeach
                     </ul>
                     @if($requirements['php']['ok'] && !in_array(false, $requirements['extensions']) && !in_array(false, $requirements['permissions']))
-                        <form method="POST" action="{{ route('install.process') }}" id="purchase-form">
+                        <div class="alert alert-info mb-4">
+                            <h5><i class="fas fa-key me-2"></i>مفتاح الترخيص</h5>
+                            <p class="mb-2">أدخل مفتاح الترخيص للمتابعة. للتطوير والاختبار، استخدم:</p>
+                            <code class="text-primary">DEV-2025-INTERNAL</code>
+                            <small class="d-block mt-1 text-muted">هذا المفتاح صالح لسنة واحدة للتطوير والاختبار</small>
+                        </div>
+                        
+                        <form method="POST" action="{{ route('install.process') }}" id="license-form">
                             @csrf
-                            <div class="form-group">
-                                <label for="purchase_code">Envato Purchase Code <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="purchase_code" name="purchase_code" value="{{ old('purchase_code') }}" required>
-                                <small class="form-text text-muted">You must enter a valid purchase code to continue installation.</small>
-                                <div id="purchase-status" class="mt-2"></div>
-                                @if(session('purchase_error'))
-                                    <div class="alert alert-danger mt-2">{{ session('purchase_error') }}</div>
+                            <div class="form-group mb-3">
+                                <label for="license_key" class="form-label">مفتاح الترخيص <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="license_key" name="license_key" 
+                                       value="{{ old('license_key', 'DEV-2025-INTERNAL') }}" 
+                                       placeholder="DEV-2025-XXXXXXXX" required>
+                                <small class="form-text text-muted">يجب إدخال مفتاح ترخيص صحيح للمتابعة</small>
+                                <div id="license-status" class="mt-2"></div>
+                                @if(session('license_error'))
+                                    <div class="alert alert-danger mt-2">{{ session('license_error') }}</div>
                                 @endif
                             </div>
-                            <button type="submit" class="btn btn-success btn-lg btn-block" id="continue-btn" disabled>Continue Installation <i class="fas fa-arrow-right"></i></button>
+                            <button type="submit" class="btn btn-success btn-lg btn-block" id="continue-btn">
+                                <i class="fas fa-arrow-right me-2"></i>متابعة التثبيت
+                            </button>
                         </form>
                     @else
                         <div class="alert alert-danger text-center">
@@ -68,25 +79,34 @@
     </div>
 </div>
 <script>
-document.getElementById('purchase_code').addEventListener('blur', function() {
-    var code = this.value.trim();
-    var status = document.getElementById('purchase-status');
+document.getElementById('license_key').addEventListener('input', function() {
+    var key = this.value.trim();
+    var status = document.getElementById('license-status');
     var btn = document.getElementById('continue-btn');
-    if (!code) { status.innerHTML = ''; btn.disabled = true; return; }
-    status.innerHTML = '<span class="text-info">Checking purchase code...</span>';
-    btn.disabled = true;
-    fetch('https://envatocode.aursuite.com/envato-verify.php?purchase_code=' + encodeURIComponent(code))
-        .then(r => r.json())
-        .then(data => {
-            if (data.success) {
-                status.innerHTML = '<span class="text-success">Valid purchase code for <b>' + data.item + '</b> (buyer: ' + data.buyer + ')</span>';
-                btn.disabled = false;
-            } else {
-                status.innerHTML = '<span class="text-danger">' + data.message + '</span>';
-                btn.disabled = true;
-            }
-        })
-        .catch(() => { status.innerHTML = '<span class="text-danger">Could not verify code. Check your internet connection.</span>'; btn.disabled = true; });
+    
+    if (!key) { 
+        status.innerHTML = ''; 
+        return; 
+    }
+    
+    // التحقق من تنسيق مفتاح التطوير
+    if (key.match(/^DEV-\d{4}-[A-Z0-9]{4,}$/i)) {
+        status.innerHTML = '<span class="text-success"><i class="fas fa-check-circle me-1"></i>مفتاح ترخيص تطوير صحيح</span>';
+        btn.disabled = false;
+    } 
+    // التحقق من تنسيق مفتاح الإنتاج (للمستقبل)
+    else if (key.match(/^PROD-\d{4}-[A-Z0-9]{12}$/i)) {
+        status.innerHTML = '<span class="text-success"><i class="fas fa-check-circle me-1"></i>مفتاح ترخيص إنتاج صحيح</span>';
+        btn.disabled = false;
+    }
+    else {
+        status.innerHTML = '<span class="text-warning"><i class="fas fa-exclamation-triangle me-1"></i>تنسيق مفتاح الترخيص غير صحيح</span>';
+    }
+});
+
+// تحقق أولي عند تحميل الصفحة
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('license_key').dispatchEvent(new Event('input'));
 });
 </script>
 @endsection 

@@ -24,6 +24,10 @@ class DatabaseSeeder extends Seeder
 
         // استدعاء Seeder الصلاحيات والأدوار أولاً
         $this->call(PermissionSeeder::class);
+        
+        // إضافة رخص التطوير الافتراضية
+        $this->call(LicenseSeeder::class);
+        
         // $this->call(AdminUserSeeder::class); // تم التعليق لأن الملف غير موجود
         // $this->call(CurrencySeeder::class); // تم التعليق لأن الملف غير موجود
         // $this->call(AccountsTableSeeder::class); // تم التعليق لأن الملف غير موجود
@@ -70,23 +74,6 @@ class DatabaseSeeder extends Seeder
         $role->syncPermissions($permissions);
         $super->assignRole($role);
         
-        // بعد إنشاء المستخدم والأدوار والصلاحيات، نقوم بإنشاء المستأجر الافتراضي
-        $this->call(TenantSeeder::class);
-
-        // Create default tenant if multi-tenancy is enabled
-        if (config('app.multi_tenancy_enabled', false) && Schema::hasTable('tenants')) {
-            \App\Models\Tenant::firstOrCreate(
-                ['id' => 1],
-                [
-                    'name' => 'Default Tenant',
-                    'domain' => 'default',
-                    'subdomain' => 'default',
-                    'contact_email' => 'admin@aursuite.com',
-                    'is_active' => true,
-                    'created_at' => now(),
-                    'updated_at' => now()
-                ]
-            );
-        }
+        // تم إزالة multi-tenancy - لم تعد هناك حاجة لإنشاء مستأجرين
     }
 }

@@ -92,28 +92,40 @@ class InstallController extends Controller
     {
         \Log::info('Install processStep started');
         $request->validate([
-            'purchase_code' => 'required',
+            'license_key' => 'required',
         ]);
-        // تحقق من رمز الشراء عبر API الوسيط باستخدام cURL
-        $domain = $request->getHost();
-        $verifyUrl = 'https://envatocode.aursuite.com/envato-verify.php?purchase_code=' . urlencode($request->purchase_code) . '&domain=' . urlencode($domain);
-        $ch = curl_init($verifyUrl);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-        $verify = curl_exec($ch);
-        curl_close($ch);
-        $result = json_decode($verify, true);
-        if (!$result || empty($result['success'])) {
-            return back()->withInput()->with('purchase_error', $result['message'] ?? 'فشل التحقق من رمز الشراء.');
+        
+        // التحقق من صحة مفتاح الرخصة
+        $licenseService = app(\App\Services\LicenseService::class);
+        $validation = $licenseService->validateLicenseKey($request->license_key);
+        
+        if (!$validation['valid']) {
+            return back()->withInput()->with('license_error', $validation['message']);
         }
-        // حفظ رمز الشراء والدومين في ملف آمن
-        $purchaseData = [
-            'purchase_code' => $request->purchase_code,
+        
+        // تنشيط الرخصة للدومين الحالي
+        $domain = $request->getHost();
+        $activation = $licenseService->activateLicense($request->license_key, $domain);
+        
+        if (!$activation['success']) {
+            return back()->withInput()->with('license_error', $activation['message']);
+        }
+        
+        // حفظ معلومات الرخصة في ملف آمن
+        $licenseData = [
+            'license_key' => $request->license_key,
             'domain' => $domain,
-            'verified_at' => now()->toDateTimeString(),
+            'activated_at' => now()->toDateTimeString(),
+            'type' => $validation['type'],
         ];
-        file_put_contents(storage_path('app/private/purchase.json'), json_encode($purchaseData));
-        // بعد تحقق المتطلبات، انتقل لخطوة إعداد قاعدة البيانات
+        
+        if (!is_dir(storage_path('app/private'))) {
+            mkdir(storage_path('app/private'), 0755, true);
+        }
+        
+        file_put_contents(storage_path('app/private/license.json'), json_encode($licenseData));
+        
+        // بعد تحقق الرخصة، انتقل لخطوة إعداد قاعدة البيانات
         return redirect()->route('install.database');
     }
 

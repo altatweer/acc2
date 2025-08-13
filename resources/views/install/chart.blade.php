@@ -6,9 +6,9 @@
         <div class="col-md-8">
             <div class="card shadow-lg">
                 <div class="card-header bg-info text-white text-center">
-                    <h2>Import Chart of Accounts</h2>
-                    <p class="mb-0">You can import a ready-made chart of accounts in Arabic or English for <b>each selected currency</b>.<br>
-                        <span class="text-danger font-weight-bold">This step is required. You must import the chart to continue installation.</span>
+                    <h2>استيراد شجرة الحسابات</h2>
+                    <p class="mb-0">يمكنك استيراد شجرة حسابات جاهزة باللغة العربية أو الإنجليزية <b>لكل عملة محددة</b>.<br>
+                        <span class="text-warning font-weight-bold">هذه الخطوة مطلوبة. يجب استيراد الشجرة لمتابعة التثبيت.</span>
                     </p>
                 </div>
                 <div class="card-body">
@@ -16,7 +16,7 @@
                         <div class="alert alert-danger text-center">{{ session('chart_error') }}</div>
                     @endif
                     <div class="mb-3">
-                        <strong>Currencies selected:</strong>
+                        <strong>العملات المحددة:</strong>
                         <ul>
                             @php $currencies = session('install_currencies', ['USD']); @endphp
                             @foreach($currencies as $cur)
@@ -26,18 +26,24 @@
                     </div>
                     <form method="POST" action="{{ route('install.importChart') }}">
                         @csrf
-                        <div class="form-group">
-                            <label>Choose Chart Language:</label>
-                            <div class="form-check">
+                        <div class="form-group mb-4">
+                            <label class="form-label"><strong>اختر لغة شجرة الحسابات:</strong></label>
+                            <div class="form-check mt-2">
                                 <input class="form-check-input" type="radio" name="chart_type" id="chart_ar" value="ar" checked>
-                                <label class="form-check-label" for="chart_ar">Arabic شجرة الحسابات بالعربية</label>
+                                <label class="form-check-label" for="chart_ar">
+                                    <strong>العربية</strong> - شجرة الحسابات باللغة العربية
+                                </label>
                             </div>
                             <div class="form-check">
                                 <input class="form-check-input" type="radio" name="chart_type" id="chart_en" value="en">
-                                <label class="form-check-label" for="chart_en">English Chart of Accounts</label>
+                                <label class="form-check-label" for="chart_en">
+                                    <strong>English</strong> - Chart of Accounts in English
+                                </label>
                             </div>
                         </div>
-                        <button type="submit" class="btn btn-primary btn-lg btn-block">Import Chart for All Currencies <i class="fas fa-arrow-right"></i></button>
+                        <button type="submit" class="btn btn-success btn-lg btn-block">
+                            <i class="fas fa-download me-2"></i>استيراد الشجرة لجميع العملات
+                        </button>
                     </form>
                 </div>
             </div>

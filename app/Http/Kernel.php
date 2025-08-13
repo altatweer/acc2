@@ -31,7 +31,7 @@ class Kernel extends HttpKernel
     protected $middlewareGroups = [
         'web' => [
             \App\Http\Middleware\CheckInstallMiddleware::class,
-            \App\Http\Middleware\VerifyLicenseMiddleware::class,
+            \App\Http\Middleware\CheckLicense::class,
             \App\Http\Middleware\EncryptCookies::class,
             \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
             \Illuminate\Session\Middleware\StartSession::class,
@@ -39,7 +39,6 @@ class Kernel extends HttpKernel
             \App\Http\Middleware\VerifyCsrfToken::class,
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
             \App\Http\Middleware\SetLocale::class,
-            \App\Http\Middleware\SetTenantId::class,
             \Illuminate\Routing\Middleware\ThrottleRequests::class.':api',
         ],
 
@@ -72,5 +71,6 @@ class Kernel extends HttpKernel
         'force.english' => \App\Http\Middleware\ForceEnglish::class,
         'setapp_locale' => \App\Http\Middleware\SetLocale::class,
         'submission' => \App\Http\Middleware\PreventDuplicateSubmission::class,
+        'license' => \App\Http\Middleware\CheckLicense::class,
     ];
 } 
