@@ -94,7 +94,13 @@ class InstallController extends Controller
             // التحقق البسيط من مفتاح الترخيص
             $licenseKey = trim($request->input('license_key', ''));
             
+            // تسجيل للتشخيص
+            \Log::info('Install Process Step - License Key: ' . $licenseKey);
+            \Log::info('Install Process Step - Request Method: ' . $request->method());
+            \Log::info('Install Process Step - Request URL: ' . $request->url());
+            
             if (empty($licenseKey)) {
+                \Log::warning('Install Process Step - Empty license key');
                 return back()->withInput()->with('license_error', 'مفتاح الترخيص مطلوب');
             }
             
@@ -108,28 +114,46 @@ class InstallController extends Controller
                 $validation = $licenseService->validateLicenseKey($licenseKey);
                 
                 if (!$validation['valid']) {
+                    \Log::warning('Install Process Step - Invalid license: ' . $validation['message']);
                     return back()->withInput()->with('license_error', $validation['message']);
                 }
             }
             
-            // حفظ مفتاح الترخيص في الجلسة
-            session(['license_key' => $licenseKey]);
+            // حفظ مفتاح الترخيص والتحقق في الجلسة
+            session([
+                'license_key' => $licenseKey,
+                'license_verified' => true,
+                'install_step' => 'database'
+            ]);
+            
+            \Log::info('Install Process Step - License verified, redirecting to database step');
             
             // الانتقال المباشر لخطوة قاعدة البيانات
             return redirect()->route('install.database');
             
         } catch (\Exception $e) {
+            \Log::error('Install Process Step - Exception: ' . $e->getMessage());
             return back()->withInput()->with('license_error', 'خطأ في معالجة مفتاح الترخيص: ' . $e->getMessage());
         }
     }
 
     public function database(Request $request)
     {
+        // حماية: التأكد من اجتياز خطوة الترخيص أولاً
+        if (!session('license_verified')) {
+            return redirect()->route('install.index')->with('install_notice', 'يجب التحقق من مفتاح الترخيص أولاً');
+        }
+        
         return view('install.database');
     }
 
     public function migrate(Request $request)
     {
+        // حماية: التأكد من اجتياز خطوات سابقة
+        if (!session('license_verified') || session('install_step') !== 'migrate') {
+            return redirect()->route('install.index')->with('install_notice', 'يجب إكمال الخطوات السابقة أولاً');
+        }
+        
         return view('install.migrate');
     }
 
@@ -148,6 +172,9 @@ class InstallController extends Controller
             \Artisan::call('migrate:fresh', ['--force' => true]);
             
 
+            
+            // تحديث خطوة التثبيت
+            session(['install_step' => 'admin']);
             
             // وضع رسالة نجاح في الجلسة
             Session::flash('success', 'تم ترحيل قاعدة البيانات بنجاح.');
@@ -192,6 +219,9 @@ class InstallController extends Controller
             $this->setEnvValue($key, $value);
         }
 
+        // تحديث خطوة التثبيت
+        session(['install_step' => 'migrate']);
+
         return redirect()->route('install.migrate');
     }
 
@@ -211,6 +241,11 @@ class InstallController extends Controller
 
     public function admin(Request $request)
     {
+        // حماية: التأكد من اجتياز خطوات سابقة
+        if (!session('license_verified') || !in_array(session('install_step'), ['admin', 'migrate_completed'])) {
+            return redirect()->route('install.index')->with('install_notice', 'يجب إكمال الخطوات السابقة أولاً');
+        }
+        
         return view('install.admin');
     }
 
@@ -243,12 +278,20 @@ class InstallController extends Controller
         
         $user->assignRole($adminRole);
 
+        // تحديث خطوة التثبيت
+        session(['install_step' => 'currencies']);
+
         // Redirect to next step
         return redirect()->route('install.currencies');
     }
 
     public function currencies(Request $request)
     {
+        // حماية: التأكد من اجتياز خطوات سابقة
+        if (!session('license_verified') || session('install_step') !== 'currencies') {
+            return redirect()->route('install.index')->with('install_notice', 'يجب إكمال الخطوات السابقة أولاً');
+        }
+        
         return view('install.currencies');
     }
 
@@ -300,12 +343,21 @@ class InstallController extends Controller
         } catch (\Exception $e) {
             return back()->withInput()->with('currencies_error', 'فشل حفظ العملات: ' . $e->getMessage());
         }
+        
+        // تحديث خطوة التثبيت
+        session(['install_step' => 'chart']);
+        
         // انتقل مباشرة إلى صفحة شجرة الحسابات
         return redirect()->route('install.chart');
     }
 
     public function chart(Request $request)
     {
+        // حماية: التأكد من اجتياز خطوات سابقة
+        if (!session('license_verified') || session('install_step') !== 'chart') {
+            return redirect()->route('install.index')->with('install_notice', 'يجب إكمال الخطوات السابقة أولاً');
+        }
+        
         return view('install.chart');
     }
 
@@ -376,12 +428,21 @@ class InstallController extends Controller
         } catch (\Exception $e) {
             return back()->with('chart_error', 'فشل استيراد الشجرة أو ربط الحسابات الافتراضية: ' . $e->getMessage());
         }
+        
+        // تحديث خطوة التثبيت
+        session(['install_step' => 'finish']);
+        
         // انتقل مباشرة إلى صفحة النهاية
         return redirect()->route('install.finish');
     }
 
     public function finish(Request $request)
     {
+        // حماية: التأكد من اجتياز جميع خطوات التثبيت
+        if (!session('license_verified') || session('install_step') !== 'finish') {
+            return redirect()->route('install.index')->with('install_notice', 'يجب إكمال جميع خطوات التثبيت أولاً');
+        }
+        
         $lockPath = storage_path('app/install.lock');
         if (!file_exists($lockPath)) {
             file_put_contents($lockPath, 'installed');
@@ -392,6 +453,10 @@ class InstallController extends Controller
                 // يمكن عرض رسالة أو تسجيل الخطأ إذا لزم الأمر
             }
         }
+        
+        // مسح بيانات التثبيت من الجلسة
+        session()->forget(['license_key', 'license_verified', 'install_step']);
+        
         return view('install.finish');
     }
 

@@ -51,18 +51,19 @@
                             <small class="d-block mt-1 text-muted">هذا المفتاح صالح لسنة واحدة للتطوير والاختبار</small>
                         </div>
                         
-                        <form method="POST" action="{{ route('install.process') }}" id="license-form">
+                        <form method="POST" action="{{ route('install.process') }}" id="license-form" accept-charset="UTF-8">
                             @csrf
                             <div class="form-group mb-3">
                                 <label for="license_key" class="form-label">مفتاح الترخيص</label>
                                 <input type="text" class="form-control" id="license_key" name="license_key" 
-                                       value="{{ old('license_key', 'DEV-2025-INTERNAL') }}">
+                                       value="{{ old('license_key', 'DEV-2025-INTERNAL') }}" required>
                                 <small class="form-text text-muted">للتطوير: DEV-2025-INTERNAL</small>
                                 @if(session('license_error'))
                                     <div class="alert alert-danger mt-2">{{ session('license_error') }}</div>
                                 @endif
+                                <div id="submit-debug" class="text-info mt-2" style="display:none;"></div>
                             </div>
-                            <button type="submit" class="btn btn-success btn-lg btn-block">
+                            <button type="submit" class="btn btn-success btn-lg btn-block" id="submit-btn">
                                 <i class="fas fa-arrow-right me-2"></i>متابعة التثبيت
                             </button>
                         </form>
@@ -77,30 +78,51 @@
     </div>
 </div>
 <script>
-// JavaScript مبسط ومباشر
+// JavaScript مُحسن مع تشخيص
 document.addEventListener('DOMContentLoaded', function() {
     var form = document.getElementById('license-form');
-    var btn = form ? form.querySelector('button[type="submit"]') : null;
+    var btn = document.getElementById('submit-btn');
+    var debug = document.getElementById('submit-debug');
     
-    // التأكد من أن الزر نشط
-    if (btn) {
+    // تشخيص النظام
+    console.log('🔧 Install System Debug:');
+    console.log('📍 Domain:', window.location.hostname);
+    console.log('🔗 Current URL:', window.location.href);
+    console.log('📝 Form found:', !!form);
+    console.log('🔘 Button found:', !!btn);
+    console.log('🛡️ CSRF Token:', form ? form.querySelector('input[name="_token"]')?.value : 'Not found');
+    
+    if (form && btn) {
+        // تفعيل الزر
         btn.disabled = false;
-    }
-    
-    // إضافة معلومات debugging للمطورين
-    if (window.location.hostname !== 'localhost') {
-        console.log('🔧 نظام التثبيت - معلومات النظام:');
-        console.log('📍 الدومين:', window.location.hostname);
-        console.log('🔗 الرابط الحالي:', window.location.href);
-        console.log('📝 النموذج موجود:', !!form);
-    }
-    
-    // السماح بالإرسال دائماً
-    if (form) {
-        form.addEventListener('submit', function() {
-            if (btn) btn.disabled = true; // منع الإرسال المتكرر
+        
+        // معالج الإرسال
+        form.addEventListener('submit', function(e) {
+            console.log('📤 Form submission started');
+            
+            // عرض رسالة للمستخدم
+            if (debug) {
+                debug.style.display = 'block';
+                debug.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري المعالجة...';
+            }
+            
+            // تعطيل الزر مؤقتاً
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>جاري التحقق...';
+            
+            // السماح بالإرسال
             return true;
         });
+        
+        // تشخيص إضافي - فحص البيانات عند النقر
+        btn.addEventListener('click', function(e) {
+            var licenseKey = document.getElementById('license_key').value;
+            console.log('🔑 License Key:', licenseKey);
+            console.log('📋 Form action:', form.action);
+            console.log('🔄 Form method:', form.method);
+        });
+    } else {
+        console.error('❌ Form or button not found!');
     }
 });
 </script>
