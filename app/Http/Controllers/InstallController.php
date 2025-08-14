@@ -108,6 +108,12 @@ class InstallController extends Controller
 
     public function database(Request $request)
     {
+        // التحقق من الجلسة المباشرة
+        session_start();
+        if (!session('license_verified') && !isset($_SESSION['license_verified'])) {
+            return redirect('/direct_install.php')->with('error', 'يجب التحقق من الترخيص أولاً');
+        }
+        
         return view('install.database');
     }
 
