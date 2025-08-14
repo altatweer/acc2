@@ -378,13 +378,28 @@ class InstallController extends Controller
                     $data = $row;
                     unset($data['parent_code']);
                     $data['parent_id'] = null;
+                    
+                    // التأكد من أن العمود supports_multi_currency موجود قبل إضافة القيمة
+                    if (!\Schema::hasColumn('accounts', 'supports_multi_currency')) {
+                        unset($data['supports_multi_currency']);
+                    }
+                    if (!\Schema::hasColumn('accounts', 'default_currency')) {
+                        unset($data['default_currency']);
+                    }
+                    if (!\Schema::hasColumn('accounts', 'require_currency_selection')) {
+                        unset($data['require_currency_selection']);
+                    }
+                    
                     $account = \App\Models\Account::create($data);
                     $codeToId[$row['code']] = $account->id;
                 }
                 // تحديث parent_id
                 foreach ($chart as $row) {
                     if ($row['parent_code']) {
-                        $account = \App\Models\Account::where('code', $row['code'])->where('default_currency', $currency)->first();
+                        // البحث بطريقة مرنة تتوافق مع هيكل الجدول
+                        $account = \Schema::hasColumn('accounts', 'default_currency')
+                                 ? \App\Models\Account::where('code', $row['code'])->where('default_currency', $currency)->first()
+                                 : \App\Models\Account::where('code', $row['code'])->first();
                         if ($account && isset($codeToId[$row['parent_code']])) {
                             $account->parent_id = $codeToId[$row['parent_code']];
                             $account->save();
@@ -407,10 +422,18 @@ class InstallController extends Controller
                 ];
                 $missing = [];
                 foreach ($defaultAccounts as $settingKey => $accountCode) {
-                    $account = \App\Models\Account::where('code', $accountCode)->where('default_currency', $currency)->first();
+                    // البحث بطريقة مرنة للحسابات الافتراضية
+                    $account = \Schema::hasColumn('accounts', 'default_currency')
+                             ? \App\Models\Account::where('code', $accountCode)->where('default_currency', $currency)->first()
+                             : \App\Models\Account::where('code', $accountCode)->first();
                     if ($account) {
+                        // حفظ الإعدادات مع التحقق من دعم العملات
+                        $settingConditions = ['key' => $settingKey];
+                        if (\Schema::hasColumn('accounting_settings', 'currency')) {
+                            $settingConditions['currency'] = $currency;
+                        }
                         \App\Models\AccountingSetting::updateOrCreate(
-                            ['key' => $settingKey, 'currency' => $currency],
+                            $settingConditions,
                             ['value' => $account->id]
                         );
                     } else {
