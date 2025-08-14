@@ -394,10 +394,10 @@ class InstallController extends Controller
                 // ربط الحسابات الافتراضية تلقائيًا
                 $defaultAccounts = [
                     'default_sales_account' => '4100',
-                    'default_purchases_account' => '4200', // أضف حساب مشتريات في الشجرة إذا لم يكن موجودًا
+                    'default_purchases_account' => '5110',
                     'default_customers_account' => '1301',
                     'default_suppliers_account' => '2101',
-                    'salary_expense_account' => '4101',
+                    'salary_expense_account' => '5101',
                     'employee_payables_account' => '2106',
                     'deductions_account' => '2201',
                     'tax_account' => '5300',
@@ -418,7 +418,15 @@ class InstallController extends Controller
                     }
                 }
                 if (count($missing) > 0) {
-                    return back()->with('chart_error', 'لم يتم العثور على بعض الحسابات الافتراضية المطلوبة في الشجرة: ' . implode(", ", $missing));
+                    $missingDetails = [];
+                    foreach ($missing as $code) {
+                        $name = array_search($code, $defaultAccounts);
+                        $missingDetails[] = $code . ($name ? ' (' . $name . ')' : '');
+                    }
+                    return back()->with('chart_error', 
+                        'لم يتم العثور على بعض الحسابات الافتراضية المطلوبة في الشجرة: ' . 
+                        implode(", ", $missingDetails) . 
+                        '. تحقق من أن شجرة الحسابات تحتوي على هذه الأرقام أو قم بإضافتها يدوياً بعد التثبيت.');
                 }
             }
         } catch (\Exception $e) {

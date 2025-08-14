@@ -24,6 +24,40 @@
                             @endforeach
                         </ul>
                     </div>
+                    
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-info-circle"></i> ماذا سيتم استيراده:</h6>
+                        <ul class="mb-0">
+                            <li><strong>الأصول:</strong> النقدية، البنوك، العملاء، المخزون، الأصول الثابتة</li>
+                            <li><strong>الخصوم:</strong> الموردون، القروض، الرواتب المستحقة</li>
+                            <li><strong>رأس المال:</strong> رأس المال، الأرباح المحتجزة</li>
+                            <li><strong>الإيرادات:</strong> المبيعات، إيرادات الخدمات</li>
+                            <li><strong>المصروفات:</strong> تكلفة البضاعة، المشتريات، الرواتب، الإيجار، المصروفات التشغيلية</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="alert alert-success">
+                        <h6><i class="fas fa-link"></i> الحسابات الافتراضية التي سيتم ربطها تلقائياً:</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <ul class="mb-0">
+                                    <li>حساب المبيعات الافتراضي (4100)</li>
+                                    <li>حساب المشتريات الافتراضي (5110)</li>
+                                    <li>حساب العملاء (1301)</li>
+                                    <li>حساب الموردين (2101)</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <ul class="mb-0">
+                                    <li>حساب مصروفات الرواتب (5101)</li>
+                                    <li>حساب الصندوق الرئيسي (1101)</li>
+                                    <li>حساب البنك الرئيسي (1201)</li>
+                                    <li>حساب المخزون (1401)</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <form method="POST" action="{{ route('install.importChart') }}">
                         @csrf
                         <div class="form-group mb-4">
