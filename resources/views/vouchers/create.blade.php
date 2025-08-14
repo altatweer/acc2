@@ -169,7 +169,7 @@
                                                                 </label>
                                                                 <select name="transactions[0][cash_currency]" class="form-control cash-currency-select" data-index="0" required>
                                                                     <option value="">اختر العملة...</option>
-                                                                    @foreach(\App\Models\Currency::where('is_active', true)->get() as $currency)
+                                                                    @foreach(\App\Models\Currency::all() as $currency)
                                                                         <option value="{{ $currency->code }}" data-rate="{{ $currency->exchange_rate }}">
                                                                             {{ $currency->code }} - {{ $currency->name }}
                                                                         </option>
@@ -204,7 +204,7 @@
                                                                 </label>
                                                                 <select name="transactions[0][target_currency]" class="form-control target-currency-select" data-index="0" required>
                                                                     <option value="">اختر العملة...</option>
-                                                                    @foreach(\App\Models\Currency::where('is_active', true)->get() as $currency)
+                                                                    @foreach(\App\Models\Currency::all() as $currency)
                                                                         <option value="{{ $currency->code }}" data-rate="{{ $currency->exchange_rate }}">
                                                                             {{ $currency->code }} - {{ $currency->name }}
                                                                         </option>

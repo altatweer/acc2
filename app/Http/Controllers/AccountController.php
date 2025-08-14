@@ -513,9 +513,15 @@ class AccountController extends Controller
         $balance = $account->balance($selectedCurrency ?: $account->default_currency);
 
         // جلب جميع العملات المتاحة في النظام
-        $allCurrencies = Currency::where('is_active', true)->pluck('code');
+        // التحقق من وجود العمود is_active أولاً
+        try {
+            $allCurrencies = Currency::where('is_active', true)->pluck('code');
+        } catch (\Exception $e) {
+            // إذا لم يكن العمود موجود، اجلب جميع العملات
+            $allCurrencies = Currency::pluck('code');
+        }
         
-        // إذا لم تكن هناك عملات نشطة، استخدم قائمة افتراضية
+        // إذا لم تكن هناك عملات، استخدم قائمة افتراضية
         if ($allCurrencies->isEmpty()) {
             $allCurrencies = collect(['IQD', 'USD', 'EUR']);
         }

@@ -181,8 +181,15 @@ class VoucherController extends Controller
            }
            
            // التحقق من صحة العملات
-           $cashCurrencyExists = Currency::where('code', $tx['cash_currency'])->where('is_active', true)->exists();
-           $targetCurrencyExists = Currency::where('code', $tx['target_currency'])->where('is_active', true)->exists();
+           // التحقق من وجود العملات (تجنب استخدام is_active إذا لم يكن موجود)
+           try {
+               $cashCurrencyExists = Currency::where('code', $tx['cash_currency'])->where('is_active', true)->exists();
+               $targetCurrencyExists = Currency::where('code', $tx['target_currency'])->where('is_active', true)->exists();
+           } catch (\Exception $e) {
+               // إذا لم يكن العمود موجود، تحقق من وجود العملة فقط
+               $cashCurrencyExists = Currency::where('code', $tx['cash_currency'])->exists();
+               $targetCurrencyExists = Currency::where('code', $tx['target_currency'])->exists();
+           }
            
            if (!$cashCurrencyExists) {
                throw \Illuminate\Validation\ValidationException::withMessages([
