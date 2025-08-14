@@ -323,7 +323,7 @@ use Illuminate\Support\Facades\DB;
                         <div class="row">
                             @php
                                 $cashBoxes = $allCashBoxes->take(8);
-                                $activeCurrencies = \App\Models\Currency::where('is_active', true)->pluck('code');
+                                $activeCurrencies = \App\Models\Currency::pluck('code');
                                 if ($activeCurrencies->isEmpty()) {
                                     $activeCurrencies = collect(['IQD', 'USD', 'EUR']);
                                 }

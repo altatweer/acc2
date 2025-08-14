@@ -370,8 +370,8 @@ class InstallController extends Controller
         try {
             foreach ($currencies as $currency) {
                 $chart = $request->chart_type == 'ar'
-                    ? \App\Helpers\ChartOfAccounts::getArabicChart($currency)
-                    : \App\Helpers\ChartOfAccounts::getEnglishChart($currency);
+                    ? \App\Helpers\ComprehensiveChartOfAccounts::getArabicChart($currency)
+                    : \App\Helpers\ComprehensiveChartOfAccounts::getEnglishChart($currency);
                 $codeToId = [];
                 // إنشاء الحسابات
                 foreach ($chart as $row) {
@@ -406,19 +406,19 @@ class InstallController extends Controller
                         }
                     }
                 }
-                // ربط الحسابات الافتراضية تلقائيًا
+                // ربط الحسابات الافتراضية تلقائيًا (محدثة للشجرة الشاملة)
                 $defaultAccounts = [
-                    'default_sales_account' => '4100',
-                    'default_purchases_account' => '5110',
-                    'default_customers_account' => '1301',
-                    'default_suppliers_account' => '2101',
-                    'salary_expense_account' => '5101',
-                    'employee_payables_account' => '2106',
-                    'deductions_account' => '2201',
-                    'tax_account' => '5300',
-                    'inventory_account' => '1401',
-                    'main_bank_account' => '1201',
-                    'main_cash_account' => '1101',
+                    'default_sales_account' => '4101',      // المبيعات المحلية
+                    'default_purchases_account' => '5101',  // مشتريات البضاعة
+                    'default_customers_account' => '1201',  // العملاء المحليون
+                    'default_suppliers_account' => '2101',  // الموردون المحليون
+                    'salary_expense_account' => '5201',     // الرواتب الأساسية
+                    'employee_payables_account' => '2201',  // رواتب مستحقة الدفع
+                    'deductions_account' => '2301',         // سلف الموظفين
+                    'tax_account' => '5602',                // ضريبة القيمة المضافة
+                    'inventory_account' => '1301',          // بضاعة جاهزة للبيع
+                    'main_bank_account' => '1110',          // البنك المركزي العراقي
+                    'main_cash_account' => '1101',          // الصندوق الرئيسي
                 ];
                 $missing = [];
                 foreach ($defaultAccounts as $settingKey => $accountCode) {
