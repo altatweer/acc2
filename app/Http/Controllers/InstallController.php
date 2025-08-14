@@ -90,28 +90,54 @@ class InstallController extends Controller
 
     public function processStep(Request $request)
     {
-        $licenseKey = trim($request->input('license_key', ''));
-        
-        // تبسيط مطلق - لا توجد تعقيدات
-        if (!empty($licenseKey) && strpos($licenseKey, 'DEV-') === 0) {
-            // حفظ في الجلسة
-            $request->session()->put('license_key', $licenseKey);
-            $request->session()->put('license_verified', true);
-            $request->session()->put('install_step', 'database');
+        try {
+            $licenseKey = trim($request->input('license_key', ''));
             
-            // انتقال فوري
-            return redirect('/install/database');
+            if (empty($licenseKey)) {
+                return back()->withInput()->with('license_error', 'مفتاح الترخيص مطلوب');
+            }
+            
+            // التحقق من مفاتيح التطوير
+            $isDevKey = in_array($licenseKey, ['DEV-2025-INTERNAL', 'DEV-2025-TESTING']) 
+                       || preg_match('/^DEV-\d{4}-[A-Z0-9]{4,}$/i', $licenseKey);
+            
+            if ($isDevKey) {
+                // حفظ في الجلسة
+                session([
+                    'license_key' => $licenseKey,
+                    'license_verified' => true,
+                    'install_step' => 'database'
+                ]);
+                
+                return redirect()->route('install.database');
+            }
+            
+            // للمفاتيح الأخرى، استخدام LicenseService
+            $licenseService = app(\App\Services\LicenseService::class);
+            $validation = $licenseService->validateLicenseKey($licenseKey);
+            
+            if ($validation['valid']) {
+                session([
+                    'license_key' => $licenseKey,
+                    'license_verified' => true,
+                    'install_step' => 'database'
+                ]);
+                
+                return redirect()->route('install.database');
+            }
+            
+            return back()->withInput()->with('license_error', $validation['message'] ?? 'مفتاح ترخيص غير صالح');
+            
+        } catch (\Exception $e) {
+            return back()->withInput()->with('license_error', 'خطأ في معالجة مفتاح الترخيص: ' . $e->getMessage());
         }
-        
-        return back()->with('license_error', 'مفتاح ترخيص غير صالح');
     }
 
     public function database(Request $request)
     {
-        // التحقق من الجلسة المباشرة
-        session_start();
-        if (!session('license_verified') && !isset($_SESSION['license_verified'])) {
-            return redirect('/direct_install.php')->with('error', 'يجب التحقق من الترخيص أولاً');
+        // التحقق من التحقق من الترخيص
+        if (!session('license_verified')) {
+            return redirect()->route('install.index')->with('install_notice', 'يجب التحقق من مفتاح الترخيص أولاً');
         }
         
         return view('install.database');
@@ -119,7 +145,7 @@ class InstallController extends Controller
 
     public function migrate(Request $request)
     {
-        // حماية: التأكد من اجتياز خطوات سابقة
+        // التحقق من اجتياز الخطوات السابقة
         if (!session('license_verified') || session('install_step') !== 'migrate') {
             return redirect()->route('install.index')->with('install_notice', 'يجب إكمال الخطوات السابقة أولاً');
         }
@@ -211,8 +237,8 @@ class InstallController extends Controller
 
     public function admin(Request $request)
     {
-        // حماية: التأكد من اجتياز خطوات سابقة
-        if (!session('license_verified') || !in_array(session('install_step'), ['admin', 'migrate_completed'])) {
+        // التحقق من اجتياز الخطوات السابقة
+        if (!session('license_verified') || session('install_step') !== 'admin') {
             return redirect()->route('install.index')->with('install_notice', 'يجب إكمال الخطوات السابقة أولاً');
         }
         
@@ -257,7 +283,7 @@ class InstallController extends Controller
 
     public function currencies(Request $request)
     {
-        // حماية: التأكد من اجتياز خطوات سابقة
+        // التحقق من اجتياز الخطوات السابقة
         if (!session('license_verified') || session('install_step') !== 'currencies') {
             return redirect()->route('install.index')->with('install_notice', 'يجب إكمال الخطوات السابقة أولاً');
         }
@@ -323,7 +349,7 @@ class InstallController extends Controller
 
     public function chart(Request $request)
     {
-        // حماية: التأكد من اجتياز خطوات سابقة
+        // التحقق من اجتياز الخطوات السابقة
         if (!session('license_verified') || session('install_step') !== 'chart') {
             return redirect()->route('install.index')->with('install_notice', 'يجب إكمال الخطوات السابقة أولاً');
         }
@@ -408,19 +434,26 @@ class InstallController extends Controller
 
     public function finish(Request $request)
     {
-        // حماية: التأكد من اجتياز جميع خطوات التثبيت
+        // التحقق من اجتياز جميع خطوات التثبيت
         if (!session('license_verified') || session('install_step') !== 'finish') {
             return redirect()->route('install.index')->with('install_notice', 'يجب إكمال جميع خطوات التثبيت أولاً');
         }
         
         $lockPath = storage_path('app/install.lock');
         if (!file_exists($lockPath)) {
-            file_put_contents($lockPath, 'installed');
+            // إنشاء مجلد app إذا لم يكن موجود
+            if (!is_dir(storage_path('app'))) {
+                mkdir(storage_path('app'), 0755, true);
+            }
+            
+            file_put_contents($lockPath, date('Y-m-d H:i:s') . " - Installation completed");
+            
             // Seed permissions after install
             try {
                 \Artisan::call('db:seed', ['--class' => 'Database\\Seeders\\PermissionSeeder', '--force' => true]);
+                \Artisan::call('db:seed', ['--class' => 'Database\\Seeders\\LicenseSeeder', '--force' => true]);
             } catch (\Exception $e) {
-                // يمكن عرض رسالة أو تسجيل الخطأ إذا لزم الأمر
+                \Log::warning('Failed to run seeders during installation: ' . $e->getMessage());
             }
         }
         

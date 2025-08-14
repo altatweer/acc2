@@ -78,34 +78,25 @@
     </div>
 </div>
 <script>
-// تشخيص مبسط للغاية
-console.log('=== INSTALL SYSTEM DEBUG ===');
-console.log('Current URL:', window.location.href);
-console.log('Form action:', document.getElementById('license-form')?.action);
-
 document.addEventListener('DOMContentLoaded', function() {
     var form = document.getElementById('license-form');
     var btn = document.getElementById('submit-btn');
     
     if (form && btn) {
-        console.log('✅ Form and button found');
+        console.log('Install System Ready');
         
-        // إزالة أي معالجات أخرى
+        // تفعيل الزر
         btn.disabled = false;
         
-        // معالج إرسال واحد فقط
+        // معالج الإرسال
         form.addEventListener('submit', function(e) {
-            console.log('🚀 FORM SUBMITTED!');
-            console.log('License Key:', document.getElementById('license_key').value);
-            
+            // تعطيل الزر مؤقتاً لمنع الإرسال المتكرر
             btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> معالجة...';
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>جاري التحقق...';
             
-            // السماح بالإرسال الطبيعي
+            // السماح بالإرسال العادي
             return true;
         });
-    } else {
-        console.error('❌ Form or button missing!');
     }
 });
 </script>

@@ -305,8 +305,8 @@ Route::middleware(['auth'])->group(function () {
 // Special debug route
 Route::get('/test-arabic-mpdf', [ReportsController::class, 'testArabicMpdf']);
 
-// Installer routes - إزالة middleware تماماً
-Route::prefix('install')->group(function () {
+// Installer routes
+Route::prefix('install')->middleware('web')->group(function () {
     Route::get('/', [\App\Http\Controllers\InstallController::class, 'index'])->name('install.index');
     Route::post('/', [\App\Http\Controllers\InstallController::class, 'processStep'])->name('install.process');
     Route::get('/database', [\App\Http\Controllers\InstallController::class, 'database'])->name('install.database');
@@ -319,6 +319,7 @@ Route::prefix('install')->group(function () {
     Route::post('/currencies', [\App\Http\Controllers\InstallController::class, 'saveCurrencies'])->name('install.saveCurrencies');
     Route::get('/chart', [\App\Http\Controllers\InstallController::class, 'chart'])->name('install.chart');
     Route::post('/chart/import', [\App\Http\Controllers\InstallController::class, 'importChart'])->name('install.importChart');
+    Route::get('/finish', [\App\Http\Controllers\InstallController::class, 'finish'])->name('install.finish');
     
     // أدوات الصيانة والإدارة
     Route::get('/maintenance', [\App\Http\Controllers\InstallController::class, 'maintenance'])->name('install.maintenance');
