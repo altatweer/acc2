@@ -90,66 +90,24 @@ class InstallController extends Controller
 
     public function processStep(Request $request)
     {
-        // إنشاء ملف تشخيص مؤقت
-        file_put_contents(storage_path('debug_install.txt'), 
-            "=== Install Debug " . date('Y-m-d H:i:s') . " ===\n" .
-            "Method: " . $request->method() . "\n" .
-            "URL: " . $request->url() . "\n" .
-            "License Key: " . $request->input('license_key', 'NOT_PROVIDED') . "\n" .
-            "All Input: " . json_encode($request->all()) . "\n" .
-            "Headers: " . json_encode($request->headers->all()) . "\n\n",
-            FILE_APPEND
-        );
-
-        try {
-            // التحقق البسيط من مفتاح الترخيص
-            $licenseKey = trim($request->input('license_key', ''));
+        $licenseKey = trim($request->input('license_key', ''));
+        
+        // تبسيط مطلق - لا توجد تعقيدات
+        if (!empty($licenseKey) && strpos($licenseKey, 'DEV-') === 0) {
+            // حفظ في الجلسة
+            $request->session()->put('license_key', $licenseKey);
+            $request->session()->put('license_verified', true);
+            $request->session()->put('install_step', 'database');
             
-            if (empty($licenseKey)) {
-                file_put_contents(storage_path('debug_install.txt'), "ERROR: Empty license key\n\n", FILE_APPEND);
-                return back()->withInput()->with('license_error', 'مفتاح الترخيص مطلوب');
-            }
-            
-            // السماح بمفاتيح التطوير مباشرة - تبسيط شديد
-            if (strpos($licenseKey, 'DEV-') === 0) {
-                // حفظ في الجلسة مباشرة
-                session([
-                    'license_key' => $licenseKey,
-                    'license_verified' => true,
-                    'install_step' => 'database'
-                ]);
-                
-                file_put_contents(storage_path('debug_install.txt'), 
-                    "SUCCESS: License verified, redirecting...\n" .
-                    "Session data saved\n" .
-                    "Redirecting to: " . route('install.database') . "\n\n",
-                    FILE_APPEND
-                );
-                
-                // الانتقال المباشر لخطوة قاعدة البيانات
-                return redirect()->route('install.database');
-            } else {
-                file_put_contents(storage_path('debug_install.txt'), "ERROR: Invalid license format\n\n", FILE_APPEND);
-                return back()->withInput()->with('license_error', 'مفتاح ترخيص غير صالح');
-            }
-            
-        } catch (\Exception $e) {
-            file_put_contents(storage_path('debug_install.txt'), 
-                "EXCEPTION: " . $e->getMessage() . "\n" .
-                "File: " . $e->getFile() . ":" . $e->getLine() . "\n\n",
-                FILE_APPEND
-            );
-            return back()->withInput()->with('license_error', 'خطأ في معالجة مفتاح الترخيص: ' . $e->getMessage());
+            // انتقال فوري
+            return redirect('/install/database');
         }
+        
+        return back()->with('license_error', 'مفتاح ترخيص غير صالح');
     }
 
     public function database(Request $request)
     {
-        // حماية: التأكد من اجتياز خطوة الترخيص أولاً
-        if (!session('license_verified')) {
-            return redirect()->route('install.index')->with('install_notice', 'يجب التحقق من مفتاح الترخيص أولاً');
-        }
-        
         return view('install.database');
     }
 
