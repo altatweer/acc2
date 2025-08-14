@@ -11,29 +11,25 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // التأكد من وجود جدول accounts أولاً قبل تعديله
+        if (!Schema::hasTable('accounts')) {
+            return; // تجاهل هذه الهجرة إذا لم يكن الجدول موجود
+        }
+        
         // تحديث جدول accounts لدعم العملات المتعددة بشكل أفضل
         Schema::table('accounts', function (Blueprint $table) {
-            // إزالة عمود currency القديم إذا كان موجوداً
+            // إزالة عمود currency القديم إذا كان موجوداً (فقط)
+            // ملاحظة: إضافة أعمدة دعم العملات المتعددة تتم في هجرة منفصلة
             if (Schema::hasColumn('accounts', 'currency')) {
                 $table->dropColumn('currency');
             }
-            
-            // إضافة حقول جديدة لدعم العملات المتعددة فقط إذا لم تكن موجودة
-            if (!Schema::hasColumn('accounts', 'supports_multi_currency')) {
-                $table->boolean('supports_multi_currency')->default(true)->after('is_cash_box')
-                    ->comment('يدعم العملات المتعددة');
-            }
-            if (!Schema::hasColumn('accounts', 'default_currency')) {
-                $table->string('default_currency', 3)->default('IQD')->after('supports_multi_currency')
-                    ->comment('العملة الافتراضية للحساب');
-            }
-            if (!Schema::hasColumn('accounts', 'require_currency_selection')) {
-                $table->boolean('require_currency_selection')->default(false)->after('default_currency')
-                    ->comment('يتطلب تحديد العملة في كل معاملة');
-            }
         });
 
-        // تحديث جدول transactions
+        // تحديث جدول transactions (التأكد من وجوده أولاً)
+        if (!Schema::hasTable('transactions')) {
+            return; // تجاهل باقي الهجرة إذا لم يكن جدول transactions موجود
+        }
+        
         Schema::table('transactions', function (Blueprint $table) {
             // تحسين دقة أسعار الصرف (من 6 إلى 10 خانات عشرية)
             if (Schema::hasColumn('transactions', 'exchange_rate')) {
@@ -48,7 +44,11 @@ return new class extends Migration
             }
         });
 
-        // تحديث جدول journal_entry_lines لدقة أفضل
+        // تحديث جدول journal_entry_lines لدقة أفضل (التأكد من وجوده أولاً)
+        if (!Schema::hasTable('journal_entry_lines')) {
+            return; // تجاهل باقي الهجرة إذا لم يكن الجدول موجود
+        }
+        
         Schema::table('journal_entry_lines', function (Blueprint $table) {
             // تحسين دقة المبالغ والصرف
             $table->decimal('debit', 18, 4)->default(0)->change();
@@ -59,7 +59,11 @@ return new class extends Migration
             }
         });
 
-        // تحديث جدول account_balances
+        // تحديث جدول account_balances (التأكد من وجوده أولاً)
+        if (!Schema::hasTable('account_balances')) {
+            return; // تجاهل باقي الهجرة إذا لم يكن الجدول موجود
+        }
+        
         Schema::table('account_balances', function (Blueprint $table) {
             // تحسين دقة الأرصدة
             $table->decimal('balance', 18, 4)->default(0)->change();

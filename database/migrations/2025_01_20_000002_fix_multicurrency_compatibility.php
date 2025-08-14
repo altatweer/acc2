@@ -11,7 +11,16 @@ class FixMulticurrencyCompatibility extends Migration
      */
     public function up()
     {
+        // التأكد من وجود الجداول الأساسية قبل تطبيق التحسينات
+        $requiredTables = ['currencies', 'accounts'];
+        foreach ($requiredTables as $table) {
+            if (!Schema::hasTable($table)) {
+                return; // تجاهل الهجرة إذا لم تكن الجداول الأساسية موجودة
+            }
+        }
+        
         // 1. تحسين جدول العملات
+        
         Schema::table('currencies', function (Blueprint $table) {
             if (!Schema::hasColumn('currencies', 'name_ar')) {
                 $table->string('name_ar', 255)->after('name')->comment('اسم العملة بالعربية');
@@ -38,7 +47,11 @@ class FixMulticurrencyCompatibility extends Migration
             }
         });
 
-        // 2. إضافة دعم العملات المتعددة لجدول الرواتب
+        // 2. إضافة دعم العملات المتعددة لجدول الرواتب (التأكد من وجوده أولاً)
+        if (!Schema::hasTable('salary_payments')) {
+            return; // تجاهل باقي الهجرة إذا لم يكن الجدول موجود
+        }
+        
         Schema::table('salary_payments', function (Blueprint $table) {
             if (!Schema::hasColumn('salary_payments', 'currency')) {
                 $table->string('currency', 3)->default('IQD')->after('net_salary')
@@ -54,7 +67,11 @@ class FixMulticurrencyCompatibility extends Migration
             }
         });
 
-        // 3. إضافة دعم العملات المتعددة للعملاء
+        // 3. إضافة دعم العملات المتعددة للعملاء (التأكد من وجوده أولاً)
+        if (!Schema::hasTable('customers')) {
+            return; // تجاهل باقي الهجرة إذا لم يكن الجدول موجود
+        }
+        
         Schema::table('customers', function (Blueprint $table) {
             if (!Schema::hasColumn('customers', 'default_currency')) {
                 $table->string('default_currency', 3)->default('IQD')->after('account_id')
