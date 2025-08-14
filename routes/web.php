@@ -309,7 +309,19 @@ Route::get('/test-arabic-mpdf', [ReportsController::class, 'testArabicMpdf']);
 Route::group(['middleware' => ['web'], 'prefix' => 'install'], function () {
     // التثبيت الأساسي
     Route::get('/', [\App\Http\Controllers\InstallController::class, 'index'])->name('install.index');
-    Route::post('/', [\App\Http\Controllers\InstallController::class, 'processStep'])->name('install.process');
+    // تشخيص الـ route مباشرة
+    Route::post('/', function(\Illuminate\Http\Request $request) {
+        file_put_contents(storage_path('route_debug.txt'), 
+            "=== ROUTE DEBUG " . date('Y-m-d H:i:s') . " ===\n" .
+            "Route Hit: install.process\n" .
+            "Method: " . $request->method() . "\n" .
+            "License Key: " . $request->input('license_key', 'NONE') . "\n\n",
+            FILE_APPEND
+        );
+        
+        // استدعاء الـ controller
+        return app(\App\Http\Controllers\InstallController::class)->processStep($request);
+    })->name('install.process');
     Route::get('/database', [\App\Http\Controllers\InstallController::class, 'database'])->name('install.database');
     Route::post('/database', [\App\Http\Controllers\InstallController::class, 'saveDatabase'])->name('install.saveDatabase');
     Route::get('/migrate', [\App\Http\Controllers\InstallController::class, 'migrate'])->name('install.migrate');

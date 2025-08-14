@@ -90,49 +90,55 @@ class InstallController extends Controller
 
     public function processStep(Request $request)
     {
+        // إنشاء ملف تشخيص مؤقت
+        file_put_contents(storage_path('debug_install.txt'), 
+            "=== Install Debug " . date('Y-m-d H:i:s') . " ===\n" .
+            "Method: " . $request->method() . "\n" .
+            "URL: " . $request->url() . "\n" .
+            "License Key: " . $request->input('license_key', 'NOT_PROVIDED') . "\n" .
+            "All Input: " . json_encode($request->all()) . "\n" .
+            "Headers: " . json_encode($request->headers->all()) . "\n\n",
+            FILE_APPEND
+        );
+
         try {
             // التحقق البسيط من مفتاح الترخيص
             $licenseKey = trim($request->input('license_key', ''));
             
-            // تسجيل للتشخيص
-            \Log::info('Install Process Step - License Key: ' . $licenseKey);
-            \Log::info('Install Process Step - Request Method: ' . $request->method());
-            \Log::info('Install Process Step - Request URL: ' . $request->url());
-            
             if (empty($licenseKey)) {
-                \Log::warning('Install Process Step - Empty license key');
+                file_put_contents(storage_path('debug_install.txt'), "ERROR: Empty license key\n\n", FILE_APPEND);
                 return back()->withInput()->with('license_error', 'مفتاح الترخيص مطلوب');
             }
             
-            // السماح بمفاتيح التطوير مباشرة
-            $isDevKey = in_array($licenseKey, ['DEV-2025-INTERNAL', 'DEV-2025-TESTING']) 
-                       || preg_match('/^DEV-\d{4}-[A-Z0-9]{4,}$/i', $licenseKey);
-            
-            if (!$isDevKey) {
-                // للمفاتيح الأخرى، نستخدم LicenseService
-                $licenseService = app(\App\Services\LicenseService::class);
-                $validation = $licenseService->validateLicenseKey($licenseKey);
+            // السماح بمفاتيح التطوير مباشرة - تبسيط شديد
+            if (strpos($licenseKey, 'DEV-') === 0) {
+                // حفظ في الجلسة مباشرة
+                session([
+                    'license_key' => $licenseKey,
+                    'license_verified' => true,
+                    'install_step' => 'database'
+                ]);
                 
-                if (!$validation['valid']) {
-                    \Log::warning('Install Process Step - Invalid license: ' . $validation['message']);
-                    return back()->withInput()->with('license_error', $validation['message']);
-                }
+                file_put_contents(storage_path('debug_install.txt'), 
+                    "SUCCESS: License verified, redirecting...\n" .
+                    "Session data saved\n" .
+                    "Redirecting to: " . route('install.database') . "\n\n",
+                    FILE_APPEND
+                );
+                
+                // الانتقال المباشر لخطوة قاعدة البيانات
+                return redirect()->route('install.database');
+            } else {
+                file_put_contents(storage_path('debug_install.txt'), "ERROR: Invalid license format\n\n", FILE_APPEND);
+                return back()->withInput()->with('license_error', 'مفتاح ترخيص غير صالح');
             }
             
-            // حفظ مفتاح الترخيص والتحقق في الجلسة
-            session([
-                'license_key' => $licenseKey,
-                'license_verified' => true,
-                'install_step' => 'database'
-            ]);
-            
-            \Log::info('Install Process Step - License verified, redirecting to database step');
-            
-            // الانتقال المباشر لخطوة قاعدة البيانات
-            return redirect()->route('install.database');
-            
         } catch (\Exception $e) {
-            \Log::error('Install Process Step - Exception: ' . $e->getMessage());
+            file_put_contents(storage_path('debug_install.txt'), 
+                "EXCEPTION: " . $e->getMessage() . "\n" .
+                "File: " . $e->getFile() . ":" . $e->getLine() . "\n\n",
+                FILE_APPEND
+            );
             return back()->withInput()->with('license_error', 'خطأ في معالجة مفتاح الترخيص: ' . $e->getMessage());
         }
     }

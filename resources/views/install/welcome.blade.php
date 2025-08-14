@@ -78,51 +78,34 @@
     </div>
 </div>
 <script>
-// JavaScript مُحسن مع تشخيص
+// تشخيص مبسط للغاية
+console.log('=== INSTALL SYSTEM DEBUG ===');
+console.log('Current URL:', window.location.href);
+console.log('Form action:', document.getElementById('license-form')?.action);
+
 document.addEventListener('DOMContentLoaded', function() {
     var form = document.getElementById('license-form');
     var btn = document.getElementById('submit-btn');
-    var debug = document.getElementById('submit-debug');
-    
-    // تشخيص النظام
-    console.log('🔧 Install System Debug:');
-    console.log('📍 Domain:', window.location.hostname);
-    console.log('🔗 Current URL:', window.location.href);
-    console.log('📝 Form found:', !!form);
-    console.log('🔘 Button found:', !!btn);
-    console.log('🛡️ CSRF Token:', form ? form.querySelector('input[name="_token"]')?.value : 'Not found');
     
     if (form && btn) {
-        // تفعيل الزر
+        console.log('✅ Form and button found');
+        
+        // إزالة أي معالجات أخرى
         btn.disabled = false;
         
-        // معالج الإرسال
+        // معالج إرسال واحد فقط
         form.addEventListener('submit', function(e) {
-            console.log('📤 Form submission started');
+            console.log('🚀 FORM SUBMITTED!');
+            console.log('License Key:', document.getElementById('license_key').value);
             
-            // عرض رسالة للمستخدم
-            if (debug) {
-                debug.style.display = 'block';
-                debug.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري المعالجة...';
-            }
-            
-            // تعطيل الزر مؤقتاً
             btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>جاري التحقق...';
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> معالجة...';
             
-            // السماح بالإرسال
+            // السماح بالإرسال الطبيعي
             return true;
         });
-        
-        // تشخيص إضافي - فحص البيانات عند النقر
-        btn.addEventListener('click', function(e) {
-            var licenseKey = document.getElementById('license_key').value;
-            console.log('🔑 License Key:', licenseKey);
-            console.log('📋 Form action:', form.action);
-            console.log('🔄 Form method:', form.method);
-        });
     } else {
-        console.error('❌ Form or button not found!');
+        console.error('❌ Form or button missing!');
     }
 });
 </script>
