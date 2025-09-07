@@ -43,10 +43,13 @@
                     <tbody>
                         <tr>
                             <td>
-                                <select name="lines[0][account_id]" class="form-control account-select" required>
+                                <input type="text" class="form-control account-search" placeholder="ابحث عن الحساب..." list="accountsList" autocomplete="off">
+                                <select name="lines[0][account_id]" class="d-none account-select" required>
                                     <option value="">-- اختر الحساب --</option>
                                     @foreach($accounts as $acc)
-                                        <option value="{{ $acc->id }}">{{ $acc->code ? $acc->code . ' - ' . $acc->name : $acc->name }}</option>
+                                        <option value="{{ $acc->id }}" data-search="{{ $acc->code ? $acc->code . ' - ' . $acc->name : $acc->name }}">
+                                            {{ $acc->code ? $acc->code . ' - ' . $acc->name : $acc->name }}
+                                        </option>
                                     @endforeach
                                 </select>
                             </td>
@@ -63,10 +66,13 @@
                         </tr>
                         <tr>
                             <td>
-                                <select name="lines[1][account_id]" class="form-control account-select" required>
+                                <input type="text" class="form-control account-search" placeholder="ابحث عن الحساب..." list="accountsList" autocomplete="off">
+                                <select name="lines[1][account_id]" class="d-none account-select" required>
                                     <option value="">-- اختر الحساب --</option>
                                     @foreach($accounts as $acc)
-                                        <option value="{{ $acc->id }}">{{ $acc->code ? $acc->code . ' - ' . $acc->name : $acc->name }}</option>
+                                        <option value="{{ $acc->id }}" data-search="{{ $acc->code ? $acc->code . ' - ' . $acc->name : $acc->name }}">
+                                            {{ $acc->code ? $acc->code . ' - ' . $acc->name : $acc->name }}
+                                        </option>
                                     @endforeach
                                 </select>
                             </td>
@@ -97,87 +103,46 @@
             </div>
         </div>
     </form>
+    
+    <!-- قائمة الحسابات للبحث -->
+    <datalist id="accountsList">
+        @foreach($accounts as $acc)
+            <option value="{{ $acc->code ? $acc->code . ' - ' . $acc->name : $acc->name }}" data-id="{{ $acc->id }}"></option>
+        @endforeach
+    </datalist>
 </div>
 @endsection
 
 @push('styles')
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <style>
-/* تحسين أساسي للواجهة مع Select2 */
-.account-select {
+/* بحث بسيط - بدون مكتبات خارجية */
+.account-search {
     font-size: 14px;
     width: 100%;
-}
-
-/* تحسينات Select2 للعربية */
-.select2-container {
+    padding: 8px 12px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    background-color: white;
+    text-align: right;
     direction: rtl;
 }
 
-.select2-selection__rendered {
-    text-align: right !important;
-}
-
-.select2-search__field {
-    text-align: right !important;
-}
-
-.select2-results {
-    text-align: right !important;
-}
-
-.select2-container--default .select2-selection--single {
-    border: 1px solid #ced4da;
-    border-radius: 4px;
-    height: 38px;
-}
-
-.select2-container--default .select2-selection--single .select2-selection__rendered {
-    padding-right: 12px;
-    padding-left: 20px;
-    line-height: 36px;
-}
-
-.select2-container--default .select2-selection--single .select2-selection__arrow {
-    left: 5px;
-    right: auto;
-}
-
-/* تحسينات للبحث */
-.select2-dropdown .select2-search {
-    padding: 8px !important;
-    border-bottom: 1px solid #eee !important;
-}
-
-.select2-dropdown .select2-search .select2-search__field {
-    border: 1px solid #ccc !important;
-    border-radius: 4px !important;
-    padding: 8px 12px !important;
-    font-size: 14px !important;
-    width: 100% !important;
-    text-align: right !important;
-    direction: rtl !important;
-}
-
-.select2-dropdown .select2-search .select2-search__field:focus {
-    border-color: #007bff !important;
-    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25) !important;
-    outline: none !important;
-}
-
-/* تأكد من ظهور البحث */
-.select2-dropdown--below {
-    border-top: 1px solid #ccc;
-}
-
-.select2-dropdown--above {
-    border-bottom: 1px solid #ccc;
-}
-
-.account-select:focus {
-    border-color: #80bdff;
+.account-search:focus {
+    border-color: #007bff;
     box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
     outline: none;
+}
+
+.account-search.selected {
+    background-color: #e8f4fd;
+    border-color: #007bff;
+    color: #495057;
+    font-weight: 500;
+}
+
+.account-search.invalid {
+    border-color: #dc3545;
+    background-color: #ffe6e6;
 }
 
 #linesTable th {
@@ -214,52 +179,42 @@
 @endpush
 
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
 $(document).ready(function(){
     let lineIdx = $('#linesTable tbody tr').length;
     
-    // تطبيق Select2 مع إجبار ظهور حقل البحث دائماً
-    function applySelect2(element) {
-        $(element).select2({
-            placeholder: 'اختر الحساب أو ابحث...',
-            allowClear: true,
-            width: '100%',
-            minimumInputLength: 0,
-            minimumResultsForSearch: 0, // إجبار ظهور البحث دائماً
-            dropdownAutoWidth: false,
-            language: {
-                noResults: function() { return "❌ لا توجد نتائج مطابقة"; },
-                searching: function() { return "🔍 جاري البحث..."; },
-                inputTooLong: function() { return "نص البحث طويل جداً"; },
-                inputTooShort: function() { return "ابحث بالرمز أو الاسم"; }
-            },
-            escapeMarkup: function(markup) {
-                return markup;
-            }
-        }).on('select2:open', function() {
-            // تركيز على حقل البحث فور فتح القائمة
-            setTimeout(function() {
-                $('.select2-search__field').focus();
-            }, 100);
-        });
-    }
-    
-    // تطبيق على العناصر الموجودة مع تأخير قصير
-    setTimeout(function() {
-        $('.account-select').each(function() {
-            if (!$(this).hasClass('select2-hidden-accessible')) {
-                try {
-                    applySelect2(this);
-                    console.log('✅ Select2 applied successfully');
-                } catch (e) {
-                    console.error('❌ Select2 error:', e);
-                }
+    // ربط البحث بالحسابات
+    $(document).on('input change', '.account-search', function() {
+        let $input = $(this);
+        let $select = $input.siblings('.account-select');
+        let searchValue = $input.val().trim();
+        
+        // البحث عن المطابقة
+        let found = false;
+        $select.find('option').each(function() {
+            if ($(this).data('search') === searchValue) {
+                $select.val($(this).val());
+                $input.removeClass('invalid').addClass('selected');
+                found = true;
+                return false;
             }
         });
-    }, 200);
+        
+        if (!found && searchValue !== '') {
+            $select.val('');
+            $input.removeClass('selected').addClass('invalid');
+        } else if (searchValue === '') {
+            $select.val('');
+            $input.removeClass('selected invalid');
+        }
+    });
     
-    // تحديث العملة في جميع السطور عند تغيير العملة الرئيسية
+    // تركيز وتحديد النص عند الضغط
+    $(document).on('focus', '.account-search', function() {
+        $(this).select();
+    });
+    
+    // تحديث العملة
     $('select[name="currency"]').on('change', function(){
         let currency = $(this).val();
         $('.line-currency').val(currency);
@@ -268,16 +223,15 @@ $(document).ready(function(){
     // إضافة سطر جديد
     $('#addLine').on('click', function(){
         let currency = $('select[name="currency"]').val();
-        let accountOptions = `<option value="">-- اختر الحساب --</option>`;
-        
-        @foreach($accounts as $acc)
-            accountOptions += `<option value="{{ $acc->id }}">{{ $acc->code ? $acc->code . ' - ' . $acc->name : $acc->name }}</option>`;
-        @endforeach
         
         let row = `<tr>
             <td>
-                <select name="lines[${lineIdx}][account_id]" class="form-control account-select" required>
-                    ${accountOptions}
+                <input type="text" class="form-control account-search" placeholder="ابحث عن الحساب..." list="accountsList" autocomplete="off">
+                <select name="lines[${lineIdx}][account_id]" class="d-none account-select" required>
+                    <option value="">-- اختر الحساب --</option>
+                    @foreach($accounts as $acc)
+                        <option value="{{ $acc->id }}" data-search="{{ $acc->code ? $acc->code . ' - ' . $acc->name : $acc->name }}">{{ $acc->code ? $acc->code . ' - ' . $acc->name : $acc->name }}</option>
+                    @endforeach
                 </select>
             </td>
             <td><input type="text" name="lines[${lineIdx}][description]" class="form-control" placeholder="وصف العملية"></td>
@@ -293,11 +247,6 @@ $(document).ready(function(){
         </tr>`;
         
         $('#linesTable tbody').append(row);
-        
-        // تطبيق Select2 على السطر الجديد
-        let $newSelect = $(`select[name="lines[${lineIdx}][account_id]"]`);
-        applySelect2($newSelect);
-        
         lineIdx++;
     });
     
@@ -310,46 +259,45 @@ $(document).ready(function(){
         }
     });
     
-    // validation للقيد قبل الحفظ
+    // validation للقيد
     $('#journalForm').on('submit', function(e){
         let debit = 0, credit = 0;
-        let emptyAccounts = 0;
+        let hasErrors = false;
         
-        // حساب المجاميع والتحقق من اختيار الحسابات
+        // فحص جميع السطور
         $('#linesTable tbody tr').each(function(){
-            let accountSelected = $(this).find('select[name*="[account_id]"]').val();
-            if (!accountSelected) {
-                emptyAccounts++;
+            let accountId = $(this).find('.account-select').val();
+            let $searchInput = $(this).find('.account-search');
+            
+            if (!accountId) {
+                $searchInput.addClass('invalid');
+                hasErrors = true;
             }
             
             debit += parseFloat($(this).find('.debit').val()) || 0;
             credit += parseFloat($(this).find('.credit').val()) || 0;
         });
         
-        // التحقق من اختيار الحسابات
-        if (emptyAccounts > 0) {
-            alert('❌ يجب اختيار حساب لجميع السطور قبل الحفظ');
+        if (hasErrors) {
+            alert('❌ يجب اختيار حساب صحيح لجميع السطور');
             e.preventDefault();
             return false;
         }
         
-        // التحقق من توازن القيد
         if (Math.abs(debit - credit) > 0.01) {
-            alert(`❌ القيد غير متوازن!\n📊 إجمالي المدين: ${debit.toFixed(2)}\n📊 إجمالي الدائن: ${credit.toFixed(2)}\n\n⚖️ يجب أن يكون المدين = الدائن`);
+            alert(`❌ القيد غير متوازن!\nالمدين: ${debit.toFixed(2)}\nالدائن: ${credit.toFixed(2)}`);
             e.preventDefault();
             return false;
         }
         
-        // التحقق من عدم وجود مبالغ صفر
-        if (debit === 0 || credit === 0) {
-            alert('❌ يجب إدخال مبالغ في المدين والدائن');
+        if (debit === 0) {
+            alert('❌ يجب إدخال مبالغ في القيد');
             e.preventDefault();
             return false;
         }
         
-        // إظهار حالة التحميل
+        // إظهار loading
         $(this).find('button[type="submit"]').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...');
-        
         return true;
     });
 });
