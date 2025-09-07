@@ -116,39 +116,23 @@
     border-radius: 0.375rem;
 }
 
-.select2-container--bootstrap4 .select2-selection--single .select2-selection__rendered {
-    padding-left: 0;
-    padding-right: 20px;
-    color: #495057;
+.select2-container--bootstrap4 .select2-selection--single {
     text-align: right;
-}
-
-.select2-container--bootstrap4 .select2-selection--single .select2-selection__arrow {
-    right: auto;
-    left: 3px;
-    width: 20px;
+    direction: rtl;
 }
 
 .select2-container--bootstrap4 .select2-dropdown {
-    border-color: #ced4da;
-    border-radius: 0.375rem;
+    direction: rtl;
 }
 
 .select2-container--bootstrap4 .select2-results__option {
-    padding: 8px 12px;
     text-align: right;
-}
-
-.select2-container--bootstrap4 .select2-results__option--highlighted {
-    background-color: #007bff;
-    color: white;
+    direction: rtl;
 }
 
 .select2-container--bootstrap4 .select2-search--dropdown .select2-search__field {
-    border: 1px solid #ced4da;
-    border-radius: 0.375rem;
-    padding: 0.375rem 0.75rem;
     text-align: right;
+    direction: rtl;
 }
 
 /* تحسينات إضافية للجدول */
@@ -230,111 +214,45 @@
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
-// التأكد من وجود jQuery وBootstrap
-if (typeof jQuery === 'undefined') {
-    console.error('jQuery is required for this page');
-}
-
-// إعداد Select2 global settings
-$.fn.select2.defaults.set('theme', 'bootstrap4');
-$.fn.select2.defaults.set('dir', 'rtl');
-$.fn.select2.defaults.set('width', '100%');
+// انتظار تحميل Select2 library بالكامل
+$(document).ready(function(){
+    if (typeof $.fn.select2 === 'undefined') {
+        console.error('⚠️ Select2 library not loaded properly');
+        return;
+    }
+    console.log('✅ Select2 library loaded successfully');
+});
 </script>
 <script>
 $(document).ready(function(){
     let lineIdx = $('#linesTable tbody tr').length;
-    let accounts = @json($accounts);
     
-    // إعدادات Select2 الموحدة
-    const select2Config = {
+    // إعدادات Select2 بسيطة
+    const select2Options = {
         placeholder: 'اختر الحساب',
         allowClear: true,
         width: '100%',
-        theme: 'bootstrap4',
-        dir: 'rtl',
-        dropdownAutoWidth: true,
-        language: {
-            noResults: function() {
-                return "لا توجد نتائج مطابقة";
-            },
-            searching: function() {
-                return "جاري البحث...";
-            },
-            errorLoading: function() {
-                return "خطأ في تحميل النتائج";
-            },
-            inputTooShort: function() {
-                return "ادخل حرف واحد على الأقل للبحث";
-            }
-        },
-        escapeMarkup: function(markup) {
-            return markup;
-        },
-        templateResult: function(option) {
-            if (!option.id) return option.text;
-            return $(`<div style="text-align: right; direction: rtl;">${option.text}</div>`);
-        },
-        templateSelection: function(option) {
-            return option.text || option.id;
-        }
+        theme: 'bootstrap4'
     };
     
-    function loadAllAccounts() {
-        console.log('Loading accounts...', accounts.length);
-        
-        // تطبيق على جميع select boxes للحسابات
-        $('select[name^="lines"]').each(function(){
-            let $select = $(this);
-            let selectedValue = $select.val();
-            
-            // تنظيف Select2 إذا كان موجود
-            if ($select.hasClass('select2-hidden-accessible')) {
-                $select.select2('destroy');
-            }
-            
-            // إعادة بناء الخيارات
-            $select.empty();
-            $select.append('<option value="">-- اختر الحساب --</option>');
-            
-            // إضافة الحسابات مع فرز
-            let sortedAccounts = accounts.sort((a, b) => {
-                if (a.code && b.code) {
-                    return a.code.localeCompare(b.code);
+    // تطبيق Select2 بشكل آمن
+    setTimeout(function(){
+        $('.account-select').each(function(){
+            if (!$(this).hasClass('select2-hidden-accessible')) {
+                try {
+                    $(this).select2(select2Options);
+                } catch (e) {
+                    console.error('Error initializing Select2:', e);
                 }
-                return a.name.localeCompare(b.name);
-            });
-            
-            sortedAccounts.forEach(function(acc){
-                let displayName = acc.code ? `${acc.code} - ${acc.name}` : acc.name;
-                let isSelected = selectedValue == acc.id ? 'selected' : '';
-                $select.append(`<option value="${acc.id}" ${isSelected}>${displayName}</option>`);
-            });
-            
-            // تطبيق Select2
-            $select.select2(select2Config);
+            }
         });
-        
-        // تحديث العملة
-        let currency = $('select[name="currency"]').val();
-        $('.line-currency').val(currency);
-        $('.line-exchange-rate').val(1);
-    }
+    }, 500);
+    
+    // تحديث العملة عند التغيير
     $('select[name="currency"]').on('change', function(){
-        // في القيد أحادي العملة، فقط نحديث قيم العملة في الحقول المخفية
         let currency = $(this).val();
         $('.line-currency').val(currency);
     });
-    
-    // عند التحميل الأولي - تطبيق Select2 على العناصر الموجودة
-    setTimeout(function() {
-        console.log('Initializing Select2 for existing elements...');
-        $('.account-select').each(function() {
-            if (!$(this).hasClass('select2-hidden-accessible')) {
-                $(this).select2(select2Config);
-            }
-        });
-        loadAllAccounts();
-    }, 100);
     $('#addLine').on('click', function(){
         let currency = $('select[name="currency"]').val();
         let row = `<tr>
@@ -352,24 +270,19 @@ $(document).ready(function(){
         </tr>`;
         $('#linesTable tbody').append(row);
         
-        // تطبيق Select2 على السطر الجديد فقط
+        // إضافة الحسابات للسطر الجديد وتطبيق Select2
         let $newSelect = $(`select[name="lines[${lineIdx}][account_id]"]`);
-        $newSelect.empty();
-        $newSelect.append('<option value="">-- اختر الحساب --</option>');
+        $newSelect.html(`
+            <option value="">-- اختر الحساب --</option>
+            @foreach($accounts as $acc)
+                <option value="{{ $acc->id }}">{{ $acc->code ? $acc->code . ' - ' . $acc->name : $acc->name }}</option>
+            @endforeach
+        `);
         
-        let sortedAccounts = accounts.sort((a, b) => {
-            if (a.code && b.code) {
-                return a.code.localeCompare(b.code);
-            }
-            return a.name.localeCompare(b.name);
-        });
-        
-        sortedAccounts.forEach(function(acc){
-            let displayName = acc.code ? `${acc.code} - ${acc.name}` : acc.name;
-            $newSelect.append(`<option value="${acc.id}">${displayName}</option>`);
-        });
-        
-        $newSelect.select2(select2Config);
+        // تطبيق Select2 على السطر الجديد مع تأخير بسيط لضمان الاستقرار
+        setTimeout(function(){
+            $newSelect.select2(select2Options);
+        }, 100);
         lineIdx++;
     });
     $(document).on('click', '.remove-line', function(){
