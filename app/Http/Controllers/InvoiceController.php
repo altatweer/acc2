@@ -166,17 +166,121 @@ class InvoiceController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(string $id)
+    public function edit(Invoice $invoice)
     {
-        //
+        // التحقق من أن الفاتورة في حالة مسودة فقط
+        if ($invoice->status !== 'draft') {
+            return redirect()->route('invoices.show', $invoice)
+                ->with('error', 'لا يمكن تعديل الفاتورة. يمكن تعديل الفواتير في حالة المسودة فقط.');
+        }
+
+        // جلب البيانات المطلوبة للتعديل
+        $customers = Customer::all();
+        $currencies = Currency::all();
+        $items = Item::all();
+        
+        // تحميل بنود الفاتورة مع بيانات المنتجات
+        $invoice->load('invoiceItems.item', 'customer');
+        
+        return view('invoices.edit', compact('invoice', 'customers', 'currencies', 'items'));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, Invoice $invoice)
     {
-        //
+        // التحقق من أن الفاتورة في حالة مسودة فقط
+        if ($invoice->status !== 'draft') {
+            return redirect()->route('invoices.show', $invoice)
+                ->with('error', 'لا يمكن تعديل الفاتورة. يمكن تعديل الفواتير في حالة المسودة فقط.');
+        }
+
+        $validated = $request->validate([
+            'invoice_number'     => 'nullable|string|unique:invoices,invoice_number,' . $invoice->id,
+            'customer_id'        => 'required|exists:customers,id',
+            'date'               => 'required|date',
+            'total'              => 'required|numeric|min:0',
+            'currency'           => 'required|string|exists:currencies,code',
+            'items.*.item_id'    => 'required|exists:items,id',
+            'items.*.quantity'   => 'required|integer|min:1',
+            'items.*.unit_price' => 'required|numeric|min:0',
+        ]);
+
+        // إعداد رقم الفاتورة إذا لم يكن موجوداً
+        if (empty($validated['invoice_number'])) {
+            $validated['invoice_number'] = $invoice->invoice_number; // الاحتفاظ بالرقم الحالي
+        }
+
+        // إعداد سعر الصرف تلقائياً بناءً على العملة المختارة
+        $currencyModel = Currency::where('code', $validated['currency'])->first();
+        $validated['exchange_rate'] = $currencyModel->exchange_rate;
+        
+        // دمج المنتجات المكررة
+        $mergedItems = [];
+        if (isset($validated['items'])) {
+            foreach ($validated['items'] as $itm) {
+                $key = $itm['item_id'];
+                if (!isset($mergedItems[$key])) {
+                    $mergedItems[$key] = $itm;
+                } else {
+                    $mergedItems[$key]['quantity'] += $itm['quantity'];
+                }
+            }
+        }
+
+        // تحديث الفاتورة ضمن معاملة قاعدة بيانات
+        DB::transaction(function() use ($invoice, $validated, $mergedItems) {
+            // تحديث بيانات الفاتورة
+            $invoice->update([
+                'invoice_number' => $validated['invoice_number'],
+                'customer_id' => $validated['customer_id'],
+                'date' => $validated['date'],
+                'total' => $validated['total'],
+                'currency' => $validated['currency'],
+                'exchange_rate' => $validated['exchange_rate'],
+            ]);
+            
+            // حذف بنود الفاتورة القديمة
+            $invoice->invoiceItems()->delete();
+            
+            // إضافة بنود الفاتورة الجديدة
+            $exchangeRate = $validated['exchange_rate'];
+            $currency = $validated['currency'];
+            
+            foreach ($mergedItems as $itm) {
+                $lineTotal = $itm['quantity'] * $itm['unit_price'];
+                $baseCurrencyTotal = $lineTotal * $exchangeRate;
+                
+                // إعداد بيانات البند
+                $itemData = [
+                    'item_id'    => $itm['item_id'],
+                    'quantity'   => $itm['quantity'],
+                    'unit_price' => $itm['unit_price'],
+                    'line_total' => $lineTotal,
+                ];
+                
+                // إضافة أعمدة العملة المتعددة إذا كانت موجودة
+                try {
+                    if (Schema::hasColumn('invoice_items', 'currency')) {
+                        $itemData['currency'] = $currency;
+                    }
+                    if (Schema::hasColumn('invoice_items', 'exchange_rate')) {
+                        $itemData['exchange_rate'] = $exchangeRate;
+                    }
+                    if (Schema::hasColumn('invoice_items', 'base_currency_total')) {
+                        $itemData['base_currency_total'] = $baseCurrencyTotal;
+                    }
+                } catch (\Exception $e) {
+                    // تجاهل الأخطاء إذا لم تكن الأعمدة موجودة
+                }
+                
+                $invoice->invoiceItems()->create($itemData);
+            }
+        });
+
+        return redirect()->route('invoices.show', $invoice)
+            ->with('success', 'تم تحديث الفاتورة بنجاح.');
     }
 
     /**
