@@ -101,15 +101,77 @@
 @endsection
 
 @push('styles')
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <style>
-/* تحسين أساسي للواجهة */
+/* تحسين أساسي للواجهة مع Select2 */
 .account-select {
     font-size: 14px;
-    height: 38px;
-    padding: 6px 12px;
+    width: 100%;
+}
+
+/* تحسينات Select2 للعربية */
+.select2-container {
+    direction: rtl;
+}
+
+.select2-selection__rendered {
+    text-align: right !important;
+}
+
+.select2-search__field {
+    text-align: right !important;
+}
+
+.select2-results {
+    text-align: right !important;
+}
+
+.select2-container--default .select2-selection--single {
     border: 1px solid #ced4da;
     border-radius: 4px;
-    background-color: white;
+    height: 38px;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+    padding-right: 12px;
+    padding-left: 20px;
+    line-height: 36px;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+    left: 5px;
+    right: auto;
+}
+
+/* تحسينات للبحث */
+.select2-dropdown .select2-search {
+    padding: 8px !important;
+    border-bottom: 1px solid #eee !important;
+}
+
+.select2-dropdown .select2-search .select2-search__field {
+    border: 1px solid #ccc !important;
+    border-radius: 4px !important;
+    padding: 8px 12px !important;
+    font-size: 14px !important;
+    width: 100% !important;
+    text-align: right !important;
+    direction: rtl !important;
+}
+
+.select2-dropdown .select2-search .select2-search__field:focus {
+    border-color: #007bff !important;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25) !important;
+    outline: none !important;
+}
+
+/* تأكد من ظهور البحث */
+.select2-dropdown--below {
+    border-top: 1px solid #ccc;
+}
+
+.select2-dropdown--above {
+    border-bottom: 1px solid #ccc;
 }
 
 .account-select:focus {
@@ -152,9 +214,50 @@
 @endpush
 
 @push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
 $(document).ready(function(){
     let lineIdx = $('#linesTable tbody tr').length;
+    
+    // تطبيق Select2 مع إجبار ظهور حقل البحث دائماً
+    function applySelect2(element) {
+        $(element).select2({
+            placeholder: 'اختر الحساب أو ابحث...',
+            allowClear: true,
+            width: '100%',
+            minimumInputLength: 0,
+            minimumResultsForSearch: 0, // إجبار ظهور البحث دائماً
+            dropdownAutoWidth: false,
+            language: {
+                noResults: function() { return "❌ لا توجد نتائج مطابقة"; },
+                searching: function() { return "🔍 جاري البحث..."; },
+                inputTooLong: function() { return "نص البحث طويل جداً"; },
+                inputTooShort: function() { return "ابحث بالرمز أو الاسم"; }
+            },
+            escapeMarkup: function(markup) {
+                return markup;
+            }
+        }).on('select2:open', function() {
+            // تركيز على حقل البحث فور فتح القائمة
+            setTimeout(function() {
+                $('.select2-search__field').focus();
+            }, 100);
+        });
+    }
+    
+    // تطبيق على العناصر الموجودة مع تأخير قصير
+    setTimeout(function() {
+        $('.account-select').each(function() {
+            if (!$(this).hasClass('select2-hidden-accessible')) {
+                try {
+                    applySelect2(this);
+                    console.log('✅ Select2 applied successfully');
+                } catch (e) {
+                    console.error('❌ Select2 error:', e);
+                }
+            }
+        });
+    }, 200);
     
     // تحديث العملة في جميع السطور عند تغيير العملة الرئيسية
     $('select[name="currency"]').on('change', function(){
@@ -190,6 +293,11 @@ $(document).ready(function(){
         </tr>`;
         
         $('#linesTable tbody').append(row);
+        
+        // تطبيق Select2 على السطر الجديد
+        let $newSelect = $(`select[name="lines[${lineIdx}][account_id]"]`);
+        applySelect2($newSelect);
+        
         lineIdx++;
     });
     
