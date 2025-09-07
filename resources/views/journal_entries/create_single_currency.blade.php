@@ -44,7 +44,8 @@
                         <tr>
                             <td>
                                 <input type="text" class="form-control account-search" placeholder="ابحث عن الحساب..." list="accountsList" autocomplete="off">
-                                <select name="lines[0][account_id]" class="d-none account-select" required>
+                                <input type="hidden" name="lines[0][account_id]" class="account-id-field" required>
+                                <select class="d-none account-select">
                                     <option value="">-- اختر الحساب --</option>
                                     @foreach($accounts as $acc)
                                         <option value="{{ $acc->id }}" data-search="{{ $acc->code ? $acc->code . ' - ' . $acc->name : $acc->name }}">
@@ -67,7 +68,8 @@
                         <tr>
                             <td>
                                 <input type="text" class="form-control account-search" placeholder="ابحث عن الحساب..." list="accountsList" autocomplete="off">
-                                <select name="lines[1][account_id]" class="d-none account-select" required>
+                                <input type="hidden" name="lines[1][account_id]" class="account-id-field" required>
+                                <select class="d-none account-select">
                                     <option value="">-- اختر الحساب --</option>
                                     @foreach($accounts as $acc)
                                         <option value="{{ $acc->id }}" data-search="{{ $acc->code ? $acc->code . ' - ' . $acc->name : $acc->name }}">
@@ -183,30 +185,40 @@
 $(document).ready(function(){
     let lineIdx = $('#linesTable tbody tr').length;
     
-    // ربط البحث بالحسابات
-    $(document).on('input change', '.account-search', function() {
+    // ربط البحث بالحسابات - إصلاح مشكلة عدم الحفظ
+    $(document).on('input change blur', '.account-search', function() {
         let $input = $(this);
+        let $hiddenInput = $input.siblings('.account-id-field');
         let $select = $input.siblings('.account-select');
         let searchValue = $input.val().trim();
         
-        // البحث عن المطابقة
+        console.log('البحث عن:', searchValue);
+        
+        // البحث عن المطابقة في الـ select
         let found = false;
         $select.find('option').each(function() {
-            if ($(this).data('search') === searchValue) {
-                $select.val($(this).val());
+            let optionText = $(this).data('search') || $(this).text().trim();
+            if (optionText === searchValue) {
+                // تحديث الحقل المخفي (المهم للحفظ!)
+                $hiddenInput.val($(this).val());
                 $input.removeClass('invalid').addClass('selected');
                 found = true;
+                console.log('تم العثور على الحساب! ID:', $(this).val(), 'اسم:', optionText);
                 return false;
             }
         });
         
         if (!found && searchValue !== '') {
-            $select.val('');
+            $hiddenInput.val('');
             $input.removeClass('selected').addClass('invalid');
+            console.log('لم يتم العثور على مطابقة للنص:', searchValue);
         } else if (searchValue === '') {
-            $select.val('');
+            $hiddenInput.val('');
             $input.removeClass('selected invalid');
         }
+        
+        // طباعة القيمة النهائية المرسلة
+        console.log('القيمة التي ستُرسل:', $hiddenInput.attr('name'), '=', $hiddenInput.val());
     });
     
     // تركيز وتحديد النص عند الضغط
@@ -227,7 +239,8 @@ $(document).ready(function(){
         let row = `<tr>
             <td>
                 <input type="text" class="form-control account-search" placeholder="ابحث عن الحساب..." list="accountsList" autocomplete="off">
-                <select name="lines[${lineIdx}][account_id]" class="d-none account-select" required>
+                <input type="hidden" name="lines[${lineIdx}][account_id]" class="account-id-field" required>
+                <select class="d-none account-select">
                     <option value="">-- اختر الحساب --</option>
                     @foreach($accounts as $acc)
                         <option value="{{ $acc->id }}" data-search="{{ $acc->code ? $acc->code . ' - ' . $acc->name : $acc->name }}">{{ $acc->code ? $acc->code . ' - ' . $acc->name : $acc->name }}</option>
@@ -266,12 +279,16 @@ $(document).ready(function(){
         
         // فحص جميع السطور
         $('#linesTable tbody tr').each(function(){
-            let accountId = $(this).find('.account-select').val();
+            let accountId = $(this).find('.account-id-field').val() || $(this).find('select[name*="[account_id]"]').val();
             let $searchInput = $(this).find('.account-search');
             
             if (!accountId) {
                 $searchInput.addClass('invalid');
                 hasErrors = true;
+                console.log('سطر بدون حساب مختار - نص البحث:', $searchInput.val());
+            } else {
+                $searchInput.removeClass('invalid').addClass('selected');
+                console.log('حساب مختار بنجاح:', accountId);
             }
             
             debit += parseFloat($(this).find('.debit').val()) || 0;
