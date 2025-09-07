@@ -462,16 +462,16 @@ $(document).ready(function(){
             let convertedAmount;
             
             if (selectedPaymentCurrency === 'IQD' && invoiceCurrency === 'USD') {
-                // تحويل من دينار إلى دولار: المبلغ ÷ السعر
-                convertedAmount = amount / rate;
+                // تحويل من دينار إلى دولار: المبلغ × السعر (سعر الصرف للدينار مقابل الدولار)
+                convertedAmount = amount * rate;
                 $('#conversion_info').text(
-                    `${amount} IQD ÷ ${rate} = ${convertedAmount.toFixed(2)} USD`
+                    `${amount} IQD × ${rate} = ${convertedAmount.toFixed(2)} USD`
                 );
             } else if (selectedPaymentCurrency === 'USD' && invoiceCurrency === 'IQD') {
-                // تحويل من دولار إلى دينار: المبلغ × السعر
-                convertedAmount = amount * (1/rate);
+                // تحويل من دولار إلى دينار: المبلغ ÷ السعر (عكس سعر صرف الدينار)
+                convertedAmount = amount / rate;
                 $('#conversion_info').text(
-                    `${amount} USD × ${(1/rate).toFixed(2)} = ${convertedAmount.toFixed(2)} IQD`
+                    `${amount} USD ÷ ${rate} = ${convertedAmount.toFixed(2)} IQD`
                 );
             } else {
                 // للعملات الأخرى

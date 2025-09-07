@@ -55,14 +55,19 @@ class InvoicePaymentController extends Controller
             $exchangeRate = 1.0;
         } else {
             // عملات مختلفة - حساب المبلغ المحول بناءً على اتجاه التحويل
+            // ملاحظة مهمة: exchange_rate هو سعر العملة مقابل الدولار الأمريكي
+            // مثال: IQD exchange_rate = 0.0006667 يعني 1 IQD = 0.0006667 USD
+            
             if ($paymentCurrency === 'IQD' && $invoice->currency === 'USD') {
-                // السداد بالدينار والفاتورة بالدولار: المبلغ ÷ السعر
-                $convertedAmount = $paymentAmount / $exchangeRate;
+                // السداد بالدينار والفاتورة بالدولار
+                // مثال: 500 IQD × 0.0006667 = 0.33 USD
+                $convertedAmount = $paymentAmount * $exchangeRate;
             } else if ($paymentCurrency === 'USD' && $invoice->currency === 'IQD') {
-                // السداد بالدولار والفاتورة بالدينار: المبلغ × (1/السعر)
-                $convertedAmount = $paymentAmount * (1 / $exchangeRate);
+                // السداد بالدولار والفاتورة بالدينار  
+                // مثال: 1 USD ÷ 0.0006667 = 1500 IQD
+                $convertedAmount = $paymentAmount / $exchangeRate;
             } else {
-                // للعملات الأخرى - الطريقة العادية
+                // للعملات الأخرى - استخدام النسبة المباشرة
                 $convertedAmount = $paymentAmount * $exchangeRate;
             }
         }
