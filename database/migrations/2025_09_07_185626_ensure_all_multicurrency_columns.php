@@ -78,17 +78,24 @@ return new class extends Migration
         // 4. جدول الموظفين (employees)
         if (Schema::hasTable('employees')) {
             Schema::table('employees', function (Blueprint $table) {
-                if (!Schema::hasColumn('employees', 'salary_currency')) {
-                    $table->string('salary_currency', 3)->default('IQD')->after('salary')->comment('عملة الراتب الأساسي');
+                // إضافة عمود salary أولاً
+                if (!Schema::hasColumn('employees', 'salary')) {
+                    $table->decimal('salary', 18, 2)->default(0)->after('status')->comment('الراتب الأساسي');
                 }
+                // إضافة salary_currency بعد currency (موجود في جدول employees)
+                if (!Schema::hasColumn('employees', 'salary_currency')) {
+                    $table->string('salary_currency', 3)->default('IQD')->after('currency')->comment('عملة الراتب الأساسي');
+                }
+                // إضافة base_salary في النهاية
                 if (!Schema::hasColumn('employees', 'base_salary')) {
-                    $table->decimal('base_salary', 18, 4)->default(0)->after('salary_currency')->comment('الراتب الأساسي');
+                    $table->decimal('base_salary', 18, 4)->default(0)->after('salary_currency')->comment('الراتب الأساسي بالعملة الأساسية');
                 }
             });
             
             // تحديث البيانات الموجودة
             \DB::statement("UPDATE employees SET salary_currency = 'IQD' WHERE salary_currency IS NULL");
-            \DB::statement("UPDATE employees SET base_salary = salary WHERE base_salary IS NULL");
+            \DB::statement("UPDATE employees SET salary = 0 WHERE salary IS NULL");
+            \DB::statement("UPDATE employees SET base_salary = COALESCE(salary, 0) WHERE base_salary IS NULL");
         }
 
         // إنشاء جداول مفقودة إذا لم تكن موجودة
@@ -163,7 +170,7 @@ return new class extends Migration
             'items' => ['currency', 'cost_price', 'cost_currency', 'is_multi_currency'],
             'salary_payments' => ['currency', 'exchange_rate', 'base_currency_net_salary'],
             'customers' => ['default_currency', 'credit_limit', 'credit_limit_currency'],
-            'employees' => ['salary_currency', 'base_salary'],
+            'employees' => ['base_salary', 'salary_currency', 'salary'],
         ];
 
         foreach ($tables as $tableName => $columns) {
