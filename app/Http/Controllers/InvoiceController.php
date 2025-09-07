@@ -11,6 +11,7 @@ use App\Models\Voucher;
 use App\Models\Item;
 use App\Models\InvoiceItem;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use App\Models\Transaction;
 
 class InvoiceController extends Controller
@@ -99,15 +100,30 @@ class InvoiceController extends Controller
                 // حساب المبلغ بالعملة الأساسية (IQD)
                 $baseCurrencyTotal = $lineTotal * $exchangeRate;
                 
-                $invoice->invoiceItems()->create([
-                    'item_id'             => $itm['item_id'],
-                    'quantity'            => $itm['quantity'],
-                    'unit_price'          => $itm['unit_price'],
-                    'line_total'          => $lineTotal,
-                    'currency'            => $currency,
-                    'exchange_rate'       => $exchangeRate,
-                    'base_currency_total' => $baseCurrencyTotal,
-                ]);
+                // التحقق من وجود الأعمدة قبل الإضافة
+                $itemData = [
+                    'item_id'    => $itm['item_id'],
+                    'quantity'   => $itm['quantity'],
+                    'unit_price' => $itm['unit_price'],
+                    'line_total' => $lineTotal,
+                ];
+                
+                // إضافة أعمدة العملة المتعددة إذا كانت موجودة
+                try {
+                    if (Schema::hasColumn('invoice_items', 'currency')) {
+                        $itemData['currency'] = $currency;
+                    }
+                    if (Schema::hasColumn('invoice_items', 'exchange_rate')) {
+                        $itemData['exchange_rate'] = $exchangeRate;
+                    }
+                    if (Schema::hasColumn('invoice_items', 'base_currency_total')) {
+                        $itemData['base_currency_total'] = $baseCurrencyTotal;
+                    }
+                } catch (\Exception $e) {
+                    // تجاهل الأخطاء إذا لم تكن الأعمدة موجودة
+                }
+                
+                $invoice->invoiceItems()->create($itemData);
             }
             // لا يتم إنشاء أي قيد محاسبي هنا
         });
