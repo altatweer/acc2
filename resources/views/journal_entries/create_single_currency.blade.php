@@ -75,12 +75,19 @@
 </div>
 @endsection
 
+@push('styles')
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap4-theme@1.0.0/dist/select2-bootstrap4.min.css" rel="stylesheet" />
+@endpush
+
 @push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
 $(function(){
     let lineIdx = $('#linesTable tbody tr').length;
     let accounts = @json($accounts);
-    function filterAccountsByCurrency(currency) {
+    function loadAllAccounts() {
+        // في القيد أحادي العملة، نعرض جميع الحسابات بدون فلترة
         $('select[name^="lines"]').each(function(){
             let selected = $(this).val();
             
@@ -90,29 +97,38 @@ $(function(){
             }
             
             $(this).empty();
+            // إضافة خيار فارغ أولاً
+            $(this).append(`<option value="">-- اختر الحساب --</option>`);
+            
             accounts.forEach(function(acc){
-                if(acc.currency === currency) {
-                    $(this).append(`<option value="${acc.id}" ${selected == acc.id ? 'selected' : ''}>${acc.name}</option>`);
-                }
+                // عرض رمز الحساب مع اسم الحساب لوضوح أكبر
+                let displayName = acc.code ? `${acc.code} - ${acc.name}` : acc.name;
+                $(this).append(`<option value="${acc.id}" ${selected == acc.id ? 'selected' : ''}>${displayName}</option>`);
             }.bind(this));
             
             // Reinitialize Select2 if needed
             if ($.fn.select2) {
                 $(this).select2({
-                    placeholder: '@lang("messages.choose_account")'
+                    placeholder: 'اختر الحساب',
+                    allowClear: true,
+                    width: '100%'
                 });
             }
         });
+        
         // تحديث حقول العملة وسعر الصرف في كل سطر
+        let currency = $('select[name="currency"]').val();
         $('.line-currency').val(currency);
         $('.line-exchange-rate').val(1);
     }
     $('select[name="currency"]').on('change', function(){
+        // في القيد أحادي العملة، فقط نحديث قيم العملة في الحقول المخفية
         let currency = $(this).val();
-        filterAccountsByCurrency(currency);
+        $('.line-currency').val(currency);
     });
-    // عند التحميل الأولي
-    filterAccountsByCurrency($('select[name="currency"]').val());
+    
+    // عند التحميل الأولي - تحميل جميع الحسابات
+    loadAllAccounts();
     $('#addLine').on('click', function(){
         let currency = $('select[name="currency"]').val();
         let row = `<tr>
@@ -127,7 +143,7 @@ $(function(){
             </td>
         </tr>`;
         $('#linesTable tbody').append(row);
-        filterAccountsByCurrency(currency);
+        loadAllAccounts(); // إعادة تحميل جميع الحسابات للسطور الجديدة
         lineIdx++;
     });
     $(document).on('click', '.remove-line', function(){

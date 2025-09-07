@@ -218,16 +218,40 @@ class JournalEntryController extends Controller
 
     public function createSingleCurrency()
     {
-        $accounts = Account::where('is_group', 0)->get();
+        // جلب الحسابات الحقيقية (غير المجموعات) مع ترتيب حسب الرمز
+        $accounts = Account::where('is_group', 0)
+            ->select('id', 'code', 'name', 'type', 'default_currency')
+            ->orderBy('code')
+            ->get();
+            
         $currencies = \App\Models\Currency::all();
         $defaultCurrency = \App\Models\Currency::getDefaultCode();
+        
+        // التأكد من وجود حسابات
+        if ($accounts->isEmpty()) {
+            return redirect()->route('accounts.create')
+                ->with('error', 'لا توجد حسابات محاسبية. يجب إنشاء حسابات أولاً لتتمكن من إنشاء القيود.');
+        }
+        
         return view('journal_entries.create_single_currency', compact('accounts', 'currencies', 'defaultCurrency'));
     }
 
     public function createMultiCurrency()
     {
-        $accounts = Account::where('is_group', 0)->get();
+        // جلب الحسابات الحقيقية (غير المجموعات) مع ترتيب حسب الرمز
+        $accounts = Account::where('is_group', 0)
+            ->select('id', 'code', 'name', 'type', 'default_currency')
+            ->orderBy('code')
+            ->get();
+            
         $currencies = \App\Models\Currency::all();
+        
+        // التأكد من وجود حسابات
+        if ($accounts->isEmpty()) {
+            return redirect()->route('accounts.create')
+                ->with('error', 'لا توجد حسابات محاسبية. يجب إنشاء حسابات أولاً لتتمكن من إنشاء القيود.');
+        }
+        
         return view('journal_entries.create_multi_currency', compact('accounts', 'currencies'));
     }
 } 
