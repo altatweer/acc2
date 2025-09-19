@@ -49,9 +49,12 @@
                     <tbody>
                         <tr>
                             <td>
-                                <input type="text" class="form-control account-search" placeholder="ابحث عن الحساب..." autocomplete="off">
-                                <input type="hidden" name="lines[0][account_id]" class="account-id-field" required>
-                                <div class="account-suggestions" style="display: none;"></div>
+                                <select name="lines[0][account_id]" class="form-control" required>
+                                    <option value="">-- اختر الحساب --</option>
+                                    @foreach($accounts as $acc)
+                                        <option value="{{ $acc->id }}">{{ $acc->code ? $acc->code . ' - ' . $acc->name : $acc->name }}</option>
+                                    @endforeach
+                                </select>
                             </td>
                             <td><input type="text" name="lines[0][description]" class="form-control" placeholder="وصف العملية"></td>
                             <td><input type="number" name="lines[0][debit]" class="form-control debit" step="0.01" value="0" min="0" placeholder="0.00"></td>
@@ -66,9 +69,12 @@
                         </tr>
                         <tr>
                             <td>
-                                <input type="text" class="form-control account-search" placeholder="ابحث عن الحساب..." autocomplete="off">
-                                <input type="hidden" name="lines[1][account_id]" class="account-id-field" required>
-                                <div class="account-suggestions" style="display: none;"></div>
+                                <select name="lines[1][account_id]" class="form-control" required>
+                                    <option value="">-- اختر الحساب --</option>
+                                    @foreach($accounts as $acc)
+                                        <option value="{{ $acc->id }}">{{ $acc->code ? $acc->code . ' - ' . $acc->name : $acc->name }}</option>
+                                    @endforeach
+                                </select>
                             </td>
                             <td><input type="text" name="lines[1][description]" class="form-control" placeholder="وصف العملية"></td>
                             <td><input type="number" name="lines[1][debit]" class="form-control debit" step="0.01" value="0" min="0" placeholder="0.00"></td>
@@ -97,75 +103,11 @@
             </div>
         </div>
     </form>
-    
-    <!-- بيانات الحسابات المخفية للجافا سكريبت -->
-    <script type="text/javascript">
-        window.accountsData = @json($accounts->map(function($acc) { return ['id' => $acc->id, 'text' => ($acc->code ? $acc->code . ' - ' . $acc->name : $acc->name)]; }));
-    </script>
 </div>
 @endsection
 
 @push('styles')
 <style>
-/* بحث بسيط - بدون مكتبات خارجية */
-.account-search {
-    font-size: 14px;
-    width: 100%;
-    padding: 8px 12px;
-    border: 1px solid #ced4da;
-    border-radius: 4px;
-    background-color: white;
-    text-align: right;
-    direction: rtl;
-}
-
-.account-search:focus {
-    border-color: #007bff;
-    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-    outline: none;
-}
-
-.account-search.selected {
-    background-color: #e8f4fd;
-    border-color: #007bff;
-    color: #495057;
-    font-weight: 500;
-}
-
-.account-search.invalid {
-    border-color: #dc3545;
-    background-color: #ffe6e6;
-}
-
-/* اقتراحات البحث */
-.account-suggestions {
-    position: absolute;
-    z-index: 1000;
-    max-height: 200px;
-    overflow-y: auto;
-    background: white;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    width: 100%;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.suggestion-item {
-    padding: 8px 12px;
-    cursor: pointer;
-    border-bottom: 1px solid #eee;
-    text-align: right;
-    direction: rtl;
-}
-
-.suggestion-item:hover {
-    background-color: #f0f8ff;
-}
-
-.suggestion-item:last-child {
-    border-bottom: none;
-}
-
 #linesTable th {
     background-color: #f8f9fa;
     text-align: center;
@@ -176,7 +118,6 @@
 #linesTable td {
     border: 1px solid #dee2e6;
     vertical-align: middle;
-    position: relative;
 }
 
 .form-control {
@@ -219,83 +160,7 @@
 let lineIdx = 2;
 
 $(document).ready(function(){
-    console.log('🚀 تم تحميل الصفحة، البيانات المتوفرة:', window.accountsData?.length || 0, 'حساب');
-    console.log('🗂️ بيانات الحسابات:', window.accountsData);
-    
-    // بحث الحسابات - حل بسيط وقوي
-    $(document).on('input focus', '.account-search', function() {
-        let $input = $(this);
-        let $row = $input.closest('tr');
-        let $hiddenInput = $row.find('.account-id-field');
-        let $suggestions = $row.find('.account-suggestions');
-        let searchValue = $input.val().trim();
-        
-        console.log('🔍 البحث عن:', searchValue);
-        
-        if (searchValue.length < 1) {
-            $suggestions.hide().empty();
-            $hiddenInput.val('');
-            $input.removeClass('selected invalid');
-            return;
-        }
-        
-        // فلترة الحسابات
-        let matches = window.accountsData.filter(account => 
-            account.text.toLowerCase().includes(searchValue.toLowerCase())
-        );
-        
-        console.log('📋 تم العثور على', matches.length, 'نتيجة');
-        
-        if (matches.length > 0) {
-            let html = '';
-            matches.slice(0, 10).forEach(account => {
-                html += `<div class="suggestion-item" data-id="${account.id}" data-text="${account.text}">${account.text}</div>`;
-            });
-            
-            $suggestions.html(html).show();
-        } else {
-            $suggestions.hide().empty();
-            $input.addClass('invalid').removeClass('selected');
-            $hiddenInput.val('');
-        }
-    });
-    
-    // اختيار الحساب
-    $(document).on('click', '.suggestion-item', function() {
-        let $item = $(this);
-        let accountId = $item.data('id');
-        let accountText = $item.data('text');
-        
-        // الحصول على الـ row الصحيح
-        let $row = $item.closest('tr');
-        let $suggestions = $item.parent();
-        let $input = $row.find('.account-search');
-        let $hiddenInput = $row.find('.account-id-field');
-        
-        $input.val(accountText).addClass('selected').removeClass('invalid');
-        $hiddenInput.val(accountId);
-        $suggestions.hide().empty();
-        
-        console.log('✅ تم اختيار الحساب:', accountId, '-', accountText);
-        console.log('💾 القيمة المحفوظة:', $hiddenInput.attr('name'), '=', $hiddenInput.val());
-        console.log('🎯 في الصف:', $row.index() + 1);
-    });
-    
-    // إخفاء الاقتراحات عند النقر خارجها
-    $(document).on('click', function(e) {
-        if (!$(e.target).closest('.account-search, .account-suggestions').length) {
-            $('.account-suggestions').hide();
-        }
-    });
-    
-    // إخفاء الاقتراحات عند blur
-    $(document).on('blur', '.account-search', function() {
-        let $input = $(this);
-        let $row = $input.closest('tr');
-        setTimeout(function() {
-            $row.find('.account-suggestions').hide();
-        }, 200);
-    });
+    console.log('🚀 نظام dropdown بسيط - {{ count($accounts) }} حساب متوفر');
     
     // تحديث العملة
     $('select[name="currency"]').on('change', function(){
@@ -307,11 +172,17 @@ $(document).ready(function(){
     $('#addLine').on('click', function(){
         let currency = $('select[name="currency"]').val();
         
+        let accountOptions = '';
+        accountOptions += '<option value="">-- اختر الحساب --</option>';
+        @foreach($accounts as $acc)
+            accountOptions += '<option value="{{ $acc->id }}">{{ $acc->code ? $acc->code . " - " . $acc->name : $acc->name }}</option>';
+        @endforeach
+        
         let row = `<tr>
             <td>
-                <input type="text" class="form-control account-search" placeholder="ابحث عن الحساب..." autocomplete="off">
-                <input type="hidden" name="lines[${lineIdx}][account_id]" class="account-id-field" required>
-                <div class="account-suggestions" style="display: none;"></div>
+                <select name="lines[${lineIdx}][account_id]" class="form-control" required>
+                    ${accountOptions}
+                </select>
             </td>
             <td><input type="text" name="lines[${lineIdx}][description]" class="form-control" placeholder="وصف العملية"></td>
             <td><input type="number" name="lines[${lineIdx}][debit]" class="form-control debit" step="0.01" value="0" min="0" placeholder="0.00"></td>
@@ -343,42 +214,28 @@ $(document).ready(function(){
         let debit = 0, credit = 0;
         let hasErrors = false;
         
-        console.log('📤 محاولة إرسال النموذج...');
-        console.log('🎯 Action URL:', $(this).attr('action'));
-        console.log('📋 Method:', $(this).attr('method'));
-        
-        // طباعة جميع البيانات قبل الإرسال
-        let formData = new FormData(this);
-        console.log('📦 بيانات النموذج:');
-        for (let [key, value] of formData.entries()) {
-            console.log(`  ${key}: ${value}`);
-        }
+        console.log('📤 إرسال النموذج...');
         
         // فحص جميع السطور
         $('#linesTable tbody tr').each(function(index){
-            let accountId = $(this).find('.account-id-field').val();
-            let $searchInput = $(this).find('.account-search');
+            let accountId = $(this).find('select[name*="[account_id]"]').val();
             
-            console.log(`📝 السطر ${index + 1}:`, {
-                accountId: accountId,
-                searchText: $searchInput.val()
-            });
+            console.log(`السطر ${index + 1}: حساب ${accountId}`);
             
             if (!accountId) {
-                $searchInput.addClass('invalid');
                 hasErrors = true;
-                console.log('❌ السطر', index + 1, 'بدون حساب مختار');
-            } else {
-                $searchInput.removeClass('invalid').addClass('selected');
-                console.log('✅ السطر', index + 1, 'صحيح');
+                alert(`❌ يجب اختيار حساب للسطر ${index + 1}`);
+                return false;
             }
             
-            debit += parseFloat($(this).find('.debit').val()) || 0;
-            credit += parseFloat($(this).find('.credit').val()) || 0;
+            let debitVal = parseFloat($(this).find('.debit').val()) || 0;
+            let creditVal = parseFloat($(this).find('.credit').val()) || 0;
+            
+            debit += debitVal;
+            credit += creditVal;
         });
         
         if (hasErrors) {
-            alert('❌ يجب اختيار حساب صحيح لجميع السطور');
             e.preventDefault();
             return false;
         }
@@ -395,22 +252,10 @@ $(document).ready(function(){
             return false;
         }
         
-        console.log('🎉 النموذج صحيح! جاري الإرسال...');
-        
-        // التأكد من وجود CSRF token
-        let csrfToken = $('input[name="_token"]').val();
-        console.log('🔐 CSRF Token:', csrfToken);
-        
-        if (!csrfToken) {
-            alert('❌ خطأ في الأمان: CSRF token مفقود');
-            e.preventDefault();
-            return false;
-        }
+        console.log('✅ النموذج صحيح! جاري الحفظ...');
         
         // إظهار loading
         $(this).find('button[type="submit"]').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...');
-        
-        console.log('🚀 إرسال النموذج الآن...');
         return true;
     });
 });
