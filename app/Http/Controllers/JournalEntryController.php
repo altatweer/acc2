@@ -257,75 +257,19 @@ class JournalEntryController extends Controller
     
     public function storeSingleCurrency(Request $request)
     {
-        // debugging شامل
-        \Log::info('🔥 بداية storeSingleCurrency', [
-            'timestamp' => now(),
-            'user_id' => auth()->id(),
-            'ip' => $request->ip(),
-            'user_agent' => $request->userAgent()
+        // التحقق من البيانات
+        $request->validate([
+            'currency' => 'required|string|max:3',
+            'date' => 'required|date',
+            'description' => 'required|string|max:255',
+            'lines' => 'required|array|size:2',
+            'lines.*.account_id' => 'required|exists:accounts,id',
+            'lines.*.description' => 'nullable|string|max:255',
+            'lines.*.debit' => 'nullable|numeric|min:0',
+            'lines.*.credit' => 'nullable|numeric|min:0',
+            'lines.*.currency' => 'required|string|max:3',
+            'lines.*.exchange_rate' => 'required|numeric|min:0.0001',
         ]);
-        
-        \Log::info('📥 البيانات المستلمة كاملة', [
-            'all_data' => $request->all(),
-            'headers' => $request->headers->all(),
-            'method' => $request->method(),
-            'url' => $request->fullUrl()
-        ]);
-        
-        // فحص أساسي
-        if (!$request->has('lines') || empty($request->lines)) {
-            \Log::error('❌ لا توجد بيانات lines في الطلب!', [
-                'request_keys' => array_keys($request->all()),
-                'request_data' => $request->all()
-            ]);
-            return back()->withErrors(['error' => 'لم يتم إرسال بيانات السطور بشكل صحيح'])
-                ->withInput();
-        }
-        
-        \Log::info('✅ تم التأكد من وجود بيانات lines');
-        
-        try {
-            \Log::info('🔍 بداية Validation');
-            
-            $rules = [
-                'currency' => 'required|string|max:3',
-                'date' => 'required|date',
-                'description' => 'required|string|max:255',
-                'lines' => 'required|array|min:2',
-                'lines.*.account_id' => 'required|exists:accounts,id',
-                'lines.*.description' => 'nullable|string|max:255',
-                'lines.*.debit' => 'nullable|numeric|min:0',
-                'lines.*.credit' => 'nullable|numeric|min:0',
-                'lines.*.currency' => 'required|string|max:3',
-                'lines.*.exchange_rate' => 'required|numeric|min:0.0001',
-            ];
-            
-            \Log::info('📋 Validation rules:', $rules);
-            
-            $request->validate($rules);
-            
-            \Log::info('✅ تم اجتياز validation بنجاح');
-            
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            \Log::error('❌ فشل في validation', [
-                'errors' => $e->errors(),
-                'failed_rules' => $e->validator->failed(),
-                'request_data' => $request->all()
-            ]);
-            
-            // إرجاع أخطاء واضحة للمستخدم
-            return back()->withErrors($e->errors())
-                ->with('error', 'يوجد أخطاء في البيانات المدخلة')
-                ->withInput();
-        } catch (\Exception $e) {
-            \Log::error('❌ خطأ غير متوقع في validation', [
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            
-            return back()->withErrors(['error' => 'حدث خطأ في التحقق من البيانات: ' . $e->getMessage()])
-                ->withInput();
-        }
 
         DB::beginTransaction();
         try {
@@ -343,19 +287,22 @@ class JournalEntryController extends Controller
 
             // إضافة السطور
             foreach ($request->lines as $line) {
-                if ((floatval($line['debit'] ?? 0) > 0) || (floatval($line['credit'] ?? 0) > 0)) {
+                $debit = floatval($line['debit'] ?? 0);
+                $credit = floatval($line['credit'] ?? 0);
+                
+                if ($debit > 0 || $credit > 0) {
                     JournalEntryLine::create([
                         'journal_entry_id' => $journalEntry->id,
                         'account_id' => $line['account_id'],
                         'description' => $line['description'] ?? null,
-                        'debit' => floatval($line['debit'] ?? 0),
-                        'credit' => floatval($line['credit'] ?? 0),
+                        'debit' => $debit,
+                        'credit' => $credit,
                         'currency' => $line['currency'],
                         'exchange_rate' => floatval($line['exchange_rate'] ?? 1),
                     ]);
                     
-                    $totalDebit += floatval($line['debit'] ?? 0);
-                    $totalCredit += floatval($line['credit'] ?? 0);
+                    $totalDebit += $debit;
+                    $totalCredit += $credit;
                 }
             }
 
@@ -366,24 +313,11 @@ class JournalEntryController extends Controller
 
             DB::commit();
             
-            \Log::info('🎉 تم إنشاء القيد بنجاح', [
-                'journal_entry_id' => $journalEntry->id,
-                'total_debit' => $totalDebit,
-                'total_credit' => $totalCredit
-            ]);
-            
             return redirect()->route('journal-entries.show', $journalEntry)
                 ->with('success', 'تم إنشاء القيد المحاسبي بنجاح');
                 
         } catch (\Exception $e) {
             DB::rollBack();
-            
-            \Log::error('❌ فشل في حفظ القيد', [
-                'error_message' => $e->getMessage(),
-                'error_trace' => $e->getTraceAsString(),
-                'request_data' => $request->all()
-            ]);
-            
             return back()->withErrors(['error' => 'حدث خطأ أثناء حفظ القيد: ' . $e->getMessage()])
                 ->withInput();
         }
