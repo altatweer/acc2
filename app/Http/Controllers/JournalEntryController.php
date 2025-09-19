@@ -254,4 +254,134 @@ class JournalEntryController extends Controller
         
         return view('journal_entries.create_multi_currency', compact('accounts', 'currencies'));
     }
+    
+    public function storeSingleCurrency(Request $request)
+    {
+        $request->validate([
+            'currency' => 'required|string|max:3',
+            'date' => 'required|date',
+            'description' => 'required|string|max:255',
+            'lines' => 'required|array|min:2',
+            'lines.*.account_id' => 'required|exists:accounts,id',
+            'lines.*.description' => 'nullable|string|max:255',
+            'lines.*.debit' => 'nullable|numeric|min:0',
+            'lines.*.credit' => 'nullable|numeric|min:0',
+            'lines.*.currency' => 'required|string|max:3',
+            'lines.*.exchange_rate' => 'required|numeric|min:0.0001',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            // إنشاء القيد المحاسبي
+            $journalEntry = JournalEntry::create([
+                'date' => $request->date,
+                'description' => $request->description,
+                'currency' => $request->currency,
+                'status' => 'approved',
+                'created_by' => auth()->id(),
+            ]);
+
+            $totalDebit = 0;
+            $totalCredit = 0;
+
+            // إضافة السطور
+            foreach ($request->lines as $line) {
+                if ((floatval($line['debit'] ?? 0) > 0) || (floatval($line['credit'] ?? 0) > 0)) {
+                    JournalEntryLine::create([
+                        'journal_entry_id' => $journalEntry->id,
+                        'account_id' => $line['account_id'],
+                        'description' => $line['description'] ?? null,
+                        'debit' => floatval($line['debit'] ?? 0),
+                        'credit' => floatval($line['credit'] ?? 0),
+                        'currency' => $line['currency'],
+                        'exchange_rate' => floatval($line['exchange_rate'] ?? 1),
+                    ]);
+                    
+                    $totalDebit += floatval($line['debit'] ?? 0);
+                    $totalCredit += floatval($line['credit'] ?? 0);
+                }
+            }
+
+            // فحص التوازن
+            if (abs($totalDebit - $totalCredit) > 0.01) {
+                throw new \Exception("القيد غير متوازن. المدين: $totalDebit، الدائن: $totalCredit");
+            }
+
+            DB::commit();
+            return redirect()->route('journal-entries.show', $journalEntry)
+                ->with('success', 'تم إنشاء القيد المحاسبي بنجاح');
+                
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withErrors(['error' => 'حدث خطأ أثناء حفظ القيد: ' . $e->getMessage()])
+                ->withInput();
+        }
+    }
+
+    public function storeMultiCurrency(Request $request)
+    {
+        $request->validate([
+            'date' => 'required|date',
+            'description' => 'required|string|max:255',
+            'lines' => 'required|array|min:2',
+            'lines.*.account_id' => 'required|exists:accounts,id',
+            'lines.*.description' => 'nullable|string|max:255',
+            'lines.*.debit' => 'nullable|numeric|min:0',
+            'lines.*.credit' => 'nullable|numeric|min:0',
+            'lines.*.currency' => 'required|string|max:3',
+            'lines.*.exchange_rate' => 'required|numeric|min:0.0001',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            // إنشاء القيد المحاسبي
+            $journalEntry = JournalEntry::create([
+                'date' => $request->date,
+                'description' => $request->description,
+                'currency' => 'MIXED', // للقيود متعددة العملات
+                'status' => 'approved',
+                'created_by' => auth()->id(),
+            ]);
+
+            $totalDebitBase = 0;
+            $totalCreditBase = 0;
+
+            // إضافة السطور
+            foreach ($request->lines as $line) {
+                if ((floatval($line['debit'] ?? 0) > 0) || (floatval($line['credit'] ?? 0) > 0)) {
+                    $debit = floatval($line['debit'] ?? 0);
+                    $credit = floatval($line['credit'] ?? 0);
+                    $exchangeRate = floatval($line['exchange_rate'] ?? 1);
+                    
+                    JournalEntryLine::create([
+                        'journal_entry_id' => $journalEntry->id,
+                        'account_id' => $line['account_id'],
+                        'description' => $line['description'] ?? null,
+                        'debit' => $debit,
+                        'credit' => $credit,
+                        'currency' => $line['currency'],
+                        'exchange_rate' => $exchangeRate,
+                    ]);
+                    
+                    // حساب القيم بالعملة الأساسية
+                    $totalDebitBase += $debit * $exchangeRate;
+                    $totalCreditBase += $credit * $exchangeRate;
+                }
+            }
+
+            // فحص التوازن بالعملة الأساسية
+            if (abs($totalDebitBase - $totalCreditBase) > 0.01) {
+                throw new \Exception("القيد غير متوازن بالعملة الأساسية. المدين: $totalDebitBase، الدائن: $totalCreditBase");
+            }
+
+            DB::commit();
+            return redirect()->route('journal-entries.show', $journalEntry)
+                ->with('success', 'تم إنشاء القيد المحاسبي متعدد العملات بنجاح');
+                
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withErrors(['error' => 'حدث خطأ أثناء حفظ القيد: ' . $e->getMessage()])
+                ->withInput();
+        }
+    }
 } 

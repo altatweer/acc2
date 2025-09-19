@@ -169,7 +169,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('journal-entries/{id}/modal', [JournalEntryController::class, 'modal']);
     Route::get('journal-entries/{id}/print', [JournalEntryController::class, 'print'])->name('journal-entries.print');
     Route::get('journal-entries/single-currency/create', [JournalEntryController::class, 'createSingleCurrency'])->name('journal-entries.single-currency.create');
+    Route::post('journal-entries/single-currency/store', [JournalEntryController::class, 'storeSingleCurrency'])->name('journal-entries.store-single-currency');
     Route::get('journal-entries/multi-currency/create', [JournalEntryController::class, 'createMultiCurrency'])->name('journal-entries.multi-currency.create');
+    Route::post('journal-entries/multi-currency/store', [JournalEntryController::class, 'storeMultiCurrency'])->name('journal-entries.store-multi-currency');
     Route::post('journal-entries/{journalEntry}/cancel', [JournalEntryController::class, 'cancel'])->middleware(\App\Http\Middleware\PreventDuplicateSubmission::class)->name('journal-entries.cancel');
 
     // Employees
