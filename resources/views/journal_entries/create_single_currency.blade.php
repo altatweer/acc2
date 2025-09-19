@@ -220,6 +220,7 @@ let lineIdx = 2;
 
 $(document).ready(function(){
     console.log('🚀 تم تحميل الصفحة، البيانات المتوفرة:', window.accountsData?.length || 0, 'حساب');
+    console.log('🗂️ بيانات الحسابات:', window.accountsData);
     
     // بحث الحسابات - حل بسيط وقوي
     $(document).on('input focus', '.account-search', function() {
@@ -338,6 +339,15 @@ $(document).ready(function(){
         let hasErrors = false;
         
         console.log('📤 محاولة إرسال النموذج...');
+        console.log('🎯 Action URL:', $(this).attr('action'));
+        console.log('📋 Method:', $(this).attr('method'));
+        
+        // طباعة جميع البيانات قبل الإرسال
+        let formData = new FormData(this);
+        console.log('📦 بيانات النموذج:');
+        for (let [key, value] of formData.entries()) {
+            console.log(`  ${key}: ${value}`);
+        }
         
         // فحص جميع السطور
         $('#linesTable tbody tr').each(function(index){
@@ -382,8 +392,20 @@ $(document).ready(function(){
         
         console.log('🎉 النموذج صحيح! جاري الإرسال...');
         
+        // التأكد من وجود CSRF token
+        let csrfToken = $('input[name="_token"]').val();
+        console.log('🔐 CSRF Token:', csrfToken);
+        
+        if (!csrfToken) {
+            alert('❌ خطأ في الأمان: CSRF token مفقود');
+            e.preventDefault();
+            return false;
+        }
+        
         // إظهار loading
         $(this).find('button[type="submit"]').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...');
+        
+        console.log('🚀 إرسال النموذج الآن...');
         return true;
     });
 });

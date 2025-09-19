@@ -257,18 +257,35 @@ class JournalEntryController extends Controller
     
     public function storeSingleCurrency(Request $request)
     {
-        $request->validate([
-            'currency' => 'required|string|max:3',
-            'date' => 'required|date',
-            'description' => 'required|string|max:255',
-            'lines' => 'required|array|min:2',
-            'lines.*.account_id' => 'required|exists:accounts,id',
-            'lines.*.description' => 'nullable|string|max:255',
-            'lines.*.debit' => 'nullable|numeric|min:0',
-            'lines.*.credit' => 'nullable|numeric|min:0',
-            'lines.*.currency' => 'required|string|max:3',
-            'lines.*.exchange_rate' => 'required|numeric|min:0.0001',
+        // تسجيل البيانات المستلمة للـ debugging
+        \Log::info('📥 تم استلام بيانات القيد الجديد', [
+            'request_data' => $request->all(),
+            'user_id' => auth()->id()
         ]);
+        
+        try {
+            $request->validate([
+                'currency' => 'required|string|max:3',
+                'date' => 'required|date',
+                'description' => 'required|string|max:255',
+                'lines' => 'required|array|min:2',
+                'lines.*.account_id' => 'required|exists:accounts,id',
+                'lines.*.description' => 'nullable|string|max:255',
+                'lines.*.debit' => 'nullable|numeric|min:0',
+                'lines.*.credit' => 'nullable|numeric|min:0',
+                'lines.*.currency' => 'required|string|max:3',
+                'lines.*.exchange_rate' => 'required|numeric|min:0.0001',
+            ]);
+            
+            \Log::info('✅ تم اجتياز validation بنجاح');
+            
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error('❌ فشل في validation', [
+                'errors' => $e->errors(),
+                'request_data' => $request->all()
+            ]);
+            throw $e;
+        }
 
         DB::beginTransaction();
         try {
@@ -308,11 +325,25 @@ class JournalEntryController extends Controller
             }
 
             DB::commit();
+            
+            \Log::info('🎉 تم إنشاء القيد بنجاح', [
+                'journal_entry_id' => $journalEntry->id,
+                'total_debit' => $totalDebit,
+                'total_credit' => $totalCredit
+            ]);
+            
             return redirect()->route('journal-entries.show', $journalEntry)
                 ->with('success', 'تم إنشاء القيد المحاسبي بنجاح');
                 
         } catch (\Exception $e) {
             DB::rollBack();
+            
+            \Log::error('❌ فشل في حفظ القيد', [
+                'error_message' => $e->getMessage(),
+                'error_trace' => $e->getTraceAsString(),
+                'request_data' => $request->all()
+            ]);
+            
             return back()->withErrors(['error' => 'حدث خطأ أثناء حفظ القيد: ' . $e->getMessage()])
                 ->withInput();
         }
