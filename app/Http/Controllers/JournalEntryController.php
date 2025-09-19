@@ -257,14 +257,37 @@ class JournalEntryController extends Controller
     
     public function storeSingleCurrency(Request $request)
     {
-        // تسجيل البيانات المستلمة للـ debugging
-        \Log::info('📥 تم استلام بيانات القيد الجديد', [
-            'request_data' => $request->all(),
-            'user_id' => auth()->id()
+        // debugging شامل
+        \Log::info('🔥 بداية storeSingleCurrency', [
+            'timestamp' => now(),
+            'user_id' => auth()->id(),
+            'ip' => $request->ip(),
+            'user_agent' => $request->userAgent()
         ]);
         
+        \Log::info('📥 البيانات المستلمة كاملة', [
+            'all_data' => $request->all(),
+            'headers' => $request->headers->all(),
+            'method' => $request->method(),
+            'url' => $request->fullUrl()
+        ]);
+        
+        // فحص أساسي
+        if (!$request->has('lines') || empty($request->lines)) {
+            \Log::error('❌ لا توجد بيانات lines في الطلب!', [
+                'request_keys' => array_keys($request->all()),
+                'request_data' => $request->all()
+            ]);
+            return back()->withErrors(['error' => 'لم يتم إرسال بيانات السطور بشكل صحيح'])
+                ->withInput();
+        }
+        
+        \Log::info('✅ تم التأكد من وجود بيانات lines');
+        
         try {
-            $request->validate([
+            \Log::info('🔍 بداية Validation');
+            
+            $rules = [
                 'currency' => 'required|string|max:3',
                 'date' => 'required|date',
                 'description' => 'required|string|max:255',
@@ -275,16 +298,33 @@ class JournalEntryController extends Controller
                 'lines.*.credit' => 'nullable|numeric|min:0',
                 'lines.*.currency' => 'required|string|max:3',
                 'lines.*.exchange_rate' => 'required|numeric|min:0.0001',
-            ]);
+            ];
+            
+            \Log::info('📋 Validation rules:', $rules);
+            
+            $request->validate($rules);
             
             \Log::info('✅ تم اجتياز validation بنجاح');
             
         } catch (\Illuminate\Validation\ValidationException $e) {
             \Log::error('❌ فشل في validation', [
                 'errors' => $e->errors(),
+                'failed_rules' => $e->validator->failed(),
                 'request_data' => $request->all()
             ]);
-            throw $e;
+            
+            // إرجاع أخطاء واضحة للمستخدم
+            return back()->withErrors($e->errors())
+                ->with('error', 'يوجد أخطاء في البيانات المدخلة')
+                ->withInput();
+        } catch (\Exception $e) {
+            \Log::error('❌ خطأ غير متوقع في validation', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return back()->withErrors(['error' => 'حدث خطأ في التحقق من البيانات: ' . $e->getMessage()])
+                ->withInput();
         }
 
         DB::beginTransaction();
