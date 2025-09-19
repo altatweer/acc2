@@ -225,8 +225,9 @@ $(document).ready(function(){
     // بحث الحسابات - حل بسيط وقوي
     $(document).on('input focus', '.account-search', function() {
         let $input = $(this);
-        let $hiddenInput = $input.siblings('.account-id-field');
-        let $suggestions = $input.siblings('.account-suggestions');
+        let $row = $input.closest('tr');
+        let $hiddenInput = $row.find('.account-id-field');
+        let $suggestions = $row.find('.account-suggestions');
         let searchValue = $input.val().trim();
         
         console.log('🔍 البحث عن:', searchValue);
@@ -265,9 +266,11 @@ $(document).ready(function(){
         let accountId = $item.data('id');
         let accountText = $item.data('text');
         
+        // الحصول على الـ row الصحيح
+        let $row = $item.closest('tr');
         let $suggestions = $item.parent();
-        let $input = $suggestions.siblings('.account-search');
-        let $hiddenInput = $suggestions.siblings('.account-id-field');
+        let $input = $row.find('.account-search');
+        let $hiddenInput = $row.find('.account-id-field');
         
         $input.val(accountText).addClass('selected').removeClass('invalid');
         $hiddenInput.val(accountId);
@@ -275,6 +278,7 @@ $(document).ready(function(){
         
         console.log('✅ تم اختيار الحساب:', accountId, '-', accountText);
         console.log('💾 القيمة المحفوظة:', $hiddenInput.attr('name'), '=', $hiddenInput.val());
+        console.log('🎯 في الصف:', $row.index() + 1);
     });
     
     // إخفاء الاقتراحات عند النقر خارجها
@@ -287,8 +291,9 @@ $(document).ready(function(){
     // إخفاء الاقتراحات عند blur
     $(document).on('blur', '.account-search', function() {
         let $input = $(this);
+        let $row = $input.closest('tr');
         setTimeout(function() {
-            $input.siblings('.account-suggestions').hide();
+            $row.find('.account-suggestions').hide();
         }, 200);
     });
     
