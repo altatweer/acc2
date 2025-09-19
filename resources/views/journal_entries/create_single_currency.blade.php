@@ -22,7 +22,7 @@
                         <label>العملة</label>
                         <select name="currency" class="form-control" required>
                             @foreach($currencies as $curr)
-                                <option value="{{ $curr }}" {{ $curr === $defaultCurrency ? 'selected' : '' }}>{{ $curr }}</option>
+                                <option value="{{ $curr->code }}" {{ $curr->code === $defaultCurrency ? 'selected' : '' }}>{{ $curr->code }} - {{ $curr->name }}</option>
                             @endforeach
                         </select>
                     </div>
