@@ -311,6 +311,12 @@ class JournalEntryController extends Controller
                 throw new \Exception("القيد غير متوازن. المدين: $totalDebit، الدائن: $totalCredit");
             }
 
+            // تحديث الإجماليات في القيد الرئيسي
+            $journalEntry->update([
+                'total_debit' => $totalDebit,
+                'total_credit' => $totalCredit
+            ]);
+
             DB::commit();
             
             return redirect()->route('journal-entries.show', $journalEntry)
@@ -378,6 +384,12 @@ class JournalEntryController extends Controller
             if (abs($totalDebitBase - $totalCreditBase) > 0.01) {
                 throw new \Exception("القيد غير متوازن بالعملة الأساسية. المدين: $totalDebitBase، الدائن: $totalCreditBase");
             }
+
+            // تحديث الإجماليات في القيد الرئيسي (بالعملة الأساسية)
+            $journalEntry->update([
+                'total_debit' => $totalDebitBase,
+                'total_credit' => $totalCreditBase
+            ]);
 
             DB::commit();
             return redirect()->route('journal-entries.show', $journalEntry)
