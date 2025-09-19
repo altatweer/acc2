@@ -1,58 +1,57 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container-fluid">
-    <h1 class="mb-4">إضافة قيد عملة واحدة</h1>
-    <form action="{{ route('journal-entries.store') }}" method="POST" id="journalForm">
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-12">
+            <h2 class="mb-4 text-center">
+                <i class="fas fa-plus-circle"></i> إنشاء قيد أحادي العملة
+            </h2>
+        </div>
+    </div>
+    
+    <form action="{{ route('journal-entries.store-single-currency') }}" method="POST" id="journalForm">
         @csrf
-        <div class="card mb-3">
+        <div class="card">
+            <div class="card-header">
+                <h3>تفاصيل القيد</h3>
+            </div>
             <div class="card-body">
-                <div class="form-row">
-                    <div class="form-group col-md-3">
-                        <label>التاريخ</label>
-                        <input type="date" name="date" class="form-control" value="{{ old('date', date('Y-m-d')) }}" required>
-                    </div>
-                    <div class="form-group col-md-6">
-                        <label>الوصف</label>
-                        <input type="text" name="description" class="form-control" value="{{ old('description') }}" placeholder="وصف القيد">
-                    </div>
-                    <div class="form-group col-md-3">
+                <div class="row mb-3">
+                    <div class="col-md-4">
                         <label>العملة</label>
                         <select name="currency" class="form-control" required>
-                            @foreach($currencies as $cur)
-                                <option value="{{ $cur->code }}" {{ $cur->code == $defaultCurrency ? 'selected' : '' }}>{{ $cur->code }}</option>
+                            @foreach($currencies as $curr)
+                                <option value="{{ $curr }}" {{ $curr === $defaultCurrency ? 'selected' : '' }}>{{ $curr }}</option>
                             @endforeach
                         </select>
                     </div>
+                    <div class="col-md-4">
+                        <label>التاريخ</label>
+                        <input type="date" name="date" class="form-control" value="{{ date('Y-m-d') }}" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label>الوصف</label>
+                        <input type="text" name="description" class="form-control" placeholder="وصف القيد" required>
+                    </div>
                 </div>
-            </div>
-        </div>
-        <div class="card">
-            <div class="card-header"><strong>السطور</strong></div>
-            <div class="card-body p-0">
-                <table class="table table-bordered mb-0" id="linesTable">
+                
+                <table class="table table-bordered" id="linesTable">
                     <thead>
                         <tr>
-                            <th>الحساب</th>
-                            <th>الوصف</th>
-                            <th>مدين</th>
-                            <th>دائن</th>
-                            <th>إجراء</th>
+                            <th style="width: 35%">الحساب</th>
+                            <th style="width: 30%">الوصف</th>
+                            <th style="width: 15%">مدين</th>
+                            <th style="width: 15%">دائن</th>
+                            <th style="width: 5%">إجراء</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
                             <td>
-                                <input type="text" class="form-control account-search" placeholder="ابحث عن الحساب..." list="accountsList" autocomplete="off">
+                                <input type="text" class="form-control account-search" placeholder="ابحث عن الحساب..." autocomplete="off">
                                 <input type="hidden" name="lines[0][account_id]" class="account-id-field" required>
-                                <select class="d-none account-select">
-                                    <option value="">-- اختر الحساب --</option>
-                                    @foreach($accounts as $acc)
-                                        <option value="{{ $acc->id }}" data-search="{{ $acc->code ? $acc->code . ' - ' . $acc->name : $acc->name }}">
-                                            {{ $acc->code ? $acc->code . ' - ' . $acc->name : $acc->name }}
-                                        </option>
-                                    @endforeach
-                                </select>
+                                <div class="account-suggestions" style="display: none;"></div>
                             </td>
                             <td><input type="text" name="lines[0][description]" class="form-control" placeholder="وصف العملية"></td>
                             <td><input type="number" name="lines[0][debit]" class="form-control debit" step="0.01" value="0" min="0" placeholder="0.00"></td>
@@ -67,16 +66,9 @@
                         </tr>
                         <tr>
                             <td>
-                                <input type="text" class="form-control account-search" placeholder="ابحث عن الحساب..." list="accountsList" autocomplete="off">
+                                <input type="text" class="form-control account-search" placeholder="ابحث عن الحساب..." autocomplete="off">
                                 <input type="hidden" name="lines[1][account_id]" class="account-id-field" required>
-                                <select class="d-none account-select">
-                                    <option value="">-- اختر الحساب --</option>
-                                    @foreach($accounts as $acc)
-                                        <option value="{{ $acc->id }}" data-search="{{ $acc->code ? $acc->code . ' - ' . $acc->name : $acc->name }}">
-                                            {{ $acc->code ? $acc->code . ' - ' . $acc->name : $acc->name }}
-                                        </option>
-                                    @endforeach
-                                </select>
+                                <div class="account-suggestions" style="display: none;"></div>
                             </td>
                             <td><input type="text" name="lines[1][description]" class="form-control" placeholder="وصف العملية"></td>
                             <td><input type="number" name="lines[1][debit]" class="form-control debit" step="0.01" value="0" min="0" placeholder="0.00"></td>
@@ -106,12 +98,10 @@
         </div>
     </form>
     
-    <!-- قائمة الحسابات للبحث -->
-    <datalist id="accountsList">
-        @foreach($accounts as $acc)
-            <option value="{{ $acc->code ? $acc->code . ' - ' . $acc->name : $acc->name }}" data-id="{{ $acc->id }}"></option>
-        @endforeach
-    </datalist>
+    <!-- بيانات الحسابات المخفية للجافا سكريبت -->
+    <script type="text/javascript">
+        window.accountsData = @json($accounts->map(function($acc) { return ['id' => $acc->id, 'text' => ($acc->code ? $acc->code . ' - ' . $acc->name : $acc->name)]; }));
+    </script>
 </div>
 @endsection
 
@@ -147,6 +137,35 @@
     background-color: #ffe6e6;
 }
 
+/* اقتراحات البحث */
+.account-suggestions {
+    position: absolute;
+    z-index: 1000;
+    max-height: 200px;
+    overflow-y: auto;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    width: 100%;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.suggestion-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid #eee;
+    text-align: right;
+    direction: rtl;
+}
+
+.suggestion-item:hover {
+    background-color: #f0f8ff;
+}
+
+.suggestion-item:last-child {
+    border-bottom: none;
+}
+
 #linesTable th {
     background-color: #f8f9fa;
     text-align: center;
@@ -157,6 +176,7 @@
 #linesTable td {
     border: 1px solid #dee2e6;
     vertical-align: middle;
+    position: relative;
 }
 
 .form-control {
@@ -170,60 +190,105 @@
 }
 
 .btn {
-    margin: 2px;
     border-radius: 4px;
 }
 
-.btn i {
-    margin-left: 5px;
+.table {
+    margin-bottom: 0;
+}
+
+.card {
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    border: 1px solid #e3e6ea;
+}
+
+.card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #e3e6ea;
+}
+
+.card-footer {
+    background-color: #f8f9fa;
+    border-top: 1px solid #e3e6ea;
 }
 </style>
 @endpush
 
 @push('scripts')
 <script>
+let lineIdx = 2;
+
 $(document).ready(function(){
-    let lineIdx = $('#linesTable tbody tr').length;
+    console.log('🚀 تم تحميل الصفحة، البيانات المتوفرة:', window.accountsData?.length || 0, 'حساب');
     
-    // ربط البحث بالحسابات - إصلاح مشكلة عدم الحفظ
-    $(document).on('input change blur', '.account-search', function() {
+    // بحث الحسابات - حل بسيط وقوي
+    $(document).on('input focus', '.account-search', function() {
         let $input = $(this);
         let $hiddenInput = $input.siblings('.account-id-field');
-        let $select = $input.siblings('.account-select');
+        let $suggestions = $input.siblings('.account-suggestions');
         let searchValue = $input.val().trim();
         
-        console.log('البحث عن:', searchValue);
+        console.log('🔍 البحث عن:', searchValue);
         
-        // البحث عن المطابقة في الـ select
-        let found = false;
-        $select.find('option').each(function() {
-            let optionText = $(this).data('search') || $(this).text().trim();
-            if (optionText === searchValue) {
-                // تحديث الحقل المخفي (المهم للحفظ!)
-                $hiddenInput.val($(this).val());
-                $input.removeClass('invalid').addClass('selected');
-                found = true;
-                console.log('تم العثور على الحساب! ID:', $(this).val(), 'اسم:', optionText);
-                return false;
-            }
-        });
-        
-        if (!found && searchValue !== '') {
-            $hiddenInput.val('');
-            $input.removeClass('selected').addClass('invalid');
-            console.log('لم يتم العثور على مطابقة للنص:', searchValue);
-        } else if (searchValue === '') {
+        if (searchValue.length < 1) {
+            $suggestions.hide().empty();
             $hiddenInput.val('');
             $input.removeClass('selected invalid');
+            return;
         }
         
-        // طباعة القيمة النهائية المرسلة
-        console.log('القيمة التي ستُرسل:', $hiddenInput.attr('name'), '=', $hiddenInput.val());
+        // فلترة الحسابات
+        let matches = window.accountsData.filter(account => 
+            account.text.toLowerCase().includes(searchValue.toLowerCase())
+        );
+        
+        console.log('📋 تم العثور على', matches.length, 'نتيجة');
+        
+        if (matches.length > 0) {
+            let html = '';
+            matches.slice(0, 10).forEach(account => {
+                html += `<div class="suggestion-item" data-id="${account.id}" data-text="${account.text}">${account.text}</div>`;
+            });
+            
+            $suggestions.html(html).show();
+        } else {
+            $suggestions.hide().empty();
+            $input.addClass('invalid').removeClass('selected');
+            $hiddenInput.val('');
+        }
     });
     
-    // تركيز وتحديد النص عند الضغط
-    $(document).on('focus', '.account-search', function() {
-        $(this).select();
+    // اختيار الحساب
+    $(document).on('click', '.suggestion-item', function() {
+        let $item = $(this);
+        let accountId = $item.data('id');
+        let accountText = $item.data('text');
+        
+        let $suggestions = $item.parent();
+        let $input = $suggestions.siblings('.account-search');
+        let $hiddenInput = $suggestions.siblings('.account-id-field');
+        
+        $input.val(accountText).addClass('selected').removeClass('invalid');
+        $hiddenInput.val(accountId);
+        $suggestions.hide().empty();
+        
+        console.log('✅ تم اختيار الحساب:', accountId, '-', accountText);
+        console.log('💾 القيمة المحفوظة:', $hiddenInput.attr('name'), '=', $hiddenInput.val());
+    });
+    
+    // إخفاء الاقتراحات عند النقر خارجها
+    $(document).on('click', function(e) {
+        if (!$(e.target).closest('.account-search, .account-suggestions').length) {
+            $('.account-suggestions').hide();
+        }
+    });
+    
+    // إخفاء الاقتراحات عند blur
+    $(document).on('blur', '.account-search', function() {
+        let $input = $(this);
+        setTimeout(function() {
+            $input.siblings('.account-suggestions').hide();
+        }, 200);
     });
     
     // تحديث العملة
@@ -238,14 +303,9 @@ $(document).ready(function(){
         
         let row = `<tr>
             <td>
-                <input type="text" class="form-control account-search" placeholder="ابحث عن الحساب..." list="accountsList" autocomplete="off">
+                <input type="text" class="form-control account-search" placeholder="ابحث عن الحساب..." autocomplete="off">
                 <input type="hidden" name="lines[${lineIdx}][account_id]" class="account-id-field" required>
-                <select class="d-none account-select">
-                    <option value="">-- اختر الحساب --</option>
-                    @foreach($accounts as $acc)
-                        <option value="{{ $acc->id }}" data-search="{{ $acc->code ? $acc->code . ' - ' . $acc->name : $acc->name }}">{{ $acc->code ? $acc->code . ' - ' . $acc->name : $acc->name }}</option>
-                    @endforeach
-                </select>
+                <div class="account-suggestions" style="display: none;"></div>
             </td>
             <td><input type="text" name="lines[${lineIdx}][description]" class="form-control" placeholder="وصف العملية"></td>
             <td><input type="number" name="lines[${lineIdx}][debit]" class="form-control debit" step="0.01" value="0" min="0" placeholder="0.00"></td>
@@ -277,18 +337,25 @@ $(document).ready(function(){
         let debit = 0, credit = 0;
         let hasErrors = false;
         
+        console.log('📤 محاولة إرسال النموذج...');
+        
         // فحص جميع السطور
-        $('#linesTable tbody tr').each(function(){
-            let accountId = $(this).find('.account-id-field').val() || $(this).find('select[name*="[account_id]"]').val();
+        $('#linesTable tbody tr').each(function(index){
+            let accountId = $(this).find('.account-id-field').val();
             let $searchInput = $(this).find('.account-search');
+            
+            console.log(`📝 السطر ${index + 1}:`, {
+                accountId: accountId,
+                searchText: $searchInput.val()
+            });
             
             if (!accountId) {
                 $searchInput.addClass('invalid');
                 hasErrors = true;
-                console.log('سطر بدون حساب مختار - نص البحث:', $searchInput.val());
+                console.log('❌ السطر', index + 1, 'بدون حساب مختار');
             } else {
                 $searchInput.removeClass('invalid').addClass('selected');
-                console.log('حساب مختار بنجاح:', accountId);
+                console.log('✅ السطر', index + 1, 'صحيح');
             }
             
             debit += parseFloat($(this).find('.debit').val()) || 0;
@@ -312,6 +379,8 @@ $(document).ready(function(){
             e.preventDefault();
             return false;
         }
+        
+        console.log('🎉 النموذج صحيح! جاري الإرسال...');
         
         // إظهار loading
         $(this).find('button[type="submit"]').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...');
