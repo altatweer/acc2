@@ -262,7 +262,7 @@ class JournalEntryController extends Controller
             'currency' => 'required|string|max:3',
             'date' => 'required|date',
             'description' => 'required|string|max:255',
-            'lines' => 'required|array|size:2',
+            'lines' => 'required|array|min:2',
             'lines.*.account_id' => 'required|exists:accounts,id',
             'lines.*.description' => 'nullable|string|max:255',
             'lines.*.debit' => 'nullable|numeric|min:0',
@@ -278,7 +278,7 @@ class JournalEntryController extends Controller
                 'date' => $request->date,
                 'description' => $request->description,
                 'currency' => $request->currency,
-                'status' => 'approved',
+                'status' => 'active',
                 'created_by' => auth()->id(),
             ]);
 
