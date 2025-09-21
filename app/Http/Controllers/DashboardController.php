@@ -24,15 +24,36 @@ class DashboardController extends Controller
             $withdrawCount = \App\Models\Voucher::where('type', 'withdraw')->count();
             
             // جلب جميع الصناديق النقدية مع الرصيد
-            $userCashBoxes = \App\Models\Account::where('is_cash_box', 1)->get()->map(function($box) {
+            $cashBoxes = \App\Models\Account::where('is_cash_box', 1)->get();
+            
+            // حساب الأرصدة الفردية لكل صندوق
+            $userCashBoxes = $cashBoxes->map(function($box) {
                 $balance = $box->journalEntryLines()->selectRaw('SUM(debit-credit) as bal')->value('bal') ?? 0;
                 return [
                     'id' => $box->id,
                     'name' => $box->name,
-                    'currency' => $box->currency,
+                    'currency' => $box->default_currency ?? $box->currency ?? 'IQD',
                     'balance' => $balance,
                 ];
             });
+
+            // تجميع الأرصدة حسب العملة
+            $currencyBalances = $cashBoxes->map(function($box) {
+                $balance = $box->journalEntryLines()->selectRaw('SUM(debit-credit) as bal')->value('bal') ?? 0;
+                return [
+                    'currency' => $box->default_currency ?? $box->currency ?? 'IQD',
+                    'balance' => $balance,
+                ];
+            })->groupBy('currency')->map(function($group, $currency) {
+                $totalBalance = $group->sum('balance');
+                $accountCount = $group->count();
+                return [
+                    'currency' => $currency,
+                    'total_balance' => $totalBalance,
+                    'accounts_count' => $accountCount,
+                    'formatted_balance' => number_format($totalBalance, 2),
+                ];
+            })->values();
         } else {
             // إذا كان المستخدم عادي - جلب البيانات المرتبطة بالمستخدم فقط
             $accountsCount = $user->cashBoxes()->count();
@@ -46,21 +67,42 @@ class DashboardController extends Controller
             $withdrawCount = \App\Models\Voucher::where('type', 'withdraw')->where('created_by', $user->id)->count();
             
             // جلب صناديق الموظف مع الرصيد
-            $userCashBoxes = $user->cashBoxes()->get()->map(function($box) {
+            $cashBoxes = $user->cashBoxes()->get();
+            
+            // حساب الأرصدة الفردية لكل صندوق
+            $userCashBoxes = $cashBoxes->map(function($box) {
                 $balance = $box->journalEntryLines()->selectRaw('SUM(debit-credit) as bal')->value('bal') ?? 0;
                 return [
                     'id' => $box->id,
                     'name' => $box->name,
-                    'currency' => $box->currency,
+                    'currency' => $box->default_currency ?? $box->currency ?? 'IQD',
                     'balance' => $balance,
                 ];
             });
+
+            // تجميع الأرصدة حسب العملة
+            $currencyBalances = $cashBoxes->map(function($box) {
+                $balance = $box->journalEntryLines()->selectRaw('SUM(debit-credit) as bal')->value('bal') ?? 0;
+                return [
+                    'currency' => $box->default_currency ?? $box->currency ?? 'IQD',
+                    'balance' => $balance,
+                ];
+            })->groupBy('currency')->map(function($group, $currency) {
+                $totalBalance = $group->sum('balance');
+                $accountCount = $group->count();
+                return [
+                    'currency' => $currency,
+                    'total_balance' => $totalBalance,
+                    'accounts_count' => $accountCount,
+                    'formatted_balance' => number_format($totalBalance, 2),
+                ];
+            })->values();
         }
         
         return view('dashboard', compact(
             'accountsCount', 'transactionsCount', 'vouchersCount', 'usersCount',
             'receiptCount', 'paymentCount', 'transferCount', 'depositCount', 'withdrawCount',
-            'userCashBoxes'
+            'userCashBoxes', 'currencyBalances'
         ));
     }
 }

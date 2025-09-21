@@ -171,7 +171,85 @@
         </div>
       </div>
 
-      <!-- صناديق الكاش -->
+      <!-- أرصدة العملات المجمعة -->
+      @if(isset($currencyBalances) && $currencyBalances->count())
+      <div class="row">
+        <div class="col-12">
+          <div class="card card-success card-outline">
+            <div class="card-header">
+              <h3 class="card-title">
+                <i class="fas fa-coins mr-1"></i>
+                إجمالي الأرصدة حسب العملة
+              </h3>
+            </div>
+            <div class="card-body">
+              <div class="row">
+                @foreach($currencyBalances as $currencyData)
+                <?php
+                  // تحديد اللون والأيقونة حسب العملة
+                  $gradients = [
+                    'USD' => 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)', // أخضر للدولار
+                    'IQD' => 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)', // أزرق للدينار
+                    'EUR' => 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)', // بنفسجي لليورو
+                    'GBP' => 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)', // أحمر للجنيه
+                    'AED' => 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', // برتقالي للدرهم
+                    'default' => 'linear-gradient(135deg, #64748b 0%, #475569 100%)' // رمادي للعملات الأخرى
+                  ];
+                  
+                  $currentGradient = $gradients[$currencyData['currency']] ?? $gradients['default'];
+                ?>
+                <div class="col-lg-3 col-md-4 col-sm-6 mb-3">
+                  <div class="card h-100" style="border-radius: 15px; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.1); overflow: hidden; background: {{ $currentGradient }};">
+                    <div class="card-body p-4 text-center text-white">
+                      <div class="mb-3">
+                        @if($currencyData['currency'] == 'USD')
+                          <i class="fas fa-dollar-sign" style="font-size: 2.5rem; opacity: 0.8;"></i>
+                        @elseif($currencyData['currency'] == 'IQD')
+                          <i class="fas fa-coins" style="font-size: 2.5rem; opacity: 0.8;"></i>
+                        @elseif($currencyData['currency'] == 'EUR')
+                          <i class="fas fa-euro-sign" style="font-size: 2.5rem; opacity: 0.8;"></i>
+                        @elseif($currencyData['currency'] == 'GBP')
+                          <i class="fas fa-pound-sign" style="font-size: 2.5rem; opacity: 0.8;"></i>
+                        @elseif($currencyData['currency'] == 'AED')
+                          <i class="fas fa-money-bill-wave" style="font-size: 2.5rem; opacity: 0.8;"></i>
+                        @else
+                          <i class="fas fa-money-bill-wave" style="font-size: 2.5rem; opacity: 0.8;"></i>
+                        @endif
+                      </div>
+                      
+                      <h4 class="mb-1" style="font-weight: 700;">{{ $currencyData['currency'] }}</h4>
+                      
+                      <div class="mt-2 mb-3">
+                        <h3 class="mb-0" style="font-weight: 800; text-shadow: 0 2px 4px rgba(0,0,0,0.3);">
+                          {{ $currencyData['formatted_balance'] }}
+                        </h3>
+                      </div>
+                      
+                      <div class="d-flex justify-content-center align-items-center">
+                        <small class="opacity-75">
+                          <i class="fas fa-boxes mr-1"></i>
+                          {{ $currencyData['accounts_count'] }} {{ $currencyData['accounts_count'] == 1 ? 'صندوق' : 'صناديق' }}
+                        </small>
+                      </div>
+                    </div>
+                    
+                    <div class="card-footer text-center p-2" style="background: rgba(255,255,255,0.1); border-top: 1px solid rgba(255,255,255,0.1);">
+                      <small class="text-white-75">
+                        <i class="fas fa-chart-line mr-1"></i>
+                        إجمالي العملة
+                      </small>
+                    </div>
+                  </div>
+                </div>
+                @endforeach
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      @endif
+
+      <!-- صناديق الكاش التفصيلية -->
       @if($userCashBoxes && $userCashBoxes->count())
       <div class="row">
         <div class="col-12">
@@ -179,7 +257,7 @@
             <div class="card-header">
               <h3 class="card-title">
                 <i class="fas fa-cash-register mr-1"></i>
-                @lang('messages.your_cash_boxes')
+                @lang('messages.your_cash_boxes') - التفاصيل
               </h3>
             </div>
             <div class="card-body">
