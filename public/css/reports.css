@@ -1,0 +1,651 @@
+/* ============================================
+   Modern Reports Design System
+   ============================================ */
+
+/* Typography - Professional & Clean */
+.reports-container {
+    font-family: 'Tajawal', 'Cairo', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    background-attachment: fixed;
+    font-size: 14px;
+    line-height: 1.7;
+    color: #212529;
+    min-height: 100vh;
+    padding: 24px 0;
+}
+
+.reports-container .container {
+    max-width: 1400px;
+}
+
+/* Modern Card Styles - Professional & Smooth */
+.report-card {
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    border: 1px solid #e9ecef;
+    background: #FFFFFF;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    margin-bottom: 32px;
+    overflow: hidden;
+}
+
+.report-card:hover {
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+    transform: translateY(-5px);
+    border-color: #dee2e6;
+}
+
+/* Staggered animation for multiple cards */
+.report-card:nth-child(1) {
+    animation-delay: 0s;
+}
+
+.report-card:nth-child(2) {
+    animation-delay: 0.1s;
+}
+
+.report-card:nth-child(3) {
+    animation-delay: 0.2s;
+}
+
+.report-card:nth-child(n+4) {
+    animation-delay: 0.3s;
+}
+
+.report-card-header {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border-bottom: 2px solid #e9ecef;
+    padding: 20px 24px;
+    border-radius: 16px 16px 0 0;
+}
+
+.report-card-body {
+    padding: 24px;
+}
+
+.report-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #212529;
+    margin: 0;
+    letter-spacing: -0.3px;
+}
+
+/* Filter Section - Clean & Professional */
+.report-filters {
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 32px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.report-filters .form-label {
+    font-weight: 600;
+    font-size: 13px;
+    color: #495057;
+    margin-bottom: 10px;
+    display: block;
+    letter-spacing: 0.2px;
+}
+
+.report-filters .form-label i {
+    color: #6c757d;
+    margin-left: 4px;
+    font-size: 12px;
+}
+
+.report-filters .form-control,
+.report-filters .form-select {
+    border: 1.5px solid #dee2e6;
+    border-radius: 8px;
+    padding: 11px 14px;
+    font-size: 14px;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    background-color: #ffffff;
+    color: #212529;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.report-filters .form-control:hover,
+.report-filters .form-select:hover {
+    border-color: #adb5bd;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.report-filters .form-control:focus,
+.report-filters .form-select:focus {
+    border-color: #2196F3;
+    box-shadow: 0 0 0 4px rgba(33, 150, 243, 0.12), 0 2px 6px rgba(0, 0, 0, 0.08);
+    outline: none;
+    transform: translateY(-1px);
+}
+
+.report-filters .form-control::placeholder,
+.report-filters .form-select::placeholder {
+    color: #adb5bd;
+    opacity: 0.7;
+}
+
+/* Tables - Professional & Clean Design */
+.report-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: #FFFFFF;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.report-table thead {
+    background: linear-gradient(135deg, #f8f9fa 0%, #f1f3f5 100%);
+}
+
+.report-table thead th {
+    padding: 16px 20px;
+    font-weight: 600;
+    font-size: 13px;
+    color: #495057;
+    text-align: right;
+    border-bottom: 2px solid #dee2e6;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    font-size: 12px;
+}
+
+.report-table tbody tr {
+    transition: all 0.15s ease;
+    border-bottom: 1px solid #f1f3f5;
+}
+
+.report-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.report-table tbody tr:hover {
+    background-color: #f8f9fa;
+    transform: translateX(-2px);
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.06);
+    border-left: 3px solid #2196F3;
+}
+
+.report-table tbody td {
+    padding: 14px 20px;
+    font-size: 14px;
+    color: #212529;
+    vertical-align: middle;
+}
+
+.report-table tbody td.text-end {
+    text-align: left;
+    font-family: 'SF Mono', 'Monaco', 'Cascadia Code', 'Roboto Mono', monospace;
+    font-weight: 500;
+    color: #495057;
+    letter-spacing: 0.5px;
+}
+
+.report-table tfoot {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    font-weight: 700;
+}
+
+.report-table tfoot th,
+.report-table tfoot td {
+    padding: 18px 20px;
+    border-top: 3px solid #dee2e6;
+    font-size: 15px;
+    color: #212529;
+}
+
+.report-table tfoot td.text-end {
+    font-family: 'SF Mono', 'Monaco', 'Cascadia Code', 'Roboto Mono', monospace;
+    font-weight: 700;
+    color: #1976d2;
+    font-size: 16px;
+    letter-spacing: 0.8px;
+}
+
+.report-table tfoot th {
+    font-size: 15px;
+    color: #495057;
+    letter-spacing: 0.3px;
+}
+
+/* Currency Badges - Elegant Design */
+.currency-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    background: #f0f4f8;
+    color: #495057;
+    border: 1px solid #dee2e6;
+    letter-spacing: 0.3px;
+    transition: all 0.2s ease;
+}
+
+.currency-badge:hover {
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    cursor: pointer;
+}
+
+.currency-badge-primary {
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    color: #1565c0;
+    border-color: #90caf9;
+}
+
+.currency-badge-success {
+    background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+    color: #2e7d32;
+    border-color: #81c784;
+}
+
+.currency-badge-info {
+    background: linear-gradient(135deg, #e1f5fe 0%, #b3e5fc 100%);
+    color: #0277bd;
+    border-color: #4dd0e1;
+}
+
+/* Exchange Rate Info - Smooth & Professional */
+.exchange-rate-info {
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    border: 1px solid #e9ecef;
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 32px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.exchange-rate-info h6 {
+    color: #0277bd;
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+
+.exchange-rate-card {
+    background: #FFFFFF;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    height: 100%;
+}
+
+.exchange-rate-card:hover {
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+    transform: translateY(-3px) scale(1.02);
+    border-color: #dee2e6;
+}
+
+.exchange-rate-card.is-default:hover {
+    box-shadow: 0 6px 20px rgba(33, 150, 243, 0.25);
+    transform: translateY(-3px) scale(1.02);
+}
+
+.exchange-rate-card.is-default {
+    border: 2px solid #2196F3;
+    background: linear-gradient(135deg, #f0f7ff 0%, #e3f2fd 100%);
+    box-shadow: 0 4px 12px rgba(33, 150, 243, 0.15);
+}
+
+/* Buttons */
+.report-btn {
+    border-radius: 6px;
+    padding: 10px 20px;
+    font-weight: 500;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+}
+
+.report-btn-primary {
+    background: #2196F3;
+    border-color: #2196F3;
+    color: #FFFFFF;
+}
+
+.report-btn-primary:hover {
+    background: #1976d2;
+    border-color: #1976d2;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(33, 150, 243, 0.35);
+}
+
+.report-btn-primary:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(33, 150, 243, 0.25);
+}
+
+.report-btn-success {
+    background: #4CAF50;
+    border-color: #4CAF50;
+    color: #FFFFFF;
+}
+
+.report-btn-success:hover {
+    background: #388e3c;
+    border-color: #388e3c;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(76, 175, 80, 0.3);
+}
+
+.report-btn-outline {
+    background: transparent;
+    border-color: #2196F3;
+    color: #2196F3;
+}
+
+.report-btn-outline:hover {
+    background: #2196F3;
+    color: #FFFFFF;
+}
+
+/* Alerts - Smooth & Professional */
+.report-alert {
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    padding: 20px 24px;
+    margin-bottom: 32px;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.report-alert-info {
+    background: linear-gradient(135deg, #e1f5fe 0%, #b3e5fc 100%);
+    color: #0277bd;
+    border-left: 4px solid #00BCD4;
+}
+
+.report-alert-success {
+    background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+    color: #2e7d32;
+    border-left: 4px solid #4CAF50;
+}
+
+.report-alert-warning {
+    background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+    color: #f57c00;
+    border-left: 4px solid #FF9800;
+}
+
+/* Summary Cards - Elegant & Smooth */
+.summary-card {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border: 1px solid #e9ecef;
+    border-radius: 16px;
+    padding: 24px;
+    text-align: center;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    height: 100%;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.summary-card:hover {
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12);
+    transform: translateY(-5px) scale(1.02);
+    border-color: #dee2e6;
+}
+
+.summary-card.border-primary:hover {
+    box-shadow: 0 10px 28px rgba(33, 150, 243, 0.2);
+    transform: translateY(-5px) scale(1.02);
+}
+
+.summary-card.border-primary {
+    border: 2px solid #2196F3;
+    background: linear-gradient(135deg, #f0f7ff 0%, #e3f2fd 100%);
+}
+
+.summary-card-header {
+    font-size: 14px;
+    font-weight: 600;
+    color: #757575;
+    margin-bottom: 8px;
+}
+
+.summary-card-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: #212529;
+    font-family: 'SF Mono', 'Monaco', 'Cascadia Code', 'Roboto Mono', monospace;
+    letter-spacing: 0.5px;
+}
+
+.summary-card-value.positive {
+    color: #2e7d32;
+}
+
+.summary-card-value.negative {
+    color: #c62828;
+}
+
+/* Smooth Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+.report-card {
+    animation: fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.report-table tbody tr {
+    animation: slideInRight 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    animation-fill-mode: both;
+}
+
+.report-table tbody tr:nth-child(1) {
+    animation-delay: 0.05s;
+}
+
+.report-table tbody tr:nth-child(2) {
+    animation-delay: 0.1s;
+}
+
+.report-table tbody tr:nth-child(3) {
+    animation-delay: 0.15s;
+}
+
+.report-table tbody tr:nth-child(4) {
+    animation-delay: 0.2s;
+}
+
+.report-table tbody tr:nth-child(n+5) {
+    animation-delay: 0.25s;
+}
+
+/* Smooth transitions for interactive elements */
+.report-btn,
+.report-filters .form-control,
+.report-filters .form-select,
+.currency-badge,
+.exchange-rate-card,
+.summary-card {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Loading state animation */
+@keyframes shimmer {
+    0% {
+        background-position: -1000px 0;
+    }
+    100% {
+        background-position: 1000px 0;
+    }
+}
+
+.report-table.loading tbody tr {
+    animation: shimmer 2s infinite linear;
+    background: linear-gradient(to right, #f6f7f8 0%, #edeef1 20%, #f6f7f8 40%, #f6f7f8 100%);
+    background-size: 1000px 100%;
+}
+
+/* Additional Polish */
+.report-table tbody tr:nth-child(even) {
+    background-color: #fafbfc;
+}
+
+.report-table tbody tr:nth-child(even):hover {
+    background-color: #f1f3f5;
+    border-left-color: #1976d2;
+}
+
+/* Enhanced number display */
+.report-table tbody td.text-success {
+    color: #2e7d32 !important;
+    font-weight: 600;
+}
+
+.report-table tbody td.text-danger {
+    color: #c62828 !important;
+    font-weight: 600;
+}
+
+/* Table header icons */
+.report-table thead th i {
+    margin-left: 6px;
+    opacity: 0.7;
+    font-size: 11px;
+}
+
+/* Better spacing for numbers */
+.report-table tbody td.text-end {
+    padding-right: 24px;
+    padding-left: 20px;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.report-table tbody td.text-end:empty::before {
+    content: "0.00";
+    color: #adb5bd;
+    opacity: 0.5;
+}
+
+/* Smooth scrollbar */
+.report-table {
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e0 #f7fafc;
+}
+
+.report-table::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.report-table::-webkit-scrollbar-track {
+    background: #f7fafc;
+    border-radius: 4px;
+}
+
+.report-table::-webkit-scrollbar-thumb {
+    background: #cbd5e0;
+    border-radius: 4px;
+}
+
+.report-table::-webkit-scrollbar-thumb:hover {
+    background: #a0aec0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .reports-container {
+        padding: 16px 0;
+    }
+    
+    .report-card {
+        margin: 0 8px 24px 8px;
+        border-radius: 12px;
+    }
+    
+    .report-card-body {
+        padding: 20px;
+    }
+    
+    .report-table {
+        font-size: 12px;
+    }
+    
+    .report-table thead th,
+    .report-table tbody td {
+        padding: 12px 14px;
+    }
+    
+    .report-title {
+        font-size: 16px;
+    }
+    
+    .report-btn {
+        padding: 10px 18px;
+        font-size: 13px;
+    }
+    
+    .report-filters {
+        padding: 20px;
+    }
+}
+
+@media (max-width: 576px) {
+    .report-card-header {
+        padding: 16px 20px;
+    }
+    
+    .report-card-body {
+        padding: 16px;
+    }
+    
+    .report-filters {
+        padding: 16px;
+    }
+    
+    .report-table {
+        font-size: 11px;
+    }
+    
+    .report-table thead th,
+    .report-table tbody td {
+        padding: 10px 12px;
+    }
+    
+    .summary-card-value {
+        font-size: 24px;
+    }
+    
+    .exchange-rate-card {
+        padding: 16px;
+    }
+}
+

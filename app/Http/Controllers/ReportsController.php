@@ -61,7 +61,8 @@ class ReportsController extends Controller
             foreach ($linesByCurrency as $currency => $currencyLines) {
                 $debit = $currencyLines->sum('debit');
                 $credit = $currencyLines->sum('credit');
-                $balance = $debit - $credit;
+                // استخدام helper method لحساب الرصيد بناءً على nature الحساب
+                $balance = $this->calculateAccountBalance($account, $debit, $credit);
                 
                 // تجاهل الحسابات التي ليس لديها أي حركة إذا كان الرصيد صفر
                 if ($debit == 0 && $credit == 0 && $balance == 0) {
@@ -149,13 +150,19 @@ class ReportsController extends Controller
         // إعداد البيانات للعرض بعملة واحدة مع تفاصيل التحويل
         $allRowsInDisplayCurrency = [];
         $conversionDetails = [];
+        $displayCurrencyTotals = [
+            'debit' => 0,
+            'credit' => 0,
+            'balance' => 0,
+        ];
         
         if ($displayCurrency) {
             $targetCurrency = \App\Models\Currency::where('code', $displayCurrency)->first();
             $conversionDate = now()->format('Y-m-d H:i');
             
             foreach ($rows as $row) {
-                $originalCurrency = $row['account']->currency ?? $defaultCurrency;
+                // استخدام العملة الفعلية للمعاملة من $row['currency'] وليس من الحساب
+                $originalCurrency = $row['currency'] ?? $defaultCurrency;
                 
                 // تحويل القيم إلى العملة المختارة
                 $convertedDebit = ($originalCurrency != $displayCurrency) ? 
@@ -179,6 +186,11 @@ class ReportsController extends Controller
                     'exchange_rate_used' => $originalCurrency != $displayCurrency ? 
                         \App\Helpers\CurrencyHelper::convert(1, $originalCurrency, $displayCurrency) : 1,
                 ];
+                
+                // تجميع المجاميع
+                $displayCurrencyTotals['debit'] += $convertedDebit;
+                $displayCurrencyTotals['credit'] += $convertedCredit;
+                $displayCurrencyTotals['balance'] += $convertedBalance;
                 
                 // تجميع تفاصيل التحويل
                 if ($originalCurrency != $displayCurrency && !isset($conversionDetails[$originalCurrency])) {
@@ -224,6 +236,7 @@ class ReportsController extends Controller
             'grandTotalInDefaultCurrency',
             'grandTotalInAllCurrencies',
             'allRowsInDisplayCurrency',
+            'displayCurrencyTotals',
             'exchangeRateDetails',
             'conversionDetails',
             'from', 
@@ -303,7 +316,8 @@ class ReportsController extends Controller
                 foreach ($linesByCurrency as $currency => $currencyLines) {
                     $debit = $currencyLines->sum('debit');
                     $credit = $currencyLines->sum('credit');
-                    $balance = $debit - $credit;
+                    // استخدام helper method لحساب الرصيد بناءً على nature الحساب
+                    $balance = $this->calculateAccountBalance($account, $debit, $credit);
                     
                     // تجاهل الحسابات التي ليس لديها رصيد
                     if ($balance == 0) {
@@ -555,7 +569,8 @@ class ReportsController extends Controller
             foreach ($linesByCurrency as $currency => $currencyLines) {
                 $debit = $currencyLines->sum('debit');
                 $credit = $currencyLines->sum('credit');
-                $balance = $debit - $credit;
+                // استخدام helper method لحساب الرصيد بناءً على nature الحساب
+                $balance = $this->calculateAccountBalance($account, $debit, $credit);
                 
                 // تجاهل الحسابات التي ليس لديها أي حركة
                 if ($debit == 0 && $credit == 0 && $balance == 0) {
@@ -1834,6 +1849,25 @@ class ReportsController extends Controller
     /**
      * الحصول على لون مميز لكل عملة
      */
+    /**
+     * حساب الرصيد بناءً على طبيعة الحساب (nature)
+     * 
+     * @param \App\Models\Account $account
+     * @param float $debit
+     * @param float $credit
+     * @return float
+     */
+    private function calculateAccountBalance($account, $debit, $credit)
+    {
+        // إذا كانت طبيعة الحساب مدين: الرصيد = المدين - الدائن
+        // إذا كانت طبيعة الحساب دائن: الرصيد = الدائن - المدين
+        if ($account->nature === 'مدين' || $account->nature === 'debit') {
+            return $debit - $credit;
+        } else {
+            return $credit - $debit;
+        }
+    }
+
     private function getCurrencyColor($currencyCode)
     {
         $colors = [

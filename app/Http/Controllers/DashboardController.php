@@ -23,37 +23,32 @@ class DashboardController extends Controller
             $depositCount = \App\Models\Voucher::where('type', 'deposit')->count();
             $withdrawCount = \App\Models\Voucher::where('type', 'withdraw')->count();
             
-            // جلب جميع الصناديق النقدية مع الرصيد
+            // جلب جميع الصناديق النقدية مع الأرصدة بالعملات المختلفة
             $cashBoxes = \App\Models\Account::where('is_cash_box', 1)->get();
+            $currencies = \App\Models\Currency::where('is_active', true)->get();
             
-            // حساب الأرصدة الفردية لكل صندوق
-            $userCashBoxes = $cashBoxes->map(function($box) {
-                $balance = $box->journalEntryLines()->selectRaw('SUM(debit-credit) as bal')->value('bal') ?? 0;
+            $userCashBoxes = $cashBoxes->map(function($box) use ($currencies) {
+                $currencyBalances = [];
+                
+                foreach ($currencies as $currency) {
+                    $balance = $box->balance($currency->code);
+                    if ($balance != 0) { // فقط إظهار العملات التي بها رصيد
+                        $currencyBalances[] = [
+                            'currency' => $currency->code,
+                            'balance' => $balance,
+                            'formatted_balance' => number_format($balance, 2),
+                        ];
+                    }
+                }
+                
                 return [
                     'id' => $box->id,
                     'name' => $box->name,
-                    'currency' => $box->default_currency ?? $box->currency ?? 'IQD',
-                    'balance' => $balance,
+                    'default_currency' => $box->default_currency ?? $box->currency ?? 'IQD',
+                    'currency_balances' => $currencyBalances,
+                    'has_balances' => count($currencyBalances) > 0,
                 ];
             });
-
-            // تجميع الأرصدة حسب العملة
-            $currencyBalances = $cashBoxes->map(function($box) {
-                $balance = $box->journalEntryLines()->selectRaw('SUM(debit-credit) as bal')->value('bal') ?? 0;
-                return [
-                    'currency' => $box->default_currency ?? $box->currency ?? 'IQD',
-                    'balance' => $balance,
-                ];
-            })->groupBy('currency')->map(function($group, $currency) {
-                $totalBalance = $group->sum('balance');
-                $accountCount = $group->count();
-                return [
-                    'currency' => $currency,
-                    'total_balance' => $totalBalance,
-                    'accounts_count' => $accountCount,
-                    'formatted_balance' => number_format($totalBalance, 2),
-                ];
-            })->values();
         } else {
             // إذا كان المستخدم عادي - جلب البيانات المرتبطة بالمستخدم فقط
             $accountsCount = $user->cashBoxes()->count();
@@ -66,43 +61,38 @@ class DashboardController extends Controller
             $depositCount = \App\Models\Voucher::where('type', 'deposit')->where('created_by', $user->id)->count();
             $withdrawCount = \App\Models\Voucher::where('type', 'withdraw')->where('created_by', $user->id)->count();
             
-            // جلب صناديق الموظف مع الرصيد
+            // جلب صناديق الموظف مع الأرصدة بالعملات المختلفة
             $cashBoxes = $user->cashBoxes()->get();
+            $currencies = \App\Models\Currency::where('is_active', true)->get();
             
-            // حساب الأرصدة الفردية لكل صندوق
-            $userCashBoxes = $cashBoxes->map(function($box) {
-                $balance = $box->journalEntryLines()->selectRaw('SUM(debit-credit) as bal')->value('bal') ?? 0;
+            $userCashBoxes = $cashBoxes->map(function($box) use ($currencies) {
+                $currencyBalances = [];
+                
+                foreach ($currencies as $currency) {
+                    $balance = $box->balance($currency->code);
+                    if ($balance != 0) { // فقط إظهار العملات التي بها رصيد
+                        $currencyBalances[] = [
+                            'currency' => $currency->code,
+                            'balance' => $balance,
+                            'formatted_balance' => number_format($balance, 2),
+                        ];
+                    }
+                }
+                
                 return [
                     'id' => $box->id,
                     'name' => $box->name,
-                    'currency' => $box->default_currency ?? $box->currency ?? 'IQD',
-                    'balance' => $balance,
+                    'default_currency' => $box->default_currency ?? $box->currency ?? 'IQD',
+                    'currency_balances' => $currencyBalances,
+                    'has_balances' => count($currencyBalances) > 0,
                 ];
             });
-
-            // تجميع الأرصدة حسب العملة
-            $currencyBalances = $cashBoxes->map(function($box) {
-                $balance = $box->journalEntryLines()->selectRaw('SUM(debit-credit) as bal')->value('bal') ?? 0;
-                return [
-                    'currency' => $box->default_currency ?? $box->currency ?? 'IQD',
-                    'balance' => $balance,
-                ];
-            })->groupBy('currency')->map(function($group, $currency) {
-                $totalBalance = $group->sum('balance');
-                $accountCount = $group->count();
-                return [
-                    'currency' => $currency,
-                    'total_balance' => $totalBalance,
-                    'accounts_count' => $accountCount,
-                    'formatted_balance' => number_format($totalBalance, 2),
-                ];
-            })->values();
         }
         
         return view('dashboard', compact(
             'accountsCount', 'transactionsCount', 'vouchersCount', 'usersCount',
             'receiptCount', 'paymentCount', 'transferCount', 'depositCount', 'withdrawCount',
-            'userCashBoxes', 'currencyBalances'
+            'userCashBoxes'
         ));
     }
 }
