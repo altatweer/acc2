@@ -27,6 +27,8 @@
     <!-- SweetAlert2 -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.5/dist/sweetalert2.min.css">
 
+    @stack('styles')
+
     <style>
         /* Dark & Light mode variables */
         :root {

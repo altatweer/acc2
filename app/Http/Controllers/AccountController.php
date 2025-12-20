@@ -381,6 +381,11 @@ class AccountController extends Controller
 
         try {
             \DB::transaction(function() use ($request, $account, $validated, $cashFlag, $hasTransactions) {
+                // حفظ حالة has_opening_balance قبل التحديث
+                $hadOpeningBalanceBefore = $account->has_opening_balance;
+                $shouldCreateOpeningBalance = false;
+                $shouldUpdateOpeningBalance = false;
+                
                 // تحديث الحساب الفعلي - نظام العملات المتعددة
                 $updateData = [
                     'name'        => $validated['name'],
@@ -400,36 +405,41 @@ class AccountController extends Controller
                 // معالجة الرصيد الافتتاحي
                 if (!$hasTransactions) {
                     // إضافة رصيد افتتاحي جديد
-                    if ($request->boolean('has_opening_balance') && !$account->has_opening_balance) {
-                        if ($validated['opening_balance_amount'] > 0) {
+                    if ($request->boolean('has_opening_balance') && !$hadOpeningBalanceBefore) {
+                        if (isset($validated['opening_balance_amount']) && $validated['opening_balance_amount'] > 0) {
                             $updateData['has_opening_balance'] = true;
                             $updateData['opening_balance'] = $validated['opening_balance_amount'];
                             $updateData['opening_balance_currency'] = $validated['opening_balance_currency'] ?? 'IQD';
                             $updateData['opening_balance_type'] = $validated['opening_balance_type'];
                             $updateData['opening_balance_date'] = $validated['opening_balance_date'];
+                            $shouldCreateOpeningBalance = true;
                         }
                     }
                     // تعديل رصيد افتتاحي موجود
-                    elseif ($request->boolean('edit_opening_balance') && $account->has_opening_balance) {
-                        if ($validated['opening_balance_amount'] > 0) {
+                    elseif ($request->boolean('edit_opening_balance') && $hadOpeningBalanceBefore) {
+                        if (isset($validated['opening_balance_amount']) && $validated['opening_balance_amount'] > 0) {
                             $updateData['opening_balance'] = $validated['opening_balance_amount'];
                             $updateData['opening_balance_currency'] = $validated['opening_balance_currency'] ?? $account->opening_balance_currency ?? 'IQD';
                             $updateData['opening_balance_type'] = $validated['opening_balance_type'];
                             $updateData['opening_balance_date'] = $validated['opening_balance_date'];
+                            $shouldUpdateOpeningBalance = true;
                         }
                     }
                 }
 
                 $account->update($updateData);
+                
+                // تحديث الحساب بعد التحديث للحصول على القيم الجديدة
+                $account->refresh();
 
                 // معالجة القيود المحاسبية للرصيد الافتتاحي
                 if (!$hasTransactions) {
                     // إنشاء قيد جديد للرصيد الافتتاحي
-                    if ($request->boolean('has_opening_balance') && !$account->has_opening_balance && $validated['opening_balance_amount'] > 0) {
+                    if ($shouldCreateOpeningBalance && isset($updateData['opening_balance']) && $updateData['opening_balance'] > 0) {
                         $this->createOpeningBalanceEntry($account, $updateData);
                     }
                     // تعديل القيد الموجود
-                    elseif ($request->boolean('edit_opening_balance') && $account->has_opening_balance && $validated['opening_balance_amount'] > 0) {
+                    elseif ($shouldUpdateOpeningBalance && isset($updateData['opening_balance']) && $updateData['opening_balance'] > 0) {
                         $this->updateOpeningBalanceEntry($account, $updateData);
                     }
                 }

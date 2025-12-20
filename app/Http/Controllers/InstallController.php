@@ -368,90 +368,101 @@ class InstallController extends Controller
             session(['install_currencies' => $currencies]);
         }
         try {
-            foreach ($currencies as $currency) {
-                $chart = $request->chart_type == 'ar'
-                    ? \App\Helpers\ComprehensiveChartOfAccounts::getArabicChart($currency)
-                    : \App\Helpers\ComprehensiveChartOfAccounts::getEnglishChart($currency);
-                $codeToId = [];
-                // إنشاء الحسابات
-                foreach ($chart as $row) {
-                    $data = $row;
-                    unset($data['parent_code']);
-                    $data['parent_id'] = null;
-                    
-                    // التأكد من أن العمود supports_multi_currency موجود قبل إضافة القيمة
-                    if (!\Schema::hasColumn('accounts', 'supports_multi_currency')) {
-                        unset($data['supports_multi_currency']);
-                    }
-                    if (!\Schema::hasColumn('accounts', 'default_currency')) {
-                        unset($data['default_currency']);
-                    }
-                    if (!\Schema::hasColumn('accounts', 'require_currency_selection')) {
-                        unset($data['require_currency_selection']);
-                    }
-                    
+            // استخدام أول عملة فقط لإنشاء الحسابات (الحسابات متعددة العملات)
+            $defaultCurrency = !empty($currencies) ? $currencies[0] : 'IQD';
+            $chart = $request->chart_type == 'ar'
+                ? \App\Helpers\ComprehensiveChartOfAccounts::getArabicChart($defaultCurrency)
+                : \App\Helpers\ComprehensiveChartOfAccounts::getEnglishChart($defaultCurrency);
+            
+            $codeToId = [];
+            $createdCodes = []; // لتتبع الحسابات التي تم إنشاؤها
+            
+            // إنشاء الحسابات مرة واحدة فقط
+            foreach ($chart as $row) {
+                // التحقق من عدم وجود حساب بنفس الكود
+                $existingAccount = \App\Models\Account::where('code', $row['code'])->first();
+                if ($existingAccount) {
+                    // إذا كان الحساب موجوداً، استخدمه
+                    $codeToId[$row['code']] = $existingAccount->id;
+                    continue;
+                }
+                
+                $data = $row;
+                unset($data['parent_code']);
+                $data['parent_id'] = null;
+                
+                // التأكد من أن العمود supports_multi_currency موجود قبل إضافة القيمة
+                if (!\Schema::hasColumn('accounts', 'supports_multi_currency')) {
+                    unset($data['supports_multi_currency']);
+                }
+                if (!\Schema::hasColumn('accounts', 'default_currency')) {
+                    unset($data['default_currency']);
+                }
+                if (!\Schema::hasColumn('accounts', 'require_currency_selection')) {
+                    unset($data['require_currency_selection']);
+                }
+                
+                // التحقق من عدم التكرار قبل الإنشاء
+                if (!in_array($row['code'], $createdCodes)) {
                     $account = \App\Models\Account::create($data);
                     $codeToId[$row['code']] = $account->id;
+                    $createdCodes[] = $row['code'];
                 }
-                // تحديث parent_id
-                foreach ($chart as $row) {
-                    if ($row['parent_code']) {
-                        // البحث بطريقة مرنة تتوافق مع هيكل الجدول
-                        $account = \Schema::hasColumn('accounts', 'default_currency')
-                                 ? \App\Models\Account::where('code', $row['code'])->where('default_currency', $currency)->first()
-                                 : \App\Models\Account::where('code', $row['code'])->first();
-                        if ($account && isset($codeToId[$row['parent_code']])) {
-                            $account->parent_id = $codeToId[$row['parent_code']];
-                            $account->save();
-                        }
+            }
+            
+            // تحديث parent_id
+            foreach ($chart as $row) {
+                if ($row['parent_code'] && isset($codeToId[$row['code']]) && isset($codeToId[$row['parent_code']])) {
+                    $account = \App\Models\Account::find($codeToId[$row['code']]);
+                    if ($account) {
+                        $account->parent_id = $codeToId[$row['parent_code']];
+                        $account->save();
                     }
                 }
-                // ربط الحسابات الافتراضية تلقائيًا (محدثة للشجرة الشاملة)
-                $defaultAccounts = [
-                    'default_sales_account' => '4101',      // المبيعات المحلية
-                    'default_purchases_account' => '5101',  // مشتريات البضاعة
-                    'default_customers_account' => '1201',  // العملاء المحليون
-                    'default_suppliers_account' => '2101',  // الموردون المحليون
-                    'salary_expense_account' => '5201',     // الرواتب الأساسية
-                    'employee_payables_account' => '2201',  // رواتب مستحقة الدفع
-                    'deductions_account' => '2301',         // سلف الموظفين
-                    'tax_account' => '5602',                // ضريبة القيمة المضافة
-                    'inventory_account' => '1301',          // بضاعة جاهزة للبيع
-                    'main_bank_account' => '1110',          // البنك المركزي العراقي
-                    'main_cash_account' => '1101',          // الصندوق الرئيسي
-                ];
-                $missing = [];
-                foreach ($defaultAccounts as $settingKey => $accountCode) {
-                    // البحث بطريقة مرنة للحسابات الافتراضية
-                    $account = \Schema::hasColumn('accounts', 'default_currency')
-                             ? \App\Models\Account::where('code', $accountCode)->where('default_currency', $currency)->first()
-                             : \App\Models\Account::where('code', $accountCode)->first();
-                    if ($account) {
-                        // حفظ الإعدادات مع التحقق من دعم العملات
-                        $settingConditions = ['key' => $settingKey];
-                        if (\Schema::hasColumn('accounting_settings', 'currency')) {
-                            $settingConditions['currency'] = $currency;
-                        }
-                        \App\Models\AccountingSetting::updateOrCreate(
-                            $settingConditions,
-                            ['value' => $account->id]
-                        );
-                    } else {
+            }
+            
+            // ربط الحسابات الافتراضية (مرة واحدة فقط - الحسابات متعددة العملات)
+            $defaultAccounts = [
+                'default_sales_account' => '4101',      // المبيعات المحلية
+                'default_purchases_account' => '5101',  // مشتريات البضاعة
+                'default_customers_account' => '1201',  // العملاء المحليون
+                'default_suppliers_account' => '2101',  // الموردون المحليون
+                'salary_expense_account' => '5201',     // الرواتب الأساسية
+                'employee_payables_account' => '2201',  // رواتب مستحقة الدفع
+                'deductions_account' => '2301',         // سلف الموظفين
+                'tax_account' => '5602',                // ضريبة القيمة المضافة
+                'inventory_account' => '1301',          // بضاعة جاهزة للبيع
+                'main_bank_account' => '1110',          // البنك المركزي العراقي
+                'main_cash_account' => '1101',          // الصندوق الرئيسي
+            ];
+            $missing = [];
+            foreach ($defaultAccounts as $settingKey => $accountCode) {
+                // البحث عن الحساب باستخدام الكود فقط (الحسابات متعددة العملات)
+                $account = \App\Models\Account::where('code', $accountCode)->first();
+                if ($account) {
+                    // حفظ الإعدادات
+                    \App\Models\AccountingSetting::updateOrCreate(
+                        ['key' => $settingKey],
+                        ['value' => $account->id]
+                    );
+                } else {
                         $missing[] = $accountCode;
                     }
                 }
-                if (count($missing) > 0) {
-                    $missingDetails = [];
-                    foreach ($missing as $code) {
-                        $name = array_search($code, $defaultAccounts);
-                        $missingDetails[] = $code . ($name ? ' (' . $name . ')' : '');
-                    }
-                    return back()->with('chart_error', 
-                        'لم يتم العثور على بعض الحسابات الافتراضية المطلوبة في الشجرة: ' . 
-                        implode(", ", $missingDetails) . 
-                        '. تحقق من أن شجرة الحسابات تحتوي على هذه الأرقام أو قم بإضافتها يدوياً بعد التثبيت.');
-                }
             }
+            if (count($missing) > 0) {
+                $missingDetails = [];
+                foreach ($missing as $code) {
+                    $name = array_search($code, $defaultAccounts);
+                    $missingDetails[] = $code . ($name ? ' (' . $name . ')' : '');
+                }
+                return back()->with('chart_error', 
+                    'لم يتم العثور على بعض الحسابات الافتراضية المطلوبة في الشجرة: ' . 
+                    implode(", ", $missingDetails) . 
+                    '. تحقق من أن شجرة الحسابات تحتوي على هذه الأرقام أو قم بإضافتها يدوياً بعد التثبيت.');
+            }
+            
+            return back()->with('chart_imported', 'تم استيراد شجرة الحسابات بنجاح!');
         } catch (\Exception $e) {
             return back()->with('chart_error', 'فشل استيراد الشجرة أو ربط الحسابات الافتراضية: ' . $e->getMessage());
         }
