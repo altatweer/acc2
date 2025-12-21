@@ -51,7 +51,8 @@ class JournalEntryController extends Controller
             }
         }
         
-        $entries = $query->latest()->paginate(20)->appends($request->all());
+        // ترتيب حسب التاريخ من الأحدث للأقدم
+        $entries = $query->orderBy('date', 'desc')->orderBy('id', 'desc')->paginate(20)->appends($request->all());
         $accounts = Account::where('is_group', false)->orderBy('code')->get();
         
         // حساب الإحصائيات

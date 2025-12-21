@@ -75,11 +75,12 @@
             <thead>
                 <tr>
                     <th width="5%">#</th>
-                    <th width="30%">@lang('messages.account')</th>
-                    <th width="20%">@lang('messages.debit')</th>
-                    <th width="20%">@lang('messages.credit')</th>
+                    <th width="25%">@lang('messages.account')</th>
+                    <th width="15%">@lang('messages.debit')</th>
+                    <th width="15%">@lang('messages.credit')</th>
                     <th width="10%">@lang('messages.currency')</th>
-                    <th width="15%">@lang('messages.description')</th>
+                    <th width="10%">سعر الصرف</th>
+                    <th width="20%">@lang('messages.description')</th>
                 </tr>
             </thead>
             <tbody>
@@ -119,6 +120,13 @@
                             <td class="text-center">
                                 <span class="badge badge-secondary">{{ $line->currency }}</span>
                             </td>
+                            <td class="text-center">
+                                @if($line->exchange_rate && $line->exchange_rate != 1.0)
+                                    <strong class="text-info">{{ number_format($line->exchange_rate, 4) }}</strong>
+                                @else
+                                    <span class="text-muted">-</span>
+                                @endif
+                            </td>
                             <td>
                                 <small>{{ $line->description ?? '-' }}</small>
                             </td>
@@ -129,7 +137,7 @@
                     @if($voucher->type == 'transfer')
                         <!-- Multi-currency transfer totals -->
                         <tr class="table-info">
-                            <td colspan="6" class="text-center font-weight-bold">
+                            <td colspan="7" class="text-center font-weight-bold">
                                 <i class="fas fa-calculator text-primary"></i> @lang('messages.totals')
                             </td>
                         </tr>
@@ -150,6 +158,7 @@
                                 <td class="text-center">
                                     <span class="badge badge-primary">{{ $currency }}</span>
                                 </td>
+                                <td class="text-center">-</td>
                                 <td class="text-center">
                                     @if($currDebit == $currCredit)
                                         <i class="fas fa-check-circle text-success" title="متوازن"></i>
@@ -173,6 +182,7 @@
                             <td class="text-center">
                                 <span class="badge badge-primary">{{ $voucher->journalEntry->lines->first()->currency ?? '-' }}</span>
                             </td>
+                            <td class="text-center">-</td>
                             <td class="text-center">
                                 @if($totalDebit == $totalCredit)
                                     <i class="fas fa-check-circle text-success" title="متوازن"></i>
@@ -184,7 +194,7 @@
                     @endif
                 @else
                     <tr>
-                        <td colspan="6" class="text-center py-4">
+                        <td colspan="7" class="text-center py-4">
                             <i class="fas fa-info-circle text-muted"></i>
                             @lang('messages.no_financial_transactions')
                         </td>

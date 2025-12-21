@@ -415,6 +415,7 @@
                                     <th class="text-right">@lang('messages.debit')</th>
                                     <th class="text-right">@lang('messages.credit')</th>
                                     <th class="text-center">@lang('messages.currency')</th>
+                                    <th class="text-center">سعر الصرف</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -453,13 +454,22 @@
                                             <td class="text-center">
                                                 <span class="badge badge-light">{{ $line->currency }}</span>
                                             </td>
+                                            <td class="text-center">
+                                                @if($line->exchange_rate && $line->exchange_rate != 1.0)
+                                                    <span class="badge badge-info" title="سعر الصرف المستخدم في التحويل">
+                                                        {{ number_format($line->exchange_rate, 4) }}
+                                                    </span>
+                                                @else
+                                                    <span class="text-muted">-</span>
+                                                @endif
+                                            </td>
                                         </tr>
                                     @endforeach
                                     
                                     @if($voucher->type == 'transfer')
                                     <!-- عرض الإجماليات لسند التحويل: إظهار كل مبلغ على حدة -->
                                     <tr class="bg-light font-weight-bold">
-                                        <td colspan="5" class="text-center border-bottom">@lang('messages.totals')</td>
+                                        <td colspan="6" class="text-center border-bottom">@lang('messages.totals')</td>
                                     </tr>
                                     @foreach($voucher->journalEntry->lines->groupBy('currency') as $currency => $lines)
                                         @php
@@ -477,6 +487,7 @@
                                                 <strong>{{ number_format($currCredit, 2) }}</strong>
                                             </td>
                                             <td class="text-center">{{ $currency }}</td>
+                                            <td class="text-center">-</td>
                                         </tr>
                                     @endforeach
                                     @else
@@ -489,11 +500,12 @@
                                             </span>
                                         </td>
                                         <td class="text-center">{{ $voucher->journalEntry->lines->first()->currency ?? '-' }}</td>
+                                        <td class="text-center">-</td>
                                     </tr>
                                     @endif
                                 @else
                                     <tr>
-                                        <td colspan="5" class="text-center text-muted py-3">
+                                        <td colspan="6" class="text-center text-muted py-3">
                                             <i class="fas fa-info-circle mr-1"></i> @lang('messages.no_transactions')
                                         </td>
                                     </tr>

@@ -248,6 +248,9 @@ class VoucherController extends Controller
        }
 
        DB::transaction(function () use ($validated, $request) {
+           // تحديد العملة الأساسية
+           $baseCurrency = Currency::where('is_default', true)->value('code') ?? 'IQD';
+           
            $voucher = Voucher::create([
                'voucher_number' => $this->generateVoucherNumber(),
                'type' => $validated['type'],
@@ -267,9 +270,11 @@ class VoucherController extends Controller
                $convertedAmount = $tx['converted_amount'];
                $exchangeRate = $tx['exchange_rate'] ?? 1;
                
-               // جلب أسعار الصرف لكل عملة
-               $cashExchangeRate = Currency::where('code', $cashCurrency)->value('exchange_rate') ?? 1;
-               $targetExchangeRate = Currency::where('code', $targetCurrency)->value('exchange_rate') ?? 1;
+               // تحديد سعر الصرف لكل سطر
+               // السطر بعملة الصندوق: سعر الصرف الافتراضي (1.0 للعملة الأساسية)
+               $cashExchangeRate = ($cashCurrency === $baseCurrency) ? 1.0 : (Currency::where('code', $cashCurrency)->value('exchange_rate') ?? 1);
+               // السطر بعملة الهدف: استخدام سعر الصرف الذي أدخله المستخدم
+               $targetExchangeRate = $exchangeRate;
                
                if (in_array($validated['type'], ['receipt', 'deposit'])) {
                    // سند قبض: الصندوق مدين بعملته، الحساب المستهدف دائن بعملته
@@ -319,7 +324,7 @@ class VoucherController extends Controller
                        'debit' => $convertedAmount,
                        'credit' => 0,
                        'currency' => $targetCurrency,
-                       'exchange_rate' => $targetExchangeRate,
+                       'exchange_rate' => $targetExchangeRate, // استخدام سعر الصرف المدخل من المستخدم
                    ];
                    
                    // إنشاء الحركات المالية
@@ -351,7 +356,7 @@ class VoucherController extends Controller
                        'debit' => $convertedAmount,
                        'credit' => 0,
                        'currency' => $targetCurrency,
-                       'exchange_rate' => $targetExchangeRate,
+                       'exchange_rate' => $targetExchangeRate, // استخدام سعر الصرف المدخل من المستخدم
                    ];
                    
                    // إنشاء الحركات المالية

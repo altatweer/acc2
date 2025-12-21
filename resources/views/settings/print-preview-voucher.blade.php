@@ -216,7 +216,8 @@ if ($printSettings->company_logo) {
     font-weight: 600;
     color: #2d3748;
     text-align: right;
-    font-size: 11px;
+    font-size: 10px;
+    padding: 4px 2px;
 }
 
 .amount-cell {
@@ -515,12 +516,14 @@ if ($printSettings->company_logo) {
             <table class="transactions-table">
                 <thead>
                     <tr>
-                        <th width="5%">#</th>
-                        <th width="15%">رقم الحساب</th>
-                        <th width="35%">اسم الحساب</th>
-                        <th width="15%">مدين</th>
-                        <th width="15%">دائن</th>
-                        <th width="15%">البيان</th>
+                        <th width="4%">#</th>
+                        <th width="10%">رقم الحساب</th>
+                        <th width="25%">اسم الحساب</th>
+                        <th width="12%">مدين</th>
+                        <th width="12%">دائن</th>
+                        <th width="8%">العملة</th>
+                        <th width="9%">سعر الصرف</th>
+                        <th width="20%">البيان</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -528,8 +531,8 @@ if ($printSettings->company_logo) {
                         @foreach($voucher->journalEntry->lines as $index => $line)
                         <tr>
                             <td>{{ $index + 1 }}</td>
-                            <td>{{ $line->account->account_code ?? '-' }}</td>
-                            <td class="account-name">{{ $line->account->account_name ?? 'حساب تجريبي' }}</td>
+                            <td>{{ $line->account->code ?? '-' }}</td>
+                            <td class="account-name">{{ $line->account->name ?? 'حساب تجريبي' }}</td>
                             <td class="amount-cell debit-amount">
                                 @if($line->debit > 0)
                                     {{ number_format($line->debit, 2) }}
@@ -542,6 +545,16 @@ if ($printSettings->company_logo) {
                                     {{ number_format($line->credit, 2) }}
                                 @else
                                     -
+                                @endif
+                            </td>
+                            <td class="text-center">
+                                <span class="badge badge-secondary">{{ $line->currency ?? '-' }}</span>
+                            </td>
+                            <td class="text-center">
+                                @if($line->exchange_rate && $line->exchange_rate != 1.0)
+                                    <strong class="text-info">{{ number_format($line->exchange_rate, 4) }}</strong>
+                                @else
+                                    <span class="text-muted">-</span>
                                 @endif
                             </td>
                             <td>{{ $line->description ?? 'بيان السند' }}</td>

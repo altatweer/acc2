@@ -247,7 +247,7 @@ $(function(){
         language: {
             url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/{{ app()->getLocale() == "ar" ? "ar" : "en-GB" }}.json'
         },
-        order: [[0, 'desc']],
+        order: [[1, 'desc']], // ترتيب حسب التاريخ من الأحدث للأقدم
         pageLength: 25,
         lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "الكل"]],
         searching: true,
