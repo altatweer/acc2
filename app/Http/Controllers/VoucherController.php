@@ -368,19 +368,285 @@ class VoucherController extends Controller
                    ]);
                }
            }
-           // حساب المجاميع بالعملة الأساسية (IQD) لضمان التوازن
+           // حساب المجاميع بالعملة الأساسية لضمان التوازن
+           // المهم: يجب التحقق من التوازن باستخدام سعر الصرف الذي أدخله المستخدم
            $totalDebitInBase = 0;
            $totalCreditInBase = 0;
            $baseCurrency = Currency::where('is_default', true)->value('code') ?? 'IQD';
-           $baseCurrencyRate = Currency::where('code', $baseCurrency)->value('exchange_rate') ?? 1;
            
-           foreach ($lines as $line) {
-               $lineRate = $line['exchange_rate'] ?? 1;
-               // تحويل المبالغ إلى العملة الأساسية
-               $debitInBase = ($line['debit'] * $lineRate) / $baseCurrencyRate;
-               $creditInBase = ($line['credit'] * $lineRate) / $baseCurrencyRate;
+           // أولاً: إعادة حساب converted_amount في الخادم بناءً على exchange_rate المدخل
+           // هذا يضمن أن converted_amount دائماً صحيح بغض النظر عن ما أرسلته الواجهة الأمامية
+           foreach ($validated['transactions'] as $index => &$tx) {
+               $cashCurrency = $tx['cash_currency'];
+               $targetCurrency = $tx['target_currency'];
+               $amount = floatval($tx['amount']);
+               $exchangeRate = floatval($tx['exchange_rate'] ?? 1);
+               
+               if ($cashCurrency !== $targetCurrency) {
+                   // تحديد اتجاه التحويل بناءً على exchange_rate في الجدول
+                   $cashCurrencyModel = Currency::where('code', $cashCurrency)->first();
+                   $targetCurrencyModel = Currency::where('code', $targetCurrency)->first();
+                   
+                   if ($cashCurrencyModel && $targetCurrencyModel) {
+                       // تحديد الاتجاه: إذا كان exchange_rate للعملة المصدر أصغر من الهدف، يكون inverse
+                       $isInverse = ($cashCurrency === 'IQD' && $targetCurrency === 'USD') || 
+                                   ($cashCurrencyModel->exchange_rate < $targetCurrencyModel->exchange_rate);
+                       
+                       // إعادة حساب converted_amount بناءً على exchange_rate المدخل
+                       if ($isInverse) {
+                           // للعملات المقلوبة: convertedAmount = amount / exchangeRate
+                           $tx['converted_amount'] = round($amount / $exchangeRate, 2);
+                       } else {
+                           // للعملات العادية: convertedAmount = amount * exchangeRate
+                           $tx['converted_amount'] = round($amount * $exchangeRate, 2);
+                       }
+                       
+                       \Log::info('Recalculated converted_amount in voucher', [
+                           'transaction_index' => $index,
+                           'cash_currency' => $cashCurrency,
+                           'target_currency' => $targetCurrency,
+                           'amount' => $amount,
+                           'exchange_rate' => $exchangeRate,
+                           'is_inverse' => $isInverse,
+                           'calculated_converted_amount' => $tx['converted_amount']
+                       ]);
+                   } else {
+                       // إذا لم نجد العملات، استخدم القيمة المرسلة
+                       $tx['converted_amount'] = floatval($tx['converted_amount'] ?? $amount);
+                   }
+               } else {
+                   // نفس العملة - يجب أن يكونا متساويين
+                   $tx['converted_amount'] = $amount;
+               }
+           }
+           unset($tx); // إزالة المرجع
+           
+           // الآن حساب المجاميع بالعملة الأساسية
+           // المهم: يجب استخدام سعر الصرف الذي أدخله المستخدم للتحويل
+           $transactionIndex = 0;
+           foreach ($lines as $lineIndex => $line) {
+               $lineCurrency = $line['currency'];
+               $debit = floatval($line['debit'] ?? 0);
+               $credit = floatval($line['credit'] ?? 0);
+               
+               // تحديد المعاملة التي ينتمي إليها هذا السطر
+               // كل معاملة تنتج سطرين (مدين ودائن)
+               $txIndex = intval($lineIndex / 2);
+               if (isset($validated['transactions'][$txIndex])) {
+                   $tx = $validated['transactions'][$txIndex];
+                   $txCashCurrency = $tx['cash_currency'];
+                   $txTargetCurrency = $tx['target_currency'];
+                   $txExchangeRate = floatval($tx['exchange_rate'] ?? 1);
+                   
+                   // إذا كان السطر بعملة الصندوق
+                   if ($lineCurrency === $txCashCurrency) {
+                       // تحويل المبلغ بعملة الصندوق إلى العملة الأساسية
+                       if ($txCashCurrency === $baseCurrency) {
+                           $debitInBase = $debit;
+                           $creditInBase = $credit;
+                       } else {
+                           // استخدام CurrencyHelper للتحويل الصحيح
+                           $debitInBase = \App\Helpers\CurrencyHelper::convertWithHistoricalRate(
+                               $debit, 
+                               $txCashCurrency, 
+                               $baseCurrency, 
+                               $validated['date']
+                           );
+                           $creditInBase = \App\Helpers\CurrencyHelper::convertWithHistoricalRate(
+                               $credit, 
+                               $txCashCurrency, 
+                               $baseCurrency, 
+                               $validated['date']
+                           );
+                       }
+                   }
+                   // إذا كان السطر بعملة الهدف
+                   elseif ($lineCurrency === $txTargetCurrency) {
+                       // تحويل المبلغ بعملة الهدف إلى العملة الأساسية
+                       if ($txTargetCurrency === $baseCurrency) {
+                           $debitInBase = $debit;
+                           $creditInBase = $credit;
+                       } else {
+                           // المهم: يجب استخدام سعر الصرف المدخل من المستخدم، وليس من الجدول!
+                           // لأن convertedAmount تم حسابه بناءً على exchange_rate المدخل
+                           
+                           // تحديد اتجاه التحويل
+                           $cashCurrencyModel = Currency::where('code', $txCashCurrency)->first();
+                           $targetCurrencyModel = Currency::where('code', $txTargetCurrency)->first();
+                           
+                           if ($cashCurrencyModel && $targetCurrencyModel) {
+                               $isInverse = ($txCashCurrency === 'IQD' && $txTargetCurrency === 'USD') || 
+                                           ($cashCurrencyModel->exchange_rate < $targetCurrencyModel->exchange_rate);
+                               
+                               if ($isInverse) {
+                                   // للعملات المقلوبة: convertedAmount = amount / exchangeRate
+                                   // للتحويل العكسي إلى العملة الأساسية: baseAmount = convertedAmount * exchangeRate
+                                   $debitInBase = $debit * $txExchangeRate;
+                                   $creditInBase = $credit * $txExchangeRate;
+                                   
+                                   \Log::info('Converting target currency to base (inverse)', [
+                                       'line_index' => $lineIndex,
+                                       'debit' => $debit,
+                                       'credit' => $credit,
+                                       'target_currency' => $txTargetCurrency,
+                                       'base_currency' => $baseCurrency,
+                                       'exchange_rate' => $txExchangeRate,
+                                       'debit_in_base' => $debitInBase,
+                                       'credit_in_base' => $creditInBase
+                                   ]);
+                               } else {
+                                   // للعملات العادية: convertedAmount = amount * exchangeRate
+                                   // للتحويل العكسي إلى العملة الأساسية: baseAmount = convertedAmount / exchangeRate
+                                   $debitInBase = $debit / $txExchangeRate;
+                                   $creditInBase = $credit / $txExchangeRate;
+                                   
+                                   \Log::info('Converting target currency to base (normal)', [
+                                       'line_index' => $lineIndex,
+                                       'debit' => $debit,
+                                       'credit' => $credit,
+                                       'target_currency' => $txTargetCurrency,
+                                       'base_currency' => $baseCurrency,
+                                       'exchange_rate' => $txExchangeRate,
+                                       'debit_in_base' => $debitInBase,
+                                       'credit_in_base' => $creditInBase
+                                   ]);
+                               }
+                           } else {
+                               // حل احتياطي: استخدام CurrencyHelper
+                               $debitInBase = \App\Helpers\CurrencyHelper::convertWithHistoricalRate(
+                                   $debit, 
+                                   $txTargetCurrency, 
+                                   $baseCurrency, 
+                                   $validated['date']
+                               );
+                               $creditInBase = \App\Helpers\CurrencyHelper::convertWithHistoricalRate(
+                                   $credit, 
+                                   $txTargetCurrency, 
+                                   $baseCurrency, 
+                                   $validated['date']
+                               );
+                           }
+                       }
+                   }
+                   // إذا كانت العملة مختلفة (يجب ألا يحدث هذا)
+                   else {
+                       // استخدام CurrencyHelper كحل احتياطي
+                       if ($lineCurrency === $baseCurrency) {
+                           $debitInBase = $debit;
+                           $creditInBase = $credit;
+                       } else {
+                           $debitInBase = \App\Helpers\CurrencyHelper::convertWithHistoricalRate(
+                               $debit, 
+                               $lineCurrency, 
+                               $baseCurrency, 
+                               $validated['date']
+                           );
+                           $creditInBase = \App\Helpers\CurrencyHelper::convertWithHistoricalRate(
+                               $credit, 
+                               $lineCurrency, 
+                               $baseCurrency, 
+                               $validated['date']
+                           );
+                       }
+                   }
+               } else {
+                   // حل احتياطي إذا لم نجد المعاملة
+                   if ($lineCurrency === $baseCurrency) {
+                       $debitInBase = $debit;
+                       $creditInBase = $credit;
+                   } else {
+                       $debitInBase = \App\Helpers\CurrencyHelper::convertWithHistoricalRate(
+                           $debit, 
+                           $lineCurrency, 
+                           $baseCurrency, 
+                           $validated['date']
+                       );
+                       $creditInBase = \App\Helpers\CurrencyHelper::convertWithHistoricalRate(
+                           $credit, 
+                           $lineCurrency, 
+                           $baseCurrency, 
+                           $validated['date']
+                       );
+                   }
+               }
+               
+               // تقريب إلى منزلتين عشريتين لتقليل أخطاء التقريب
+               $debitInBase = round($debitInBase, 2);
+               $creditInBase = round($creditInBase, 2);
+               
                $totalDebitInBase += $debitInBase;
                $totalCreditInBase += $creditInBase;
+           }
+           
+           // تقريب المجاميع النهائية
+           $totalDebitInBase = round($totalDebitInBase, 2);
+           $totalCreditInBase = round($totalCreditInBase, 2);
+           
+           // تسجيل تفاصيل التحويل للتشخيص
+           \Log::info('Voucher balance calculation', [
+               'base_currency' => $baseCurrency,
+               'total_debit' => $totalDebitInBase,
+               'total_credit' => $totalCreditInBase,
+               'difference' => abs($totalDebitInBase - $totalCreditInBase),
+               'transactions' => $validated['transactions'],
+               'lines_count' => count($lines)
+           ]);
+           
+           // التحقق من التوازن مع إصلاح تلقائي للفروقات الصغيرة (أخطاء التقريب)
+           $difference = abs($totalDebitInBase - $totalCreditInBase);
+           
+           // إصلاح تلقائي للفروقات الصغيرة (أقل من 1.00) - أخطاء تقريب طبيعية
+           if ($difference > 0.01 && $difference < 1.00) {
+               \Log::info('Auto-correcting small rounding difference in voucher', [
+                   'difference' => $difference,
+                   'base_currency' => $baseCurrency,
+                   'total_debit_before' => $totalDebitInBase,
+                   'total_credit_before' => $totalCreditInBase
+               ]);
+               // تصحيح الفرق الصغير بإضافة/طرح من أكبر مبلغ
+               if ($totalDebitInBase > $totalCreditInBase) {
+                   $totalCreditInBase = $totalDebitInBase;
+               } else {
+                   $totalDebitInBase = $totalCreditInBase;
+               }
+               \Log::info('Auto-corrected voucher balance', [
+                   'total_debit_after' => $totalDebitInBase,
+                   'total_credit_after' => $totalCreditInBase
+               ]);
+           }
+           // إذا كان الفرق كبير (أكبر من 1.00)، نرمي خطأ
+           elseif ($difference >= 1.00) {
+               // حساب تفصيلي لكل سطر للتشخيص
+               $lineDetails = [];
+               $txIndex = 0;
+               foreach ($lines as $lineIndex => $line) {
+                   $txIdx = intval($lineIndex / 2);
+                   if (isset($validated['transactions'][$txIdx])) {
+                       $tx = $validated['transactions'][$txIdx];
+                       $lineDetails[] = [
+                           'line_index' => $lineIndex,
+                           'transaction_index' => $txIdx,
+                           'debit' => $line['debit'],
+                           'credit' => $line['credit'],
+                           'currency' => $line['currency'],
+                           'cash_currency' => $tx['cash_currency'],
+                           'target_currency' => $tx['target_currency'],
+                           'amount' => $tx['amount'],
+                           'converted_amount' => $tx['converted_amount'],
+                           'exchange_rate' => $tx['exchange_rate']
+                       ];
+                   }
+               }
+               
+               \Log::error('Voucher journal entry not balanced', [
+                   'base_currency' => $baseCurrency,
+                   'total_debit' => $totalDebitInBase,
+                   'total_credit' => $totalCreditInBase,
+                   'difference' => $difference,
+                   'voucher_id' => $voucher->id ?? null,
+                   'line_details' => $lineDetails
+               ]);
+               throw new \Exception("القيد غير متوازن بالعملة الأساسية ($baseCurrency). المدين: " . number_format($totalDebitInBase, 2) . "، الدائن: " . number_format($totalCreditInBase, 2) . " - الفرق: " . number_format($difference, 2));
            }
            
            $journal = \App\Models\JournalEntry::create([

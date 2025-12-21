@@ -404,25 +404,39 @@ class AccountController extends Controller
 
                 // معالجة الرصيد الافتتاحي
                 if (!$hasTransactions) {
+                    $hasOpeningBalanceChecked = $request->has('has_opening_balance') && $request->input('has_opening_balance');
+                    $editOpeningBalanceChecked = $request->has('edit_opening_balance') && $request->input('edit_opening_balance');
+                    
+                    \Log::info('معالجة الرصيد الافتتاحي', [
+                        'has_opening_balance' => $hasOpeningBalanceChecked,
+                        'edit_opening_balance' => $editOpeningBalanceChecked,
+                        'hadOpeningBalanceBefore' => $hadOpeningBalanceBefore,
+                        'opening_balance_amount' => $validated['opening_balance_amount'] ?? null,
+                    ]);
+                    
                     // إضافة رصيد افتتاحي جديد
-                    if ($request->boolean('has_opening_balance') && !$hadOpeningBalanceBefore) {
+                    if ($hasOpeningBalanceChecked && !$hadOpeningBalanceBefore) {
                         if (isset($validated['opening_balance_amount']) && $validated['opening_balance_amount'] > 0) {
                             $updateData['has_opening_balance'] = true;
                             $updateData['opening_balance'] = $validated['opening_balance_amount'];
                             $updateData['opening_balance_currency'] = $validated['opening_balance_currency'] ?? 'IQD';
-                            $updateData['opening_balance_type'] = $validated['opening_balance_type'];
-                            $updateData['opening_balance_date'] = $validated['opening_balance_date'];
+                            $updateData['opening_balance_type'] = $validated['opening_balance_type'] ?? 'debit';
+                            $updateData['opening_balance_date'] = $validated['opening_balance_date'] ?? date('Y-m-d');
                             $shouldCreateOpeningBalance = true;
+                            
+                            \Log::info('سيتم إنشاء رصيد افتتاحي جديد', $updateData);
                         }
                     }
                     // تعديل رصيد افتتاحي موجود
-                    elseif ($request->boolean('edit_opening_balance') && $hadOpeningBalanceBefore) {
+                    elseif ($editOpeningBalanceChecked && $hadOpeningBalanceBefore) {
                         if (isset($validated['opening_balance_amount']) && $validated['opening_balance_amount'] > 0) {
                             $updateData['opening_balance'] = $validated['opening_balance_amount'];
                             $updateData['opening_balance_currency'] = $validated['opening_balance_currency'] ?? $account->opening_balance_currency ?? 'IQD';
-                            $updateData['opening_balance_type'] = $validated['opening_balance_type'];
-                            $updateData['opening_balance_date'] = $validated['opening_balance_date'];
+                            $updateData['opening_balance_type'] = $validated['opening_balance_type'] ?? $account->opening_balance_type ?? 'debit';
+                            $updateData['opening_balance_date'] = $validated['opening_balance_date'] ?? $account->opening_balance_date ?? date('Y-m-d');
                             $shouldUpdateOpeningBalance = true;
+                            
+                            \Log::info('سيتم تحديث رصيد افتتاحي موجود', $updateData);
                         }
                     }
                 }
@@ -436,10 +450,18 @@ class AccountController extends Controller
                 if (!$hasTransactions) {
                     // إنشاء قيد جديد للرصيد الافتتاحي
                     if ($shouldCreateOpeningBalance && isset($updateData['opening_balance']) && $updateData['opening_balance'] > 0) {
+                        \Log::info('إنشاء قيد الرصيد الافتتاحي', [
+                            'account_id' => $account->id,
+                            'opening_balance' => $updateData['opening_balance']
+                        ]);
                         $this->createOpeningBalanceEntry($account, $updateData);
                     }
                     // تعديل القيد الموجود
                     elseif ($shouldUpdateOpeningBalance && isset($updateData['opening_balance']) && $updateData['opening_balance'] > 0) {
+                        \Log::info('تحديث قيد الرصيد الافتتاحي', [
+                            'account_id' => $account->id,
+                            'opening_balance' => $updateData['opening_balance']
+                        ]);
                         $this->updateOpeningBalanceEntry($account, $updateData);
                     }
                 }

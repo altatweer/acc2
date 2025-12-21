@@ -158,6 +158,47 @@ class InvoicePaymentController extends Controller
                 $journalCurrency = $paymentCurrency === $invoice->currency ? $paymentCurrency : 'MIX';
                 $isMultiCurrency = $paymentCurrency !== $invoice->currency;
                 
+                // تحويل المبلغ المدفوع إلى عملة الفاتورة للتحقق من التوازن
+                $debitInInvoiceCurrency = $paymentCurrency === $invoice->currency 
+                    ? $paymentAmount 
+                    : \App\Helpers\CurrencyHelper::convertWithHistoricalRate(
+                        $paymentAmount, 
+                        $paymentCurrency, 
+                        $invoice->currency, 
+                        $validated['date']
+                    );
+                
+                $creditInInvoiceCurrency = $convertedAmount; // بالفعل بعملة الفاتورة
+                
+                // تقريب المبالغ المحولة
+                $debitInInvoiceCurrency = round($debitInInvoiceCurrency, 2);
+                $creditInInvoiceCurrency = round($creditInInvoiceCurrency, 2);
+                
+                // التحقق من التوازن (فرق مقبول 0.10 لأخطاء التقريب في التحويلات)
+                $difference = abs($debitInInvoiceCurrency - $creditInInvoiceCurrency);
+                if ($difference > 0.10) {
+                    \Log::error('Invoice payment journal entry not balanced', [
+                        'debit_in_invoice_currency' => $debitInInvoiceCurrency,
+                        'credit_in_invoice_currency' => $creditInInvoiceCurrency,
+                        'difference' => $difference,
+                        'invoice_id' => $invoice->id
+                    ]);
+                    throw new \Exception("القيد غير متوازن مالياً. المدين: " . number_format($debitInInvoiceCurrency, 2) . " " . $invoice->currency . "، الدائن: " . number_format($creditInInvoiceCurrency, 2) . " " . $invoice->currency . " - الفرق: " . number_format($difference, 2));
+                }
+                
+                // إذا كان الفرق صغير (أقل من 0.10)، نصححه تلقائياً
+                if ($difference > 0.01 && $difference <= 0.10) {
+                    \Log::info('Auto-correcting small rounding difference in invoice payment', [
+                        'difference' => $difference,
+                        'invoice_currency' => $invoice->currency
+                    ]);
+                    if ($debitInInvoiceCurrency > $creditInInvoiceCurrency) {
+                        $creditInInvoiceCurrency = $debitInInvoiceCurrency;
+                    } else {
+                        $debitInInvoiceCurrency = $creditInInvoiceCurrency;
+                    }
+                }
+                
                 $journal = \App\Models\JournalEntry::create([
                     'date' => $validated['date'],
                     'description' => 'قيد سداد فاتورة ' . $invoice->invoice_number,
@@ -167,8 +208,8 @@ class InvoicePaymentController extends Controller
                     'currency' => $journalCurrency,
                     'is_multi_currency' => $isMultiCurrency,
                     'exchange_rate' => $exchangeRate,
-                    'total_debit' => $paymentAmount,
-                    'total_credit' => $convertedAmount,
+                    'total_debit' => $debitInInvoiceCurrency,   // ✅ بنفس العملة (عملة الفاتورة)
+                    'total_credit' => $creditInInvoiceCurrency, // ✅ بنفس العملة (عملة الفاتورة)
                 ]);
                 
                 foreach ($lines as $line) {

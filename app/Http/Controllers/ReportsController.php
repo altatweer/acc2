@@ -908,11 +908,15 @@ class ReportsController extends Controller
         $rows = [];
         $totalRevenue = 0;
         $totalExpense = 0;
+        $totalDebit = 0;
+        $totalCredit = 0;
+        $totalBalance = 0;
         
         // تجميع الصفوف حسب العملة
         $rowsByCurrency = collect();
         $revenuesByCurrency = [];
         $expensesByCurrency = [];
+        $netByCurrency = [];
         
         foreach ($accounts as $account) {
             $query = $account->journalEntryLines();
@@ -936,7 +940,8 @@ class ReportsController extends Controller
             foreach ($linesByCurrency as $currency => $currencyLines) {
                 $debit = $currencyLines->sum('debit');
                 $credit = $currencyLines->sum('credit');
-                $balance = $debit - $credit;
+                // استخدام helper method لحساب الرصيد بناءً على nature الحساب
+                $balance = $this->calculateAccountBalance($account, $debit, $credit);
                 
                 // تجاهل الحسابات التي ليس لديها أي حركة
                 if ($debit == 0 && $credit == 0 && $balance == 0) {
@@ -992,6 +997,11 @@ class ReportsController extends Controller
                     $expensesByCurrency[$actualCurrency] += abs($balance);
                 }
             }
+        }
+        
+        // حساب صافي الربح/الخسارة لكل عملة
+        foreach ($revenuesByCurrency as $currency => $revenue) {
+            $netByCurrency[$currency] = $revenue - ($expensesByCurrency[$currency] ?? 0);
         }
         
         // المجموع الكلي معروض بكل العملات المتاحة
@@ -1075,6 +1085,7 @@ class ReportsController extends Controller
             'rowsByCurrency',
             'revenuesByCurrency',
             'expensesByCurrency',
+            'netByCurrency',
             'financialResultsInAllCurrencies',
             'allRowsInDisplayCurrency',
             'revenueInDisplayCurrency',

@@ -153,6 +153,45 @@ class SalaryPaymentController extends Controller
                     throw new \Exception('لم يتم العثور على حساب الذمم المستحقة للموظفين في إعدادات النظام.');
                 }
 
+                // تحويل المبلغ المدفوع إلى عملة الراتب للتحقق من التوازن
+                $creditInSalaryCurrency = $paymentCurrency === $employee->currency 
+                    ? $paymentAmount 
+                    : \App\Helpers\CurrencyHelper::convertWithHistoricalRate(
+                        $paymentAmount, 
+                        $paymentCurrency, 
+                        $employee->currency, 
+                        $validated['payment_date']
+                    );
+                
+                // تقريب المبالغ المحولة
+                $convertedAmount = round($convertedAmount, 2);
+                $creditInSalaryCurrency = round($creditInSalaryCurrency, 2);
+                
+                // التحقق من التوازن (فرق مقبول 0.10 لأخطاء التقريب في التحويلات)
+                $difference = abs($convertedAmount - $creditInSalaryCurrency);
+                if ($difference > 0.10) {
+                    \Log::error('Salary payment journal entry not balanced', [
+                        'converted_amount' => $convertedAmount,
+                        'credit_in_salary_currency' => $creditInSalaryCurrency,
+                        'difference' => $difference,
+                        'employee_id' => $employee->id
+                    ]);
+                    throw new \Exception("القيد غير متوازن مالياً. المدين: " . number_format($convertedAmount, 2) . " " . $employee->currency . "، الدائن: " . number_format($creditInSalaryCurrency, 2) . " " . $employee->currency . " - الفرق: " . number_format($difference, 2));
+                }
+                
+                // إذا كان الفرق صغير (أقل من 0.10)، نصححه تلقائياً
+                if ($difference > 0.01 && $difference <= 0.10) {
+                    \Log::info('Auto-correcting small rounding difference in salary payment', [
+                        'difference' => $difference,
+                        'employee_currency' => $employee->currency
+                    ]);
+                    if ($convertedAmount > $creditInSalaryCurrency) {
+                        $creditInSalaryCurrency = $convertedAmount;
+                    } else {
+                        $convertedAmount = $creditInSalaryCurrency;
+                    }
+                }
+                
                 $journal = \App\Models\JournalEntry::create([
                     'date' => $validated['payment_date'],
                     'description' => 'سداد راتب الموظف ' . $employee->name . ' عن شهر ' . $salaryPayment->salary_month,
@@ -162,8 +201,8 @@ class SalaryPaymentController extends Controller
                     'currency' => $paymentCurrency, // عملة السند الرئيسية
                     'exchange_rate' => $exchangeRate,
                     'is_multi_currency' => ($paymentCurrency !== $employee->currency), // إشارة للعملات المتعددة
-                    'total_debit' => $convertedAmount, // بعملة الراتب
-                    'total_credit' => $convertedAmount, // بعملة الراتب
+                    'total_debit' => $convertedAmount,        // ✅ بعملة الراتب
+                    'total_credit' => $creditInSalaryCurrency, // ✅ بعملة الراتب (محول من IQD)
                 ]);
 
                 // خط القيد: مدين حساب الذمم المستحقة للموظفين (بعملة الراتب)
@@ -176,13 +215,13 @@ class SalaryPaymentController extends Controller
                     'exchange_rate' => 1, // بالنسبة لعملة الراتب
                 ]);
 
-                // خط القيد: دائن الصندوق النقدي (بعملة الدفع)
+                // خط القيد: دائن الصندوق النقدي (محول إلى عملة الراتب)
                 $journal->lines()->create([
                     'account_id' => $cashAccount->id,
                     'description' => 'دفع راتب ' . $employee->name . ' نقداً',
                     'debit' => 0,
-                    'credit' => $paymentAmount,
-                    'currency' => $paymentCurrency,
+                    'credit' => $creditInSalaryCurrency, // ✅ محول إلى عملة الراتب
+                    'currency' => $employee->currency,    // ✅ بعملة الراتب
                     'exchange_rate' => $exchangeRate,
                 ]);
 

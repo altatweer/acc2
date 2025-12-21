@@ -213,42 +213,83 @@
     letter-spacing: 0.3px;
 }
 
-/* Currency Badges - Elegant Design */
+/* Currency Badges - Elegant & Professional Design */
 .currency-badge {
-    display: inline-block;
-    padding: 6px 12px;
-    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 14px;
+    border-radius: 12px;
     font-size: 12px;
-    font-weight: 600;
-    background: #f0f4f8;
+    font-weight: 700;
+    background: linear-gradient(135deg, #f0f4f8 0%, #e8ecef 100%);
     color: #495057;
-    border: 1px solid #dee2e6;
-    letter-spacing: 0.3px;
-    transition: all 0.2s ease;
+    border: 1.5px solid #dee2e6;
+    letter-spacing: 0.5px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    position: relative;
+    overflow: hidden;
+}
+
+.currency-badge::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    transition: left 0.5s ease;
+}
+
+.currency-badge:hover::before {
+    left: 100%;
 }
 
 .currency-badge:hover {
     transform: translateY(-2px) scale(1.05);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
     cursor: pointer;
+    border-color: #adb5bd;
 }
 
 .currency-badge-primary {
     background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
     color: #1565c0;
     border-color: #90caf9;
+    box-shadow: 0 3px 8px rgba(33, 150, 243, 0.2);
+}
+
+.currency-badge-primary:hover {
+    background: linear-gradient(135deg, #bbdefb 0%, #90caf9 100%);
+    box-shadow: 0 6px 20px rgba(33, 150, 243, 0.3);
+    border-color: #64b5f6;
 }
 
 .currency-badge-success {
     background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
     color: #2e7d32;
     border-color: #81c784;
+    box-shadow: 0 3px 8px rgba(76, 175, 80, 0.2);
+}
+
+.currency-badge-success:hover {
+    background: linear-gradient(135deg, #c8e6c9 0%, #a5d6a7 100%);
+    box-shadow: 0 6px 20px rgba(76, 175, 80, 0.3);
+    border-color: #66bb6a;
 }
 
 .currency-badge-info {
     background: linear-gradient(135deg, #e1f5fe 0%, #b3e5fc 100%);
     color: #0277bd;
     border-color: #4dd0e1;
+    box-shadow: 0 3px 8px rgba(0, 188, 212, 0.2);
+}
+
+.currency-badge-info:hover {
+    background: linear-gradient(135deg, #b3e5fc 0%, #81d4fa 100%);
+    box-shadow: 0 6px 20px rgba(0, 188, 212, 0.3);
+    border-color: #26c6da;
 }
 
 /* Exchange Rate Info - Smooth & Professional */
@@ -376,31 +417,149 @@
 }
 
 /* Summary Cards - Elegant & Smooth */
+/* Summary Cards - Professional, Soft & White Design */
 .summary-card {
-    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-    border: 1px solid #e9ecef;
-    border-radius: 16px;
-    padding: 24px;
+    background: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 0;
     text-align: center;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     height: 100%;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+.summary-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: #f5f5f5;
+    transition: background 0.3s ease;
+}
+
+.summary-card:hover::before {
+    background: #2196F3;
 }
 
 .summary-card:hover {
-    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12);
-    transform: translateY(-5px) scale(1.02);
-    border-color: #dee2e6;
-}
-
-.summary-card.border-primary:hover {
-    box-shadow: 0 10px 28px rgba(33, 150, 243, 0.2);
-    transform: translateY(-5px) scale(1.02);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    transform: translateY(-4px);
+    border-color: #d0d0d0;
 }
 
 .summary-card.border-primary {
     border: 2px solid #2196F3;
-    background: linear-gradient(135deg, #f0f7ff 0%, #e3f2fd 100%);
+    box-shadow: 0 4px 12px rgba(33, 150, 243, 0.1);
+}
+
+.summary-card.border-primary::before {
+    background: #2196F3;
+}
+
+.summary-card.border-primary:hover {
+    box-shadow: 0 10px 28px rgba(33, 150, 243, 0.15);
+    transform: translateY(-4px);
+}
+
+.summary-card .report-card-header {
+    background: #f8f9fa;
+    padding: 16px 20px;
+    border-radius: 12px 12px 0 0;
+    margin: 0;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.summary-card .report-card-header h6 {
+    color: #495057;
+    font-weight: 600;
+    font-size: 14px;
+    margin: 0;
+    letter-spacing: 0.2px;
+}
+
+.summary-card.border-primary .report-card-header {
+    background: #e3f2fd;
+    border-bottom-color: #bbdefb;
+}
+
+.summary-card .report-card-header .badge {
+    background: #2196F3;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 600;
+    margin-right: 8px;
+}
+
+.summary-card .report-card-body {
+    padding: 24px 20px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    background: #ffffff;
+}
+
+.summary-card table {
+    width: 100%;
+    margin: 0;
+}
+
+.summary-card table tr {
+    border-bottom: 1px solid #f0f0f0;
+    transition: background-color 0.2s ease;
+}
+
+.summary-card table tr:hover {
+    background-color: #fafafa;
+}
+
+.summary-card table tr:last-child {
+    border-bottom: none;
+}
+
+.summary-card table td,
+.summary-card table th {
+    padding: 14px 12px;
+    text-align: right;
+    font-size: 13px;
+    vertical-align: middle;
+    color: #495057;
+}
+
+.summary-card table td:first-child,
+.summary-card table th:first-child {
+    text-align: right;
+    font-weight: 600;
+    color: #6c757d;
+}
+
+.summary-card table td:last-child,
+.summary-card table th:last-child {
+    text-align: left;
+    font-weight: 700;
+    font-size: 14px;
+    font-family: 'SF Mono', 'Monaco', 'Cascadia Code', 'Roboto Mono', monospace;
+    letter-spacing: 0.3px;
+    color: #212529;
+}
+
+.summary-card table .text-success {
+    color: #28a745 !important;
+    font-weight: 700;
+}
+
+.summary-card table .text-danger {
+    color: #dc3545 !important;
+    font-weight: 700;
 }
 
 .summary-card-header {
@@ -649,3 +808,352 @@
     }
 }
 
+/* ============================================
+   Ledger Specific Styles
+   ============================================ */
+
+.ledger-container {
+    padding: 20px 0;
+}
+
+.ledger-filters {
+    background: #fff;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    border: 1px solid #e9ecef;
+}
+
+.ledger-table {
+    background: #fff;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    margin-bottom: 24px;
+    border: 1px solid #e9ecef;
+}
+
+.ledger-table table {
+    margin-bottom: 0;
+    font-variant-numeric: tabular-nums;
+}
+
+.ledger-table thead th {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    font-weight: 600;
+    text-align: center;
+    vertical-align: middle;
+    border-bottom: 2px solid #dee2e6;
+    padding: 12px;
+    font-size: 13px;
+    color: #495057;
+}
+
+.ledger-table tbody td {
+    vertical-align: middle;
+    text-align: center;
+    padding: 10px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.ledger-table tbody tr:hover {
+    background-color: #f8f9fa;
+    transition: background-color 0.2s;
+}
+
+.ledger-table .text-right {
+    text-align: right !important;
+    font-weight: 500;
+}
+
+.ledger-table .currency-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    background: #e3f2fd;
+    color: #1976d2;
+}
+
+.ledger-table tfoot th {
+    background: #f8f9fa;
+    font-weight: 600;
+    border-top: 2px solid #dee2e6;
+}
+
+.ledger-summary-card {
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    color: white;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.ledger-summary-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+}
+
+.ledger-summary-card h5 {
+    color: white;
+    margin-bottom: 15px;
+    font-weight: 600;
+}
+
+.ledger-summary-card h4 {
+    color: white;
+    font-weight: 700;
+    margin: 0;
+}
+
+.ledger-summary-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+}
+
+.ledger-summary-item:last-child {
+    border-bottom: none;
+}
+
+.ledger-summary-item strong {
+    font-size: 1.1rem;
+}
+
+/* Responsive adjustments for ledger */
+@media (max-width: 768px) {
+    .ledger-filters .row {
+        margin: 0;
+    }
+    
+    .ledger-filters .col-md-4,
+    .ledger-filters .col-md-2,
+    .ledger-filters .col-md-3 {
+        padding: 0 10px;
+        margin-bottom: 15px;
+    }
+    
+    .ledger-table {
+        overflow-x: auto;
+    }
+    
+    .ledger-table table {
+        min-width: 800px;
+    }
+}
+
+/* Print styles for ledger */
+@media print {
+    .ledger-filters,
+    .ledger-summary-card,
+    .btn {
+        display: none !important;
+    }
+    
+    .ledger-table {
+        box-shadow: none;
+        border: 1px solid #000;
+    }
+    
+    .ledger-table thead th {
+        background: #f0f0f0 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+}
+}
+
+/* ============================================
+   Balance Sheet Specific Styles - Professional & Fast
+   ============================================ */
+
+.balance-sheet-section {
+    background: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.balance-sheet-section:hover {
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+    border-color: #d0d0d0;
+}
+
+.balance-sheet-section-header {
+    padding: 16px 20px;
+    font-weight: 600;
+    font-size: 15px;
+    border-bottom: 2px solid #e9ecef;
+    background: #f8f9fa;
+}
+
+.balance-sheet-section-header.assets-header {
+    background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+    color: #2e7d32;
+    border-bottom-color: #81c784;
+}
+
+.balance-sheet-section-header.liabilities-header {
+    background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+    color: #c62828;
+    border-bottom-color: #ef5350;
+}
+
+.balance-sheet-section-header.equity-header {
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    color: #1565c0;
+    border-bottom-color: #64b5f6;
+}
+
+.balance-sheet-section-body {
+    flex: 1;
+    padding: 0;
+    background: #ffffff;
+}
+
+.balance-sheet-table {
+    width: 100%;
+}
+
+.balance-sheet-table table {
+    margin: 0;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.balance-sheet-table thead {
+    background: #f8f9fa;
+}
+
+.balance-sheet-table thead th {
+    padding: 12px 16px;
+    font-weight: 600;
+    font-size: 12px;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.balance-sheet-table tbody tr {
+    transition: background-color 0.15s ease;
+    border-bottom: 1px solid #f5f5f5;
+}
+
+.balance-sheet-table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.balance-sheet-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.balance-sheet-table tbody td {
+    padding: 12px 16px;
+    font-size: 13px;
+    color: #495057;
+    vertical-align: middle;
+}
+
+.balance-sheet-table .account-name {
+    font-weight: 500;
+    color: #212529;
+}
+
+.balance-sheet-table .balance-value {
+    font-family: 'SF Mono', 'Monaco', 'Cascadia Code', 'Roboto Mono', monospace;
+    font-weight: 600;
+    color: #495057;
+    letter-spacing: 0.3px;
+    text-align: left;
+}
+
+.balance-sheet-table tfoot {
+    background: #f8f9fa;
+    border-top: 2px solid #e9ecef;
+}
+
+.balance-sheet-table .section-total th {
+    padding: 14px 16px;
+    font-weight: 700;
+    font-size: 14px;
+    color: #212529;
+    background: #f0f0f0;
+}
+
+.balance-sheet-table .section-total .total-value {
+    font-family: 'SF Mono', 'Monaco', 'Cascadia Code', 'Roboto Mono', monospace;
+    font-weight: 700;
+    font-size: 15px;
+    color: #1976d2;
+    letter-spacing: 0.5px;
+}
+
+.balance-summary-table {
+    width: 100%;
+}
+
+.balance-summary-table tr {
+    border-bottom: 1px solid #f0f0f0;
+    transition: background-color 0.2s ease;
+}
+
+.balance-summary-table tr:hover {
+    background-color: #fafafa;
+}
+
+.balance-summary-table tr.balance-row {
+    border-top: 2px solid #e9ecef;
+    border-bottom: none;
+    background: #f8f9fa;
+}
+
+.balance-summary-table .summary-label {
+    padding: 12px 16px;
+    font-weight: 600;
+    color: #495057;
+    font-size: 14px;
+}
+
+.balance-summary-table .summary-value {
+    padding: 12px 16px;
+    font-family: 'SF Mono', 'Monaco', 'Cascadia Code', 'Roboto Mono', monospace;
+    font-weight: 600;
+    color: #212529;
+    letter-spacing: 0.3px;
+    font-size: 14px;
+}
+
+.balance-summary-table .balance-row .summary-label {
+    font-size: 15px;
+    padding: 16px;
+}
+
+.balance-summary-table .balance-row .summary-value {
+    font-size: 18px;
+    padding: 16px;
+}
+
+/* Responsive adjustments for balance sheet */
+@media (max-width: 768px) {
+    .balance-sheet-section {
+        margin-bottom: 20px;
+    }
+    
+    .balance-sheet-table thead th,
+    .balance-sheet-table tbody td {
+        padding: 10px 12px;
+        font-size: 12px;
+    }
+
+}

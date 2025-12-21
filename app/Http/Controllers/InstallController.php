@@ -446,8 +446,7 @@ class InstallController extends Controller
                         ['value' => $account->id]
                     );
                 } else {
-                        $missing[] = $accountCode;
-                    }
+                    $missing[] = $accountCode;
                 }
             }
             if (count($missing) > 0) {
@@ -462,16 +461,13 @@ class InstallController extends Controller
                     '. تحقق من أن شجرة الحسابات تحتوي على هذه الأرقام أو قم بإضافتها يدوياً بعد التثبيت.');
             }
             
+            // تحديث خطوة التثبيت
+            session(['install_step' => 'finish']);
+            
             return back()->with('chart_imported', 'تم استيراد شجرة الحسابات بنجاح!');
         } catch (\Exception $e) {
             return back()->with('chart_error', 'فشل استيراد الشجرة أو ربط الحسابات الافتراضية: ' . $e->getMessage());
         }
-        
-        // تحديث خطوة التثبيت
-        session(['install_step' => 'finish']);
-        
-        // انتقل مباشرة إلى صفحة النهاية
-        return redirect()->route('install.finish');
     }
 
     public function finish(Request $request)
