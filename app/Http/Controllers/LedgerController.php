@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Helpers\CurrencyHelper;
+use App\Models\Setting;
 
 class LedgerController extends Controller
 {
@@ -77,8 +78,7 @@ class LedgerController extends Controller
                     
                     $openingDebit = $openingEntries->sum('debit');
                     $openingCredit = $openingEntries->sum('credit');
-                    // المنطق البسيط: المدين - الدائن (بغض النظر عن طبيعة الحساب)
-                    $openingBalanceForCurrency = $openingDebit - $openingCredit;
+                    $openingBalanceForCurrency = $this->calculateAccountBalance($account, $openingDebit, $openingCredit);
                 } else {
                     // إذا لم يكن هناك تاريخ بداية، الرصيد الافتتاحي هو 0
                     $openingBalanceForCurrency = 0;
@@ -320,7 +320,7 @@ class LedgerController extends Controller
     }
     
     /**
-     * حساب الرصيد بناءً على المنطق البسيط (لدفتر الأستاذ فقط)
+     * حساب الرصيد بناءً على الإعداد المختار
      * 
      * @param \App\Models\Account $account
      * @param float $debit
@@ -329,12 +329,23 @@ class LedgerController extends Controller
      */
     private function calculateAccountBalance($account, $debit, $credit)
     {
-        // المنطق البسيط: المدين - الدائن (بغض النظر عن طبيعة الحساب)
-        return $debit - $credit;
+        $method = Setting::getBalanceCalculationMethod();
+        
+        if ($method === 'transaction_nature') {
+            // المنطق البسيط: المدين - الدائن (بغض النظر عن طبيعة الحساب)
+            return $debit - $credit;
+        } else {
+            // المنطق التقليدي: يعتمد على طبيعة الحساب
+            if ($account->nature === 'مدين' || $account->nature === 'debit') {
+                return $debit - $credit;
+            } else {
+                return $credit - $debit;
+            }
+        }
     }
     
     /**
-     * حساب الرصيد التراكمي بعد حركة (المنطق البسيط)
+     * حساب الرصيد التراكمي بعد حركة
      * 
      * @param \App\Models\Account $account
      * @param float $currentBalance
@@ -344,7 +355,10 @@ class LedgerController extends Controller
      */
     private function calculateRunningBalance($account, $currentBalance, $debit, $credit)
     {
-        // المنطق البسيط: الرصيد الحالي + (المدين - الدائن)
-        return $currentBalance + ($debit - $credit);
+        // حساب التغيير في الرصيد من هذه الحركة
+        $change = $this->calculateAccountBalance($account, $debit, $credit);
+        
+        // إضافة التغيير للرصيد الحالي
+        return $currentBalance + $change;
     }
 }

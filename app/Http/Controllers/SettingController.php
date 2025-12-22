@@ -17,6 +17,7 @@ class SettingController extends Controller
             'company_name' => Setting::get('company_name', ''),
             'company_logo' => Setting::get('company_logo', ''),
             'default_language' => Setting::get('default_language', 'ar'),
+            'balance_calculation_method' => Setting::get('balance_calculation_method', 'account_nature'),
         ];
         return view('settings.system', compact('settings'));
     }
@@ -28,11 +29,13 @@ class SettingController extends Controller
             'company_name' => 'required|string|max:255',
             'company_logo' => 'nullable|image|max:2048',
             'default_language' => 'required|in:ar,en',
+            'balance_calculation_method' => 'required|in:account_nature,transaction_nature',
         ]);
         
         Setting::set('system_name', $request->system_name);
         Setting::set('company_name', $request->company_name);
         Setting::set('default_language', $request->default_language);
+        Setting::set('balance_calculation_method', $request->balance_calculation_method);
         
         if ($request->hasFile('company_logo')) {
             $logo = $request->file('company_logo')->store('logos', 'public');

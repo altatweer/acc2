@@ -40,6 +40,21 @@
                                 <i class="fas fa-info-circle"></i> @lang('messages.language_setting_admin_only')
                             </div>
                         </div>
+                        <div class="form-group">
+                            <label>طريقة حساب الرصيد</label>
+                            <select name="balance_calculation_method" class="form-control">
+                                <option value="account_nature" {{ ($settings['balance_calculation_method'] ?? 'account_nature') == 'account_nature' ? 'selected' : '' }}>
+                                    طبيعة الحساب (المنطق التقليدي)
+                                </option>
+                                <option value="transaction_nature" {{ ($settings['balance_calculation_method'] ?? 'account_nature') == 'transaction_nature' ? 'selected' : '' }}>
+                                    طبيعة الحركات (المنطق البسيط: المدين - الدائن)
+                                </option>
+                            </select>
+                            <small class="form-text text-muted">
+                                <strong>طبيعة الحساب:</strong> الرصيد يعتمد على nature الحساب (مدين/دائن)<br>
+                                <strong>طبيعة الحركات:</strong> الرصيد = المدين - الدائن دائماً (بغض النظر عن nature الحساب)
+                            </small>
+                        </div>
                         <button type="submit" class="btn btn-success">@lang('messages.save_settings')</button>
                     </form>
                 </div>

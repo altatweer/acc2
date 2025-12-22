@@ -10,6 +10,7 @@ use App\Exports\ExpensesRevenuesExport;
 use App\Exports\PayrollExport;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Mpdf\Mpdf;
+use App\Models\Setting;
 
 class ReportsController extends Controller
 {
@@ -1870,12 +1871,18 @@ class ReportsController extends Controller
      */
     private function calculateAccountBalance($account, $debit, $credit)
     {
-        // إذا كانت طبيعة الحساب مدين: الرصيد = المدين - الدائن
-        // إذا كانت طبيعة الحساب دائن: الرصيد = الدائن - المدين
-        if ($account->nature === 'مدين' || $account->nature === 'debit') {
+        $method = Setting::getBalanceCalculationMethod();
+        
+        if ($method === 'transaction_nature') {
+            // المنطق البسيط: المدين - الدائن (بغض النظر عن طبيعة الحساب)
             return $debit - $credit;
         } else {
-            return $credit - $debit;
+            // المنطق التقليدي: يعتمد على طبيعة الحساب
+            if ($account->nature === 'مدين' || $account->nature === 'debit') {
+                return $debit - $credit;
+            } else {
+                return $credit - $debit;
+            }
         }
     }
 

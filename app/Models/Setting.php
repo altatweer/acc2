@@ -22,4 +22,10 @@ class Setting extends Model
     {
         return static::updateOrCreate(['key' => $key], ['value' => $value]);
     }
+
+    // الحصول على طريقة حساب الرصيد
+    public static function getBalanceCalculationMethod()
+    {
+        return static::get('balance_calculation_method', 'account_nature');
+    }
 } 

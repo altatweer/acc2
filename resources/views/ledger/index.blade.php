@@ -194,11 +194,7 @@
                             <div class="flex-grow-1">
                                 <h6 class="text-white mb-1">الرصيد الافتتاحي ({{ $displayCurrency }})</h6>
                                 <h4 class="text-white mb-0">
-                                    @if($openingBalance >= 0)
-                                        +{{ number_format($openingBalance, 2) }}
-                                    @else
-                                        {{ number_format($openingBalance, 2) }}
-                                    @endif
+                                    {{ number_format($openingBalance, 2) }}
                                 </h4>
                             </div>
                             <i class="fas fa-wallet fa-2x text-white opacity-75"></i>
@@ -236,11 +232,7 @@
                                     @php
                                         $finalBal = $finalBalance ?? 0;
                                     @endphp
-                                    @if($finalBal >= 0)
-                                        +{{ number_format($finalBal, 2) }}
-                                    @else
-                                        {{ number_format($finalBal, 2) }}
-                                    @endif
+                                    {{ number_format($finalBal, 2) }}
                                 </h4>
                             </div>
                             <i class="fas fa-balance-scale fa-2x text-white opacity-75"></i>
@@ -262,11 +254,7 @@
                                     <div class="flex-grow-1">
                                         <h6 class="text-white mb-1">الرصيد الافتتاحي</h6>
                                         <h4 class="text-white mb-0">
-                                            @if($summary['opening_balance'] >= 0)
-                                                +{{ number_format($summary['opening_balance'], 2) }} {{ $currency }}
-                                            @else
-                                                {{ number_format($summary['opening_balance'], 2) }} {{ $currency }}
-                                            @endif
+                                            {{ number_format($summary['opening_balance'], 2) }} {{ $currency }}
                                         </h4>
                                     </div>
                                     <i class="fas fa-wallet fa-2x text-white opacity-75"></i>
@@ -301,11 +289,7 @@
                                     <div class="flex-grow-1">
                                         <h6 class="text-white mb-1">الرصيد النهائي</h6>
                                         <h4 class="text-white mb-0">
-                                            @if($summary['final_balance'] >= 0)
-                                                +{{ number_format($summary['final_balance'], 2) }} {{ $currency }}
-                                            @else
-                                                {{ number_format($summary['final_balance'], 2) }} {{ $currency }}
-                                            @endif
+                                            {{ number_format($summary['final_balance'], 2) }} {{ $currency }}
                                         </h4>
                                     </div>
                                     <i class="fas fa-balance-scale fa-2x text-white opacity-75"></i>
@@ -380,7 +364,7 @@
                             <td colspan="7" class="text-right"><strong>الرصيد الافتتاحي</strong></td>
                             <td class="text-right">
                                 @if($openingBalance >= 0)
-                                    <strong class="text-success">+{{ number_format($openingBalance, 2) }} {{ $displayCurrency }}</strong>
+                                    <strong class="text-success">{{ number_format($openingBalance, 2) }} {{ $displayCurrency }}</strong>
                                 @else
                                     <strong class="text-danger">{{ number_format($openingBalance, 2) }} {{ $displayCurrency }}</strong>
                                 @endif
@@ -389,11 +373,22 @@
                         @php 
                             $balance = $openingBalance;
                             $index = 1;
+                            $method = \App\Models\Setting::getBalanceCalculationMethod();
                         @endphp
                         @foreach($entries as $entry)
                             @php
-                                // المنطق البسيط: المدين - الدائن (بغض النظر عن طبيعة الحساب)
-                                $balance += $entry->debit - $entry->credit;
+                                // حساب الرصيد التراكمي بناءً على الإعداد المختار
+                                if ($method === 'transaction_nature') {
+                                    // المنطق البسيط: المدين - الدائن
+                                    $balance += $entry->debit - $entry->credit;
+                                } else {
+                                    // المنطق التقليدي: يعتمد على طبيعة الحساب
+                                    if ($account->nature === 'مدين' || $account->nature === 'debit') {
+                                        $balance += $entry->debit - $entry->credit;
+                                    } else {
+                                        $balance += $entry->credit - $entry->debit;
+                                    }
+                                }
                             @endphp
                             <tr>
                                 <td>{{ $index++ }}</td>
@@ -409,7 +404,7 @@
                                 <td class="text-right">{{ number_format($entry->credit, 2) }}</td>
                                 <td class="text-right">
                                     @if($balance >= 0)
-                                        <strong class="text-success">+{{ number_format($balance, 2) }} {{ $displayCurrency }}</strong>
+                                        <strong class="text-success">{{ number_format($balance, 2) }} {{ $displayCurrency }}</strong>
                                     @else
                                         <strong class="text-danger">{{ number_format($balance, 2) }} {{ $displayCurrency }}</strong>
                                     @endif
@@ -424,7 +419,7 @@
                             <th class="text-right">{{ number_format($totalCredit, 2) }}</th>
                             <th class="text-right">
                                 @if($balance >= 0)
-                                    <strong class="text-success">+{{ number_format($balance, 2) }} {{ $displayCurrency }}</strong>
+                                    <strong class="text-success">{{ number_format($balance, 2) }} {{ $displayCurrency }}</strong>
                                 @else
                                     <strong class="text-danger">{{ number_format($balance, 2) }} {{ $displayCurrency }}</strong>
                                 @endif
@@ -462,7 +457,7 @@
                                             $openingBal = $openingBalancesByCurrency[$currency] ?? 0;
                                         @endphp
                                         @if($openingBal >= 0)
-                                            <strong class="text-success">+{{ number_format($openingBal, 2) }} {{ $currency }}</strong>
+                                            <strong class="text-success">{{ number_format($openingBal, 2) }} {{ $currency }}</strong>
                                         @else
                                             <strong class="text-danger">{{ number_format($openingBal, 2) }} {{ $currency }}</strong>
                                         @endif
@@ -473,11 +468,22 @@
                                     $index = 1;
                                     $currencyTotalDebit = 0;
                                     $currencyTotalCredit = 0;
+                                    $method = \App\Models\Setting::getBalanceCalculationMethod();
                                 @endphp
                                 @foreach($currencyEntries as $entry)
                                     @php
-                                        // المنطق البسيط: المدين - الدائن (بغض النظر عن طبيعة الحساب)
-                                        $balance += $entry->debit - $entry->credit;
+                                        // حساب الرصيد التراكمي بناءً على الإعداد المختار
+                                        if ($method === 'transaction_nature') {
+                                            // المنطق البسيط: المدين - الدائن
+                                            $balance += $entry->debit - $entry->credit;
+                                        } else {
+                                            // المنطق التقليدي: يعتمد على طبيعة الحساب
+                                            if ($account->nature === 'مدين' || $account->nature === 'debit') {
+                                                $balance += $entry->debit - $entry->credit;
+                                            } else {
+                                                $balance += $entry->credit - $entry->debit;
+                                            }
+                                        }
                                         $currencyTotalDebit += $entry->debit;
                                         $currencyTotalCredit += $entry->credit;
                                     @endphp
@@ -489,7 +495,7 @@
                                         <td class="text-right">{{ number_format($entry->credit, 2) }}</td>
                                         <td class="text-right">
                                             @if($balance >= 0)
-                                                <strong class="text-success">+{{ number_format($balance, 2) }} {{ $currency }}</strong>
+                                                <strong class="text-success">{{ number_format($balance, 2) }} {{ $currency }}</strong>
                                             @else
                                                 <strong class="text-danger">{{ number_format($balance, 2) }} {{ $currency }}</strong>
                                             @endif
@@ -504,7 +510,7 @@
                                     <th class="text-right">{{ number_format($currencyTotalCredit, 2) }}</th>
                                     <th class="text-right">
                                         @if($balance >= 0)
-                                            <strong class="text-success">+{{ number_format($balance, 2) }} {{ $currency }}</strong>
+                                            <strong class="text-success">{{ number_format($balance, 2) }} {{ $currency }}</strong>
                                         @else
                                             <strong class="text-danger">{{ number_format($balance, 2) }} {{ $currency }}</strong>
                                         @endif

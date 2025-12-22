@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Account;
 use App\Models\Currency;
+use App\Models\Setting;
 use Illuminate\Http\Request;
 
 class AccountController extends Controller
@@ -533,16 +534,30 @@ class AccountController extends Controller
         $linesQuery = $account->journalEntryLines()
             ->with('journalEntry')
             ->orderBy('created_at');
-            
+        
+        $lines = collect();
+        $linesByCurrency = [];
+        $balance = 0;
+        
         // إذا تم تحديد عملة معينة، فلتر حسب العملة
         if ($selectedCurrency) {
             $linesQuery->where('currency', $selectedCurrency);
+            $lines = $linesQuery->get();
+            
+            // حساب الرصيد بناءً على الإعداد المختار
+            $method = Setting::getBalanceCalculationMethod();
+            if ($method === 'transaction_nature') {
+                // المنطق البسيط: المدين - الدائن (بغض النظر عن طبيعة الحساب)
+                $balance = $lines->sum('debit') - $lines->sum('credit');
+            } else {
+                // المنطق التقليدي: يعتمد على طبيعة الحساب
+                $balance = $account->balance($selectedCurrency);
+            }
+        } else {
+            // إذا لم يتم تحديد عملة، اجلب جميع الحركات واجمعها حسب العملة
+            $allLines = $linesQuery->get();
+            $linesByCurrency = $allLines->groupBy('currency');
         }
-        
-        $lines = $linesQuery->get();
-
-        // حساب الرصيد البسيط: المدين - الدائن (بغض النظر عن طبيعة الحساب)
-        $balance = $lines->sum('debit') - $lines->sum('credit');
 
         // جلب جميع العملات المتاحة في النظام
         // التحقق من وجود العمود is_active أولاً
@@ -558,7 +573,7 @@ class AccountController extends Controller
             $allCurrencies = collect(['IQD', 'USD', 'EUR']);
         }
 
-        return view('accounts.show', compact('account', 'defaultCurrency', 'lines', 'balance', 'allCurrencies', 'selectedCurrency'));
+        return view('accounts.show', compact('account', 'defaultCurrency', 'lines', 'balance', 'allCurrencies', 'selectedCurrency', 'linesByCurrency'));
     }
 
     /**
