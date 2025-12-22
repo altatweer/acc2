@@ -163,7 +163,16 @@ $(function(){
     // Update exchange rate when currency changes
     $('select[name="currency"]').on('change', function(){
         const code = $(this).val();
-        const rate = rates[code] || 1;
+        let rate = rates[code];
+        
+        // التحقق من أن rate هو رقم صحيح
+        if (rate === null || rate === undefined || isNaN(rate)) {
+            rate = 1;
+        }
+        
+        // تحويل إلى رقم إذا كان string
+        rate = parseFloat(rate) || 1;
+        
         $('#exchange_rate_display').val(rate.toFixed(6));
         $('#exchange_rate').val(rate);
     }).trigger('change');
@@ -183,22 +192,128 @@ $(function(){
     // Dynamic invoice items
     let idx = $('#invoice_items_body tr').length;
     
-    // Create template for new rows
-    let $template = $('#invoice_items_body tr:first').clone();
-    $template.find('select').val('');
-    $template.find('input').val('');
-    $template.find('input[type="number"]').val('1');
+    // حفظ قائمة المنتجات للاستخدام في الصفوف الجديدة
+    const itemsList = @json($items);
     
-    $('#add_item').click(function(){
-        let $row = $template.clone();
-        $row.find('[name]').each(function(){
-            let name = $(this).attr('name');
-            let newName = name.replace(/\[\d+\]/, '['+ idx +']');
-            $(this).attr('name', newName);
-        });
-        $row.find('select.select2').select2({theme:'bootstrap4'});
+    // Create template for new rows
+    function createNewItemRow() {
+        // إنشاء صف جديد من الصف الأول الموجود
+        let $firstRow = $('#invoice_items_body tr:first');
+        let $row;
+        
+        if ($firstRow.length > 0) {
+            // استنساخ الصف الأول
+            $row = $firstRow.clone();
+            
+            // تنظيف القيم
+            $row.find('select.items-select').val('');
+            $row.find('input.item-quantity').val('1');
+            $row.find('input.item-price').val('0');
+            $row.find('input.item-total').val('0.00');
+            
+            // تحديث أسماء الحقول
+            $row.find('[name]').each(function(){
+                let name = $(this).attr('name');
+                if (name) {
+                    let newName = name.replace(/\[\d+\]/, '['+ idx +']');
+                    $(this).attr('name', newName);
+                }
+            });
+            
+            // إزالة Select2 من العناصر المستنسخة وإعادة تهيئتها
+            $row.find('select.select2').each(function(){
+                if ($(this).data('select2')) {
+                    $(this).select2('destroy');
+                }
+            });
+            
+            // إعادة تهيئة Select2
+            $row.find('select.select2').select2({theme:'bootstrap4'});
+        } else {
+            // إذا لم يكن هناك صف موجود، إنشاء صف جديد
+            let itemsOptions = '';
+            itemsList.forEach(function(item) {
+                itemsOptions += `<option value="${item.id}" data-price="${item.unit_price || 0}">${item.name} (${item.type || 'product'})</option>`;
+            });
+            
+            $row = $(`
+                <tr>
+                    <td>
+                        <select name="items[${idx}][item_id]" class="form-control select2 items-select" required>
+                            <option value="" disabled selected>-- اختر المنتج/الخدمة --</option>
+                            ${itemsOptions}
+                        </select>
+                    </td>
+                    <td><input type="number" name="items[${idx}][quantity]" value="1" class="form-control item-quantity" min="1" step="1" required></td>
+                    <td><input type="number" name="items[${idx}][unit_price]" value="0" class="form-control item-price" step="0.01" required></td>
+                    <td><input type="number" name="items[${idx}][line_total]" value="0.00" class="form-control item-total" step="0.01" readonly></td>
+                    <td class="text-center"><button type="button" class="btn btn-danger btn-sm remove-item"><i class="fas fa-trash"></i></button></td>
+                </tr>
+            `);
+            
+            // تهيئة Select2
+            $row.find('select.select2').select2({theme:'bootstrap4'});
+        }
+        
+        // إضافة الصف إلى الجدول
         $('#invoice_items_body').append($row);
+        
+        // تحديث الإجمالي
+        updateTotal($row);
         idx++;
+    }
+    
+    $('#add_item').on('click', function(e){
+        e.preventDefault();
+        try {
+            createNewItemRow();
+        } catch(error) {
+            console.error('Error adding item row:', error);
+            console.error('Error details:', {
+                message: error.message,
+                stack: error.stack,
+                idx: idx,
+                firstRowLength: $('#invoice_items_body tr').length
+            });
+            
+            // محاولة بديلة: إنشاء صف بسيط بدون Select2 أولاً
+            try {
+                let itemsOptions = '';
+                if (itemsList && itemsList.length > 0) {
+                    itemsList.forEach(function(item) {
+                        itemsOptions += `<option value="${item.id}" data-price="${item.unit_price || 0}">${item.name} (${item.type || 'product'})</option>`;
+                    });
+                }
+                
+                let $newRow = $(`
+                    <tr>
+                        <td>
+                            <select name="items[${idx}][item_id]" class="form-control items-select" required>
+                                <option value="" disabled selected>-- اختر المنتج/الخدمة --</option>
+                                ${itemsOptions}
+                            </select>
+                        </td>
+                        <td><input type="number" name="items[${idx}][quantity]" value="1" class="form-control item-quantity" min="1" step="1" required></td>
+                        <td><input type="number" name="items[${idx}][unit_price]" value="0" class="form-control item-price" step="0.01" required></td>
+                        <td><input type="number" name="items[${idx}][line_total]" value="0.00" class="form-control item-total" step="0.01" readonly></td>
+                        <td class="text-center"><button type="button" class="btn btn-danger btn-sm remove-item"><i class="fas fa-trash"></i></button></td>
+                    </tr>
+                `);
+                
+                $('#invoice_items_body').append($newRow);
+                
+                // تهيئة Select2 بعد إضافة الصف
+                setTimeout(function() {
+                    $newRow.find('select.items-select').select2({theme:'bootstrap4'});
+                }, 100);
+                
+                updateTotal($newRow);
+                idx++;
+            } catch(fallbackError) {
+                console.error('Fallback also failed:', fallbackError);
+                alert('حدث خطأ أثناء إضافة البند. يرجى تحديث الصفحة والمحاولة مرة أخرى.');
+            }
+        }
     });
     
     $(document).on('click', '.remove-item', function(){

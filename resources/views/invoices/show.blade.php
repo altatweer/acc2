@@ -276,6 +276,15 @@
 
 @push('scripts')
 <script>
+// دالة لتنسيق الأرقام
+function formatNumber(num) {
+    if (typeof num === 'string') {
+        num = parseFloat(num);
+    }
+    if (isNaN(num)) return '0';
+    return num.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+}
+
 $(document).ready(function(){
     const invoiceCurrency = '{{ $invoice->currency }}';
     const invoiceAmount = {{ $invoice->total - $invoice->transactions()->where('type','receipt')->sum('amount') }};
@@ -405,30 +414,124 @@ $(document).ready(function(){
             $('#conversion_section').show();
             $('#same_currency_alert').hide();
             
-            // حساب سعر الصرف الصحيح
+            // حساب سعر الصرف الصحيح - عرض مثل السندات (مثل 1420 أو 1310)
             const selectedCurrencyData = currencies.find(c => c.code === selectedPaymentCurrency);
             const invoiceCurrencyData = currencies.find(c => c.code === invoiceCurrency);
             
-            let defaultRate;
+            console.log('Currency data:', {
+                selectedPaymentCurrency,
+                invoiceCurrency,
+                selectedCurrencyData,
+                invoiceCurrencyData,
+                allCurrencies: currencies
+            });
             
-            // منطق مبسط لحساب السعر
-            if (selectedPaymentCurrency === 'IQD' && invoiceCurrency === 'USD') {
-                // السداد بالدينار والفاتورة بالدولار
-                // 1 USD = 1310.6 IQD (تقريباً)
-                defaultRate = 1 / invoiceCurrencyData.exchange_rate; // 1 ÷ 0.000763 = 1310.6
-                $('#rate_info').text(`1 USD = ${defaultRate.toFixed(2)} IQD`);
-            } else if (selectedPaymentCurrency === 'USD' && invoiceCurrency === 'IQD') {
-                // السداد بالدولار والفاتورة بالدينار  
-                // 1 IQD = 0.000763 USD
-                defaultRate = invoiceCurrencyData.exchange_rate; // 0.000763
-                $('#rate_info').text(`1 IQD = ${defaultRate.toFixed(6)} USD`);
-            } else {
-                // للعملات الأخرى - حساب نسبي
-                defaultRate = selectedCurrencyData ? selectedCurrencyData.exchange_rate : 1;
-                $('#rate_info').text(`1 ${selectedPaymentCurrency} = ${defaultRate.toFixed(4)} ${invoiceCurrency}`);
+            // التحقق من وجود بيانات العملات
+            if (!selectedCurrencyData || !invoiceCurrencyData) {
+                console.error('Currency data not found:', {
+                    selectedPaymentCurrency,
+                    invoiceCurrency,
+                    selectedCurrencyData,
+                    invoiceCurrencyData,
+                    availableCurrencies: currencies.map(c => c.code)
+                });
+                $('#exchange_rate').val(1);
+                $('#rate_info').text('بيانات العملة غير متوفرة');
+                return;
             }
             
-            $('#exchange_rate').val(defaultRate.toFixed(8));
+            let defaultRate;
+            let isInverse = false; // لتحديد إذا كان يجب القسمة أو الضرب
+            
+            // منطق مبسط لحساب السعر - عرض مثل السندات
+            // ملاحظة: exchange_rate في جدول currencies هو سعر العملة مقابل IQD
+            // IQD: exchange_rate = 1.0
+            // USD: exchange_rate قد يكون 0.000763 (يعني 1 IQD = 0.000763 USD) أو 1310 (يعني 1 USD = 1310 IQD)
+            
+            console.log('Exchange rates:', {
+                selected: selectedCurrencyData.exchange_rate,
+                invoice: invoiceCurrencyData.exchange_rate
+            });
+            
+            if (selectedPaymentCurrency === 'IQD' && invoiceCurrency === 'USD') {
+                // السداد بالدينار والفاتورة بالدولار
+                // عرض: 1 USD = 1310.6 IQD (مثل السندات)
+                const usdRate = parseFloat(invoiceCurrencyData.exchange_rate) || 0;
+                
+                if (usdRate > 1) {
+                    // قيمة مباشرة: exchange_rate = 1310 (يعني 1 USD = 1310 IQD)
+                    defaultRate = usdRate;
+                    console.log('Using direct rate:', defaultRate);
+                } else if (usdRate > 0 && usdRate < 1) {
+                    // قيمة عكسية: exchange_rate = 0.000763 (يعني 1 IQD = 0.000763 USD)
+                    defaultRate = 1 / usdRate; // 1 ÷ 0.000763 = 1310.6
+                    console.log('Using inverse rate, calculated:', defaultRate);
+                } else {
+                    // قيمة افتراضية
+                    defaultRate = 1310; // قيمة افتراضية
+                    console.log('Using default rate:', defaultRate);
+                }
+                isInverse = true; // يجب القسمة عند التحويل
+                $('#rate_info').text(`1 ${invoiceCurrency} = ${defaultRate.toFixed(2)} ${selectedPaymentCurrency}`);
+            } else if (selectedPaymentCurrency === 'USD' && invoiceCurrency === 'IQD') {
+                // السداد بالدولار والفاتورة بالدينار
+                // عرض: 1 USD = 1310.6 IQD (مثل السندات)
+                const usdRate = parseFloat(selectedCurrencyData.exchange_rate) || 0;
+                
+                if (usdRate > 1) {
+                    // قيمة مباشرة: exchange_rate = 1310 (يعني 1 USD = 1310 IQD)
+                    defaultRate = usdRate;
+                    console.log('Using direct rate:', defaultRate);
+                } else if (usdRate > 0 && usdRate < 1) {
+                    // قيمة عكسية: exchange_rate = 0.000763 (يعني 1 IQD = 0.000763 USD)
+                    defaultRate = 1 / usdRate; // 1 ÷ 0.000763 = 1310.6
+                    console.log('Using inverse rate, calculated:', defaultRate);
+                } else {
+                    // قيمة افتراضية
+                    defaultRate = 1310; // قيمة افتراضية
+                    console.log('Using default rate:', defaultRate);
+                }
+                isInverse = false; // يجب الضرب عند التحويل
+                $('#rate_info').text(`1 ${selectedPaymentCurrency} = ${defaultRate.toFixed(2)} ${invoiceCurrency}`);
+            } else {
+                // للعملات الأخرى - حساب نسبي
+                let selectedRate = parseFloat(selectedCurrencyData.exchange_rate) || 1;
+                let invoiceRate = parseFloat(invoiceCurrencyData.exchange_rate) || 1;
+                
+                // تحويل إلى قيم مباشرة إذا كانت عكسية
+                if (selectedRate < 1 && selectedRate > 0) {
+                    selectedRate = 1 / selectedRate;
+                }
+                if (invoiceRate < 1 && invoiceRate > 0) {
+                    invoiceRate = 1 / invoiceRate;
+                }
+                
+                // حساب السعر من عملة السداد إلى عملة الفاتورة
+                if (selectedRate < invoiceRate) {
+                    // عملة السداد أصغر - مثل IQD إلى USD
+                    defaultRate = invoiceRate / selectedRate;
+                    isInverse = true;
+                    $('#rate_info').text(`1 ${invoiceCurrency} = ${defaultRate.toFixed(2)} ${selectedPaymentCurrency}`);
+                } else {
+                    // عملة السداد أكبر - مثل USD إلى IQD
+                    defaultRate = selectedRate / invoiceRate;
+                    isInverse = false;
+                    $('#rate_info').text(`1 ${selectedPaymentCurrency} = ${defaultRate.toFixed(2)} ${invoiceCurrency}`);
+                }
+            }
+            
+            // التحقق من أن السعر صحيح
+            if (isNaN(defaultRate) || defaultRate <= 0 || !isFinite(defaultRate)) {
+                console.error('Invalid exchange rate calculated:', defaultRate);
+                defaultRate = 1310; // قيمة افتراضية آمنة
+                isInverse = selectedPaymentCurrency === 'IQD' && invoiceCurrency === 'USD';
+            }
+            
+            console.log('Final exchange rate:', defaultRate, 'isInverse:', isInverse);
+            
+            // حفظ معلومات السعر للاستخدام في حساب المبلغ المحول
+            $('#exchange_rate').data('is-inverse', isInverse);
+            $('#exchange_rate').val(defaultRate.toFixed(4)); // عرض 4 أرقام عشرية مثل السندات
             
             // إظهار تحذير التحويل
             $('#currency_conversion_alert').show();
@@ -460,24 +563,21 @@ $(document).ready(function(){
         
         if (selectedPaymentCurrency !== invoiceCurrency) {
             let convertedAmount;
+            const isInverse = $('#exchange_rate').data('is-inverse') || false;
             
-            if (selectedPaymentCurrency === 'IQD' && invoiceCurrency === 'USD') {
-                // تحويل من دينار إلى دولار: المبلغ × السعر (سعر الصرف للدينار مقابل الدولار)
-                convertedAmount = amount * rate;
-                $('#conversion_info').text(
-                    `${amount} IQD × ${rate} = ${convertedAmount.toFixed(2)} USD`
-                );
-            } else if (selectedPaymentCurrency === 'USD' && invoiceCurrency === 'IQD') {
-                // تحويل من دولار إلى دينار: المبلغ ÷ السعر (عكس سعر صرف الدينار)
+            if (isInverse) {
+                // للعملات المقلوبة مثل IQD → USD: القسمة
+                // مثال: 24,345,985.2 IQD ÷ 1310.6 = 18,575.99 USD
                 convertedAmount = amount / rate;
                 $('#conversion_info').text(
-                    `${amount} USD ÷ ${rate} = ${convertedAmount.toFixed(2)} IQD`
+                    `${formatNumber(amount)} ${selectedPaymentCurrency} ÷ ${rate.toFixed(2)} = ${formatNumber(convertedAmount)} ${invoiceCurrency}`
                 );
             } else {
-                // للعملات الأخرى
+                // للعملات العادية مثل USD → IQD: الضرب
+                // مثال: 100 USD × 1310.6 = 131,060 IQD
                 convertedAmount = amount * rate;
                 $('#conversion_info').text(
-                    `${amount} ${selectedPaymentCurrency} × ${rate} = ${convertedAmount.toFixed(2)} ${invoiceCurrency}`
+                    `${formatNumber(amount)} ${selectedPaymentCurrency} × ${rate.toFixed(2)} = ${formatNumber(convertedAmount)} ${invoiceCurrency}`
                 );
             }
             

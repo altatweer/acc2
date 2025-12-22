@@ -231,26 +231,18 @@ class InvoiceController extends Controller
 
         // تحديث الفاتورة ضمن معاملة قاعدة بيانات
         DB::transaction(function() use ($invoice, $validated, $mergedItems) {
-            // تحديث بيانات الفاتورة
-            $invoice->update([
-                'invoice_number' => $validated['invoice_number'],
-                'customer_id' => $validated['customer_id'],
-                'date' => $validated['date'],
-                'total' => $validated['total'],
-                'currency' => $validated['currency'],
-                'exchange_rate' => $validated['exchange_rate'],
-            ]);
-            
-            // حذف بنود الفاتورة القديمة
+            // حذف بنود الفاتورة القديمة أولاً
             $invoice->invoiceItems()->delete();
             
-            // إضافة بنود الفاتورة الجديدة
+            // إضافة بنود الفاتورة الجديدة وحساب الإجمالي الفعلي
             $exchangeRate = $validated['exchange_rate'];
             $currency = $validated['currency'];
+            $calculatedTotal = 0; // حساب الإجمالي من البنود الفعلية
             
             foreach ($mergedItems as $itm) {
                 $lineTotal = $itm['quantity'] * $itm['unit_price'];
                 $baseCurrencyTotal = $lineTotal * $exchangeRate;
+                $calculatedTotal += $lineTotal; // إضافة إلى الإجمالي
                 
                 // إعداد بيانات البند
                 $itemData = [
@@ -277,6 +269,22 @@ class InvoiceController extends Controller
                 
                 $invoice->invoiceItems()->create($itemData);
             }
+            
+            // تحديث بيانات الفاتورة مع الإجمالي المحسوب من البنود
+            $invoice->update([
+                'invoice_number' => $validated['invoice_number'],
+                'customer_id' => $validated['customer_id'],
+                'date' => $validated['date'],
+                'total' => round($calculatedTotal, 2), // استخدام الإجمالي المحسوب من البنود
+                'currency' => $validated['currency'],
+                'exchange_rate' => $validated['exchange_rate'],
+            ]);
+            
+            \Log::info('Invoice updated successfully', [
+                'invoice_id' => $invoice->id,
+                'calculated_total' => $calculatedTotal,
+                'items_count' => count($mergedItems)
+            ]);
         });
 
         return redirect()->route('invoices.show', $invoice)

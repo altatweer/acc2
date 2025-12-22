@@ -585,17 +585,53 @@ if ($printSettings->company_logo) {
 
         <!-- Total Section -->
         <div class="total-section">
-            <div class="total-row">
-                <span>إجمالي المدين:</span>
-                <span class="debit-amount">{{ number_format($voucher->journalEntry->total_debit ?? 1500, 2) }} {{ $voucher->currency }}</span>
-            </div>
-            <div class="total-row">
-                <span>إجمالي الدائن:</span>
-                <span class="credit-amount">{{ number_format($voucher->journalEntry->total_credit ?? 1500, 2) }} {{ $voucher->currency }}</span>
-            </div>
+            @php
+                // حساب مبلغ السند بناءً على القيود الفعلية
+                $voucherAmount = 0;
+                $voucherAmountCurrency = $voucher->currency ?? 'MIX';
+                
+                if ($voucher->journalEntry && $voucher->journalEntry->lines) {
+                    // للسندات متعددة العملات: حساب المبلغ الأصلي من المعاملة الأولى
+                    // نأخذ المبلغ الأكبر (المدين أو الدائن) من أول سطر
+                    $firstLine = $voucher->journalEntry->lines->first();
+                    if ($firstLine) {
+                        $voucherAmount = max($firstLine->debit, $firstLine->credit);
+                        $voucherAmountCurrency = $firstLine->currency;
+                    }
+                }
+            @endphp
+            
+            @if($voucher->type == 'transfer')
+                <!-- للسندات متعددة العملات: عرض المجاميع لكل عملة -->
+                @foreach($voucher->journalEntry->lines->groupBy('currency') as $currency => $lines)
+                    @php
+                        $currDebit = $lines->sum('debit');
+                        $currCredit = $lines->sum('credit');
+                    @endphp
+                    <div class="total-row">
+                        <span>إجمالي المدين ({{ $currency }}):</span>
+                        <span class="debit-amount">{{ number_format($currDebit, 2) }} {{ $currency }}</span>
+                    </div>
+                    <div class="total-row">
+                        <span>إجمالي الدائن ({{ $currency }}):</span>
+                        <span class="credit-amount">{{ number_format($currCredit, 2) }} {{ $currency }}</span>
+                    </div>
+                @endforeach
+            @else
+                <!-- للسندات العادية: عرض المجاميع الإجمالية -->
+                <div class="total-row">
+                    <span>إجمالي المدين:</span>
+                    <span class="debit-amount">{{ number_format($voucher->journalEntry->total_debit ?? 0, 2) }} {{ $voucherAmountCurrency }}</span>
+                </div>
+                <div class="total-row">
+                    <span>إجمالي الدائن:</span>
+                    <span class="credit-amount">{{ number_format($voucher->journalEntry->total_credit ?? 0, 2) }} {{ $voucherAmountCurrency }}</span>
+                </div>
+            @endif
+            
             <div class="total-row total-final">
                 <span>مبلغ السند:</span>
-                <span>{{ number_format($voucher->amount ?? 1500, 2) }} {{ $voucher->currency }}</span>
+                <span>{{ number_format($voucherAmount, 2) }} {{ $voucherAmountCurrency }}</span>
             </div>
         </div>
 

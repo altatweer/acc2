@@ -280,7 +280,7 @@ class VoucherController extends Controller
                    // سند قبض: الصندوق مدين بعملته، الحساب المستهدف دائن بعملته
                    $lines[] = [
                        'account_id' => $tx['account_id'],
-                       'description' => $tx['description'] ?? "قبض من {$tx['target_account_id']}",
+                       'description' => $tx['description'] ?? "قبض من {$targetAccount->name} ({$targetAccount->code})",
                        'debit' => $amount,
                        'credit' => 0,
                        'currency' => $cashCurrency,
@@ -288,7 +288,7 @@ class VoucherController extends Controller
                    ];
                    $lines[] = [
                        'account_id' => $tx['target_account_id'],
-                       'description' => $tx['description'] ?? "دفع لـ {$tx['account_id']}",
+                       'description' => $tx['description'] ?? "دفع لـ {$cashAccount->name} ({$cashAccount->code})",
                        'debit' => 0,
                        'credit' => $convertedAmount,
                        'currency' => $targetCurrency,
@@ -312,7 +312,7 @@ class VoucherController extends Controller
                    // سند صرف: الصندوق دائن بعملته، الحساب المستهدف مدين بعملته
                    $lines[] = [
                        'account_id' => $tx['account_id'],
-                       'description' => $tx['description'] ?? "صرف لـ {$tx['target_account_id']}",
+                       'description' => $tx['description'] ?? "صرف لـ {$targetAccount->name} ({$targetAccount->code})",
                        'debit' => 0,
                        'credit' => $amount,
                        'currency' => $cashCurrency,
@@ -320,7 +320,7 @@ class VoucherController extends Controller
                    ];
                    $lines[] = [
                        'account_id' => $tx['target_account_id'],
-                       'description' => $tx['description'] ?? "استلام من {$tx['account_id']}",
+                       'description' => $tx['description'] ?? "استلام من {$cashAccount->name} ({$cashAccount->code})",
                        'debit' => $convertedAmount,
                        'credit' => 0,
                        'currency' => $targetCurrency,
@@ -344,7 +344,7 @@ class VoucherController extends Controller
                    // سند تحويل: الصندوق الأول دائن بعملته، الصندوق الثاني مدين بعملته
                    $lines[] = [
                        'account_id' => $tx['account_id'],
-                       'description' => $tx['description'] ?? "تحويل إلى {$tx['target_account_id']}",
+                       'description' => $tx['description'] ?? "تحويل إلى {$targetAccount->name} ({$targetAccount->code})",
                        'debit' => 0,
                        'credit' => $amount,
                        'currency' => $cashCurrency,
@@ -352,7 +352,7 @@ class VoucherController extends Controller
                    ];
                    $lines[] = [
                        'account_id' => $tx['target_account_id'],
-                       'description' => $tx['description'] ?? "تحويل من {$tx['account_id']}",
+                       'description' => $tx['description'] ?? "تحويل من {$cashAccount->name} ({$cashAccount->code})",
                        'debit' => $convertedAmount,
                        'credit' => 0,
                        'currency' => $targetCurrency,

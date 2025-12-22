@@ -49,27 +49,19 @@ class InvoicePaymentController extends Controller
         $paymentAmount = $validated['payment_amount']; // المبلغ بعملة السداد المختارة
         $exchangeRate = $validated['exchange_rate'];
         
+        // استخدام CurrencyHelper للتحويل الصحيح
         if ($paymentCurrency === $invoice->currency) {
             // نفس العملة - لا حاجة للتحويل
             $convertedAmount = $paymentAmount;
             $exchangeRate = 1.0;
         } else {
-            // عملات مختلفة - حساب المبلغ المحول بناءً على اتجاه التحويل
-            // ملاحظة مهمة: exchange_rate هو سعر العملة مقابل الدولار الأمريكي
-            // مثال: IQD exchange_rate = 0.0006667 يعني 1 IQD = 0.0006667 USD
-            
-            if ($paymentCurrency === 'IQD' && $invoice->currency === 'USD') {
-                // السداد بالدينار والفاتورة بالدولار
-                // مثال: 500 IQD × 0.0006667 = 0.33 USD
-                $convertedAmount = $paymentAmount * $exchangeRate;
-            } else if ($paymentCurrency === 'USD' && $invoice->currency === 'IQD') {
-                // السداد بالدولار والفاتورة بالدينار  
-                // مثال: 1 USD ÷ 0.0006667 = 1500 IQD
-                $convertedAmount = $paymentAmount / $exchangeRate;
-            } else {
-                // للعملات الأخرى - استخدام النسبة المباشرة
-                $convertedAmount = $paymentAmount * $exchangeRate;
-            }
+            // عملات مختلفة - استخدام CurrencyHelper للتحويل مع السعر التاريخي
+            $convertedAmount = \App\Helpers\CurrencyHelper::convertWithHistoricalRate(
+                $paymentAmount,
+                $paymentCurrency,
+                $invoice->currency,
+                $validated['date']
+            );
         }
 
         \Log::info('Conversion calculation:', [
@@ -81,9 +73,30 @@ class InvoicePaymentController extends Controller
         ]);
 
         // تحقق من عدم تجاوز السداد لإجمالي الفاتورة
-        $paidSoFar = \App\Models\Transaction::where('invoice_id', $invoice->id)
+        // حساب المدفوع من جميع السندات المرتبطة بالفاتورة
+        // تحويل جميع المبالغ إلى عملة الفاتورة قبل الجمع
+        $paidSoFar = 0;
+        $previousTransactions = \App\Models\Transaction::where('invoice_id', $invoice->id)
             ->where('type', 'receipt')
-            ->sum('amount');
+            ->get();
+        
+        foreach ($previousTransactions as $prevTransaction) {
+            if ($prevTransaction->currency === $invoice->currency) {
+                // نفس العملة - جمع مباشرة
+                $paidSoFar += $prevTransaction->amount;
+            } else {
+                // عملات مختلفة - تحويل إلى عملة الفاتورة
+                $convertedPrevAmount = \App\Helpers\CurrencyHelper::convertWithHistoricalRate(
+                    $prevTransaction->amount,
+                    $prevTransaction->currency,
+                    $invoice->currency,
+                    $prevTransaction->date
+                );
+                $paidSoFar += $convertedPrevAmount;
+            }
+        }
+        
+        $paidSoFar = round($paidSoFar, 2);
         $remaining = $invoice->total - $paidSoFar;
         
         \Log::info('Payment validation:', [
@@ -235,9 +248,31 @@ class InvoicePaymentController extends Controller
                 \Log::info('Transaction created successfully', ['transaction_id' => $transaction->id]);
                 
                 // تحديث حالة الفاتورة
-                $paidAmount = \App\Models\Transaction::where('invoice_id', $invoice->id)
+                // حساب المدفوع من جميع السندات المرتبطة بالفاتورة
+                // تحويل جميع المبالغ إلى عملة الفاتورة قبل الجمع
+                $paidAmount = 0;
+                $allTransactions = \App\Models\Transaction::where('invoice_id', $invoice->id)
                     ->where('type', 'receipt')
-                    ->sum('amount');
+                    ->get();
+                
+                foreach ($allTransactions as $paymentTransaction) {
+                    if ($paymentTransaction->currency === $invoice->currency) {
+                        // نفس العملة - جمع مباشرة
+                        $paidAmount += $paymentTransaction->amount;
+                    } else {
+                        // عملات مختلفة - تحويل إلى عملة الفاتورة
+                        $convertedPaymentAmount = \App\Helpers\CurrencyHelper::convertWithHistoricalRate(
+                            $paymentTransaction->amount,
+                            $paymentTransaction->currency,
+                            $invoice->currency,
+                            $paymentTransaction->date
+                        );
+                        $paidAmount += $convertedPaymentAmount;
+                    }
+                }
+                
+                // تقريب المبلغ المدفوع
+                $paidAmount = round($paidAmount, 2);
                     
                 \Log::info('Updating invoice status...', [
                     'total_paid_amount' => $paidAmount,
@@ -245,7 +280,8 @@ class InvoicePaymentController extends Controller
                     'previous_status' => $invoice->status
                 ]);
                     
-                if ($paidAmount >= $invoice->total) {
+                // التحقق من السداد الكامل (مع هامش صغير لأخطاء التقريب)
+                if (abs($paidAmount - $invoice->total) < 0.01 || $paidAmount >= $invoice->total) {
                     $invoice->status = 'paid';
                 } elseif ($paidAmount > 0) {
                     $invoice->status = 'partial';
