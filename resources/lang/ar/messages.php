@@ -76,6 +76,8 @@ return [
     'account' => 'الحساب',
     'debit' => 'مدين',
     'credit' => 'دائن',
+    'total_debit' => 'إجمالي المدين',
+    'total_credit' => 'إجمالي الدائن',
     'currency' => 'العملة',
     'description' => 'الوصف',
     
@@ -164,6 +166,7 @@ return [
     
     // ترجمات إضافية مفقودة
     'print_date' => 'تاريخ الطباعة',
+    'journal_entry' => 'قيد محاسبي',
     'journal_entry_lines' => 'بنود القيد المحاسبي',
     'finance_manager_signature' => 'توقيع المدير المالي',
     'generated_by_system' => 'تم إنشاؤه بواسطة النظام',

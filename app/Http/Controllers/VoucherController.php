@@ -264,6 +264,10 @@ class VoucherController extends Controller
            // بناء سطور القيد المحاسبي حسب نوع السند مع دعم العملات المتعددة
            $lines = [];
            foreach ($validated['transactions'] as $tx) {
+               // جلب بيانات الحسابات
+               $cashAccount = Account::find($tx['account_id']);
+               $targetAccount = Account::find($tx['target_account_id']);
+               
                $cashCurrency = $tx['cash_currency'];
                $targetCurrency = $tx['target_currency'];
                $amount = $tx['amount'];

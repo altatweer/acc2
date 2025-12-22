@@ -89,17 +89,28 @@ class CurrencyHelper
         
         $date = $date ?: now()->format('Y-m-d');
         
-        // Try to get historical rate first
-        $historicalRate = \DB::table('currency_rates')
-            ->where('from_currency', $fromCurrency)
-            ->where('to_currency', $toCurrency)
-            ->where('effective_date', '<=', $date)
-            ->where('is_active', true)
-            ->orderBy('effective_date', 'desc')
-            ->value('rate');
-            
-        if ($historicalRate) {
-            return $amount * $historicalRate;
+        // Try to get historical rate first - check if table exists
+        try {
+            if (\Schema::hasTable('currency_rates')) {
+                $historicalRate = \DB::table('currency_rates')
+                    ->where('from_currency', $fromCurrency)
+                    ->where('to_currency', $toCurrency)
+                    ->where('effective_date', '<=', $date)
+                    ->where('is_active', true)
+                    ->orderBy('effective_date', 'desc')
+                    ->value('rate');
+                    
+                if ($historicalRate) {
+                    return $amount * $historicalRate;
+                }
+            }
+        } catch (\Exception $e) {
+            // If table doesn't exist or query fails, fallback to current rates
+            \Log::warning('Currency rates table not available, using current rates', [
+                'error' => $e->getMessage(),
+                'from_currency' => $fromCurrency,
+                'to_currency' => $toCurrency
+            ]);
         }
         
         // Fallback to current rates
@@ -162,14 +173,24 @@ class CurrencyHelper
         
         $date = $date ?: now()->format('Y-m-d');
         
-        // Try historical rates
-        $historicalRate = \DB::table('currency_rates')
-            ->where('from_currency', $fromCurrency)
-            ->where('to_currency', $toCurrency)
-            ->where('effective_date', '<=', $date)
-            ->where('is_active', true)
-            ->orderBy('effective_date', 'desc')
-            ->first();
+        // Try historical rates - check if table exists
+        $historicalRate = null;
+        try {
+            if (\Schema::hasTable('currency_rates')) {
+                $historicalRate = \DB::table('currency_rates')
+                    ->where('from_currency', $fromCurrency)
+                    ->where('to_currency', $toCurrency)
+                    ->where('effective_date', '<=', $date)
+                    ->where('is_active', true)
+                    ->orderBy('effective_date', 'desc')
+                    ->first();
+            }
+        } catch (\Exception $e) {
+            // If table doesn't exist, continue to fallback
+            \Log::warning('Currency rates table not available in getExchangeRateInfo', [
+                'error' => $e->getMessage()
+            ]);
+        }
             
         if ($historicalRate) {
             return [
