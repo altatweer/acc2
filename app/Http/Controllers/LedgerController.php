@@ -77,7 +77,8 @@ class LedgerController extends Controller
                     
                     $openingDebit = $openingEntries->sum('debit');
                     $openingCredit = $openingEntries->sum('credit');
-                    $openingBalanceForCurrency = $this->calculateAccountBalance($account, $openingDebit, $openingCredit);
+                    // المنطق البسيط: المدين - الدائن (بغض النظر عن طبيعة الحساب)
+                    $openingBalanceForCurrency = $openingDebit - $openingCredit;
                 } else {
                     // إذا لم يكن هناك تاريخ بداية، الرصيد الافتتاحي هو 0
                     $openingBalanceForCurrency = 0;
@@ -319,7 +320,7 @@ class LedgerController extends Controller
     }
     
     /**
-     * حساب الرصيد بناءً على طبيعة الحساب (nature)
+     * حساب الرصيد بناءً على المنطق البسيط (لدفتر الأستاذ فقط)
      * 
      * @param \App\Models\Account $account
      * @param float $debit
@@ -328,17 +329,12 @@ class LedgerController extends Controller
      */
     private function calculateAccountBalance($account, $debit, $credit)
     {
-        // إذا كانت طبيعة الحساب مدين: الرصيد = المدين - الدائن
-        // إذا كانت طبيعة الحساب دائن: الرصيد = الدائن - المدين
-        if ($account->nature === 'مدين' || $account->nature === 'debit') {
-            return $debit - $credit;
-        } else {
-            return $credit - $debit;
-        }
+        // المنطق البسيط: المدين - الدائن (بغض النظر عن طبيعة الحساب)
+        return $debit - $credit;
     }
     
     /**
-     * حساب الرصيد التراكمي بعد حركة
+     * حساب الرصيد التراكمي بعد حركة (المنطق البسيط)
      * 
      * @param \App\Models\Account $account
      * @param float $currentBalance
@@ -348,10 +344,7 @@ class LedgerController extends Controller
      */
     private function calculateRunningBalance($account, $currentBalance, $debit, $credit)
     {
-        // حساب التغيير في الرصيد من هذه الحركة
-        $change = $this->calculateAccountBalance($account, $debit, $credit);
-        
-        // إضافة التغيير للرصيد الحالي
-        return $currentBalance + $change;
+        // المنطق البسيط: الرصيد الحالي + (المدين - الدائن)
+        return $currentBalance + ($debit - $credit);
     }
 }
