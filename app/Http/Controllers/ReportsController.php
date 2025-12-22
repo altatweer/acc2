@@ -158,25 +158,31 @@ class ReportsController extends Controller
         ];
         
         if ($displayCurrency) {
-            $targetCurrency = \App\Models\Currency::where('code', $displayCurrency)->first();
-            $conversionDate = now()->format('Y-m-d H:i');
+            // استخدام تاريخ الفترة للتحويل (أو تاريخ اليوم إذا لم يكن محدداً)
+            $conversionDate = $to ?: ($from ?: now()->format('Y-m-d'));
             
             foreach ($rows as $row) {
                 // استخدام العملة الفعلية للمعاملة من $row['currency'] وليس من الحساب
                 $originalCurrency = $row['currency'] ?? $defaultCurrency;
                 
-                // تحويل القيم إلى العملة المختارة
+                // تحويل القيم إلى العملة المختارة باستخدام السعر التاريخي المثبت في النظام
                 $convertedDebit = ($originalCurrency != $displayCurrency) ? 
-                    \App\Helpers\CurrencyHelper::convert($row['debit'], $originalCurrency, $displayCurrency) : 
+                    \App\Helpers\CurrencyHelper::convertWithHistoricalRate($row['debit'], $originalCurrency, $displayCurrency, $conversionDate) : 
                     $row['debit'];
                 
                 $convertedCredit = ($originalCurrency != $displayCurrency) ? 
-                    \App\Helpers\CurrencyHelper::convert($row['credit'], $originalCurrency, $displayCurrency) : 
+                    \App\Helpers\CurrencyHelper::convertWithHistoricalRate($row['credit'], $originalCurrency, $displayCurrency, $conversionDate) : 
                     $row['credit'];
                 
                 $convertedBalance = ($originalCurrency != $displayCurrency) ? 
-                    \App\Helpers\CurrencyHelper::convert($row['balance'], $originalCurrency, $displayCurrency) : 
+                    \App\Helpers\CurrencyHelper::convertWithHistoricalRate($row['balance'], $originalCurrency, $displayCurrency, $conversionDate) : 
                     $row['balance'];
+                
+                // حساب سعر الصرف المستخدم
+                $exchangeRateUsed = 1;
+                if ($originalCurrency != $displayCurrency) {
+                    $exchangeRateUsed = \App\Helpers\CurrencyHelper::convertWithHistoricalRate(1, $originalCurrency, $displayCurrency, $conversionDate);
+                }
                 
                 $allRowsInDisplayCurrency[] = [
                     'account' => $row['account'],
@@ -184,8 +190,7 @@ class ReportsController extends Controller
                     'debit' => $convertedDebit,
                     'credit' => $convertedCredit,
                     'balance' => $convertedBalance,
-                    'exchange_rate_used' => $originalCurrency != $displayCurrency ? 
-                        \App\Helpers\CurrencyHelper::convert(1, $originalCurrency, $displayCurrency) : 1,
+                    'exchange_rate_used' => $exchangeRateUsed,
                 ];
                 
                 // تجميع المجاميع
@@ -198,7 +203,7 @@ class ReportsController extends Controller
                     $conversionDetails[$originalCurrency] = [
                         'from' => $originalCurrency,
                         'to' => $displayCurrency,
-                        'rate' => \App\Helpers\CurrencyHelper::convert(1, $originalCurrency, $displayCurrency),
+                        'rate' => $exchangeRateUsed,
                         'date' => $conversionDate,
                     ];
                 }
@@ -370,43 +375,12 @@ class ReportsController extends Controller
             }
         }
         
-        // حساب المجموع الكلي بكل العملات المتاحة
-        $balanceSheetTotalsInAllCurrencies = [];
-        
-        foreach ($currencies as $targetCurrency) {
-            $targetCode = $targetCurrency->code;
-            $assets = 0;
-            $liabilities = 0;
-            $equity = 0;
-            
-            // المجموع للأصول والخصوم وحقوق الملكية
-            foreach ($sectionTotalsByCurrency as $currCode => $sectionTotals) {
-                foreach ($sectionTotals as $sectionType => $amount) {
-                    $convertedAmount = ($currCode == $targetCode) ? 
-                        $amount : 
-                        \App\Helpers\CurrencyHelper::convert($amount, $currCode, $targetCode);
-                    
-                    if ($sectionType == 'أصل') {
-                        $assets += $convertedAmount;
-                    } elseif ($sectionType == 'خصم') {
-                        $liabilities += $convertedAmount;
-                    } elseif ($sectionType == 'حقوق ملكية') {
-                        $equity += $convertedAmount;
-                    }
-                }
-            }
-            
-            $balanceSheetTotalsInAllCurrencies[$targetCode] = [
-                'assets' => $assets,
-                'liabilities' => $liabilities,
-                'equity' => $equity,
-                'balance' => $assets - ($liabilities + $equity),
-            ];
-        }
-        
         // إعداد البيانات للعرض بعملة واحدة
         $sectionsInDisplayCurrency = [];
         if ($displayCurrency) {
+            // استخدام تاريخ الفترة للتحويل (أو تاريخ اليوم إذا لم يكن محدداً)
+            $conversionDate = $to ?: ($from ?: now()->format('Y-m-d'));
+            
             foreach ($types as $typeArr) {
                 $rowsInDisplayCurrency = [];
                 $totalInDisplayCurrency = 0;
@@ -414,9 +388,9 @@ class ReportsController extends Controller
                 foreach ($sections[$typeArr['ar']]['rows'] as $row) {
                     $originalCurrency = $row['currency'];
                     
-                    // تحويل القيم إلى العملة المختارة
+                    // تحويل القيم إلى العملة المختارة باستخدام السعر التاريخي المثبت في النظام
                     $convertedBalance = ($originalCurrency != $displayCurrency) ? 
-                        \App\Helpers\CurrencyHelper::convert($row['balance'], $originalCurrency, $displayCurrency) : 
+                        \App\Helpers\CurrencyHelper::convertWithHistoricalRate($row['balance'], $originalCurrency, $displayCurrency, $conversionDate) : 
                         $row['balance'];
                     
                     $rowsInDisplayCurrency[] = [
@@ -446,7 +420,6 @@ class ReportsController extends Controller
             'sections', 
             'sectionsByCurrency',
             'sectionTotalsByCurrency',
-            'balanceSheetTotalsInAllCurrencies',
             'sectionsInDisplayCurrency',
             'from', 
             'to',
@@ -615,7 +588,7 @@ class ReportsController extends Controller
             }
         }
         
-        // حساب صافي الربح/الخسارة لكل عملة
+        // حساب صافي الربح/الخسارة لكل عملة (منفصل لكل عملة بدون دمج)
         foreach ($revenuesByCurrency as $curr => $revenue) {
             $expense = $expensesByCurrency[$curr] ?? 0;
             $netByCurrency[$curr] = $revenue - $expense;
@@ -624,41 +597,6 @@ class ReportsController extends Controller
         $totalRevenue = abs($totalRevenue);
         $totalExpense = abs($totalExpense);
         $net = $totalRevenue - $totalExpense;
-        
-        // المجموع الكلي معروض بكل العملات المتاحة
-        $financialResultsInAllCurrencies = [];
-        
-        // حساب المجموع الكلي بكل العملات مع الأخذ بالاعتبار تحويل قيم كل العملات
-        foreach ($currencies as $targetCurrency) {
-            $targetCode = $targetCurrency->code;
-            $totalRevenueInCurrency = 0;
-            $totalExpenseInCurrency = 0;
-            
-            // جمع القيم من كل العملات بعد تحويلها للعملة المستهدفة
-            foreach ($revenuesByCurrency as $currCode => $amount) {
-                if ($currCode == $targetCode) {
-                    $totalRevenueInCurrency += $amount;
-                } else {
-                    $totalRevenueInCurrency += \App\Helpers\CurrencyHelper::convert($amount, $currCode, $targetCode);
-                }
-            }
-            
-            foreach ($expensesByCurrency as $currCode => $amount) {
-                if ($currCode == $targetCode) {
-                    $totalExpenseInCurrency += $amount;
-                } else {
-                    $totalExpenseInCurrency += \App\Helpers\CurrencyHelper::convert($amount, $currCode, $targetCode);
-                }
-            }
-            
-            $netProfitInCurrency = $totalRevenueInCurrency - $totalExpenseInCurrency;
-            
-            $financialResultsInAllCurrencies[$targetCode] = [
-                'revenue' => $totalRevenueInCurrency,
-                'expense' => $totalExpenseInCurrency,
-                'net' => $netProfitInCurrency,
-            ];
-        }
         
         // إعداد البيانات للعرض بعملة واحدة
         $allRowsInDisplayCurrency = [];
@@ -687,22 +625,32 @@ class ReportsController extends Controller
                 ];
             }
             
+            // استخدام تاريخ الفترة للتحويل (أو تاريخ اليوم إذا لم يكن محدداً)
+            $conversionDate = $to ?: ($from ?: now()->format('Y-m-d'));
+            
             foreach ($rows as $row) {
                 $originalCurrency = $row['currency'];
                 $parentType = $row['type'];
                 
-                // تحويل القيم إلى العملة المختارة
+                // تحويل القيم إلى العملة المختارة باستخدام السعر التاريخي المثبت في النظام
                 $convertedDebit = ($originalCurrency != $displayCurrency) ? 
-                    \App\Helpers\CurrencyHelper::convert($row['debit'], $originalCurrency, $displayCurrency) : 
+                    \App\Helpers\CurrencyHelper::convertWithHistoricalRate($row['debit'], $originalCurrency, $displayCurrency, $conversionDate) : 
                     $row['debit'];
                 
                 $convertedCredit = ($originalCurrency != $displayCurrency) ? 
-                    \App\Helpers\CurrencyHelper::convert($row['credit'], $originalCurrency, $displayCurrency) : 
+                    \App\Helpers\CurrencyHelper::convertWithHistoricalRate($row['credit'], $originalCurrency, $displayCurrency, $conversionDate) : 
                     $row['credit'];
                 
                 $convertedBalance = ($originalCurrency != $displayCurrency) ? 
-                    \App\Helpers\CurrencyHelper::convert($row['balance'], $originalCurrency, $displayCurrency) : 
+                    \App\Helpers\CurrencyHelper::convertWithHistoricalRate($row['balance'], $originalCurrency, $displayCurrency, $conversionDate) : 
                     $row['balance'];
+                
+                // حساب سعر الصرف المستخدم
+                $exchangeRateUsed = 1;
+                if ($originalCurrency != $displayCurrency) {
+                    $rateAmount = \App\Helpers\CurrencyHelper::convertWithHistoricalRate(1, $originalCurrency, $displayCurrency, $conversionDate);
+                    $exchangeRateUsed = $rateAmount;
+                }
                 
                 $allRowsInDisplayCurrency[] = [
                     'account' => $row['account'],
@@ -711,8 +659,7 @@ class ReportsController extends Controller
                     'credit' => $convertedCredit,
                     'balance' => $convertedBalance,
                     'type' => $parentType,
-                    'exchange_rate_used' => $originalCurrency != $displayCurrency ? 
-                        \App\Helpers\CurrencyHelper::convert(1, $originalCurrency, $displayCurrency) : 1,
+                    'exchange_rate_used' => $exchangeRateUsed,
                 ];
                 
                 // تجميع تفاصيل التحويل
@@ -720,7 +667,7 @@ class ReportsController extends Controller
                     $conversionDetails[$originalCurrency] = [
                         'from' => $originalCurrency,
                         'to' => $displayCurrency,
-                        'rate' => \App\Helpers\CurrencyHelper::convert(1, $originalCurrency, $displayCurrency),
+                        'rate' => $exchangeRateUsed,
                         'date' => $conversionDate,
                     ];
                 }
@@ -749,7 +696,6 @@ class ReportsController extends Controller
             'revenuesByCurrency',
             'expensesByCurrency',
             'netByCurrency',
-            'financialResultsInAllCurrencies',
             'allRowsInDisplayCurrency',
             'exchangeRateDetails',
             'conversionDetails',
@@ -819,39 +765,6 @@ class ReportsController extends Controller
             ];
         }
         
-        // حساب المجموع الكلي بكل العملات المتاحة
-        $payrollTotalsInAllCurrencies = [];
-        
-        foreach ($currencies as $targetCurrency) {
-            $targetCode = $targetCurrency->code;
-            $totalGrossInCurrency = 0;
-            $totalAllowancesInCurrency = 0;
-            $totalDeductionsInCurrency = 0;
-            $totalNetInCurrency = 0;
-            
-            // جمع القيم من كل العملات بعد تحويلها للعملة المستهدفة
-            foreach ($totalsByCurrency as $currCode => $totals) {
-                if ($currCode == $targetCode) {
-                    $totalGrossInCurrency += $totals['gross'];
-                    $totalAllowancesInCurrency += $totals['allowances'];
-                    $totalDeductionsInCurrency += $totals['deductions'];
-                    $totalNetInCurrency += $totals['net'];
-                } else {
-                    $totalGrossInCurrency += \App\Helpers\CurrencyHelper::convert($totals['gross'], $currCode, $targetCode);
-                    $totalAllowancesInCurrency += \App\Helpers\CurrencyHelper::convert($totals['allowances'], $currCode, $targetCode);
-                    $totalDeductionsInCurrency += \App\Helpers\CurrencyHelper::convert($totals['deductions'], $currCode, $targetCode);
-                    $totalNetInCurrency += \App\Helpers\CurrencyHelper::convert($totals['net'], $currCode, $targetCode);
-                }
-            }
-            
-            $payrollTotalsInAllCurrencies[$targetCode] = [
-                'gross' => $totalGrossInCurrency,
-                'allowances' => $totalAllowancesInCurrency,
-                'deductions' => $totalDeductionsInCurrency,
-                'net' => $totalNetInCurrency,
-            ];
-        }
-        
         // المجاميع القديمة - لا نستخدمها في العرض الجديد، لكن نحتفظ بها للتوافقية
         $totalNet = $rows->sum('net_salary');
         $totalGross = $rows->sum('gross_salary');
@@ -862,7 +775,6 @@ class ReportsController extends Controller
             'rows', 
             'rowsByCurrency',
             'totalsByCurrency',
-            'payrollTotalsInAllCurrencies',
             'month', 
             'employeeName', 
             'totalNet', 
@@ -1005,61 +917,30 @@ class ReportsController extends Controller
             $netByCurrency[$currency] = $revenue - ($expensesByCurrency[$currency] ?? 0);
         }
         
-        // المجموع الكلي معروض بكل العملات المتاحة
-        $financialResultsInAllCurrencies = [];
-        
-        foreach ($currencies as $targetCurrency) {
-            $targetCode = $targetCurrency->code;
-            $totalRevenueInCurrency = 0;
-            $totalExpenseInCurrency = 0;
-            
-            // جمع القيم من كل العملات بعد تحويلها للعملة المستهدفة
-            foreach ($revenuesByCurrency as $currCode => $amount) {
-                if ($currCode == $targetCode) {
-                    $totalRevenueInCurrency += $amount;
-                } else {
-                    $totalRevenueInCurrency += \App\Helpers\CurrencyHelper::convert($amount, $currCode, $targetCode);
-                }
-            }
-            
-            foreach ($expensesByCurrency as $currCode => $amount) {
-                if ($currCode == $targetCode) {
-                    $totalExpenseInCurrency += $amount;
-                } else {
-                    $totalExpenseInCurrency += \App\Helpers\CurrencyHelper::convert($amount, $currCode, $targetCode);
-                }
-            }
-            
-            $netProfitInCurrency = $totalRevenueInCurrency - $totalExpenseInCurrency;
-            
-            $financialResultsInAllCurrencies[$targetCode] = [
-                'revenue' => $totalRevenueInCurrency,
-                'expense' => $totalExpenseInCurrency,
-                'net' => $netProfitInCurrency,
-            ];
-        }
-        
         // إعداد البيانات للعرض بعملة واحدة
         $allRowsInDisplayCurrency = [];
         $revenueInDisplayCurrency = 0;
         $expenseInDisplayCurrency = 0;
         
         if ($displayCurrency) {
+            // استخدام تاريخ الفترة للتحويل (أو تاريخ اليوم إذا لم يكن محدداً)
+            $conversionDate = $to ?: ($from ?: now()->format('Y-m-d'));
+            
             foreach ($rows as $row) {
                 $originalCurrency = $row['currency'];
                 $parentType = $row['type'];
                 
-                // تحويل القيم إلى العملة المختارة
+                // تحويل القيم إلى العملة المختارة باستخدام السعر التاريخي المثبت في النظام
                 $convertedDebit = ($originalCurrency != $displayCurrency) ? 
-                    \App\Helpers\CurrencyHelper::convert($row['debit'], $originalCurrency, $displayCurrency) : 
+                    \App\Helpers\CurrencyHelper::convertWithHistoricalRate($row['debit'], $originalCurrency, $displayCurrency, $conversionDate) : 
                     $row['debit'];
                 
                 $convertedCredit = ($originalCurrency != $displayCurrency) ? 
-                    \App\Helpers\CurrencyHelper::convert($row['credit'], $originalCurrency, $displayCurrency) : 
+                    \App\Helpers\CurrencyHelper::convertWithHistoricalRate($row['credit'], $originalCurrency, $displayCurrency, $conversionDate) : 
                     $row['credit'];
                 
                 $convertedBalance = ($originalCurrency != $displayCurrency) ? 
-                    \App\Helpers\CurrencyHelper::convert($row['balance'], $originalCurrency, $displayCurrency) : 
+                    \App\Helpers\CurrencyHelper::convertWithHistoricalRate($row['balance'], $originalCurrency, $displayCurrency, $conversionDate) : 
                     $row['balance'];
                 
                 $allRowsInDisplayCurrency[] = [
@@ -1087,7 +968,6 @@ class ReportsController extends Controller
             'revenuesByCurrency',
             'expensesByCurrency',
             'netByCurrency',
-            'financialResultsInAllCurrencies',
             'allRowsInDisplayCurrency',
             'revenueInDisplayCurrency',
             'expenseInDisplayCurrency',
@@ -1999,20 +1879,21 @@ class ReportsController extends Controller
         $conversionDetails = [];
         
         if ($displayCurrency) {
-            $conversionDate = now()->format('Y-m-d H:i');
+            // استخدام تاريخ الفترة للتحويل (أو تاريخ اليوم إذا لم يكن محدداً)
+            $conversionDate = $to ?: ($from ?: now()->format('Y-m-d'));
             
             foreach ($cashFlowData as $currencyCode => $data) {
                 if ($currencyCode !== $displayCurrency) {
-                    $conversionRate = \App\Helpers\CurrencyHelper::convert(1, $currencyCode, $displayCurrency);
+                    $conversionRate = \App\Helpers\CurrencyHelper::convertWithHistoricalRate(1, $currencyCode, $displayCurrency, $conversionDate);
                     
                     $allDataInDisplayCurrency[] = [
                         'original_currency' => $currencyCode,
                         'currency_name' => $data['currency_info']->name ?? $currencyCode,
-                        'total_inflow' => \App\Helpers\CurrencyHelper::convert($data['total_inflow'], $currencyCode, $displayCurrency),
-                        'total_outflow' => \App\Helpers\CurrencyHelper::convert($data['total_outflow'], $currencyCode, $displayCurrency),
-                        'net_flow' => \App\Helpers\CurrencyHelper::convert($data['net_flow'], $currencyCode, $displayCurrency),
-                        'opening_balance' => \App\Helpers\CurrencyHelper::convert($data['opening_balance'], $currencyCode, $displayCurrency),
-                        'closing_balance' => \App\Helpers\CurrencyHelper::convert($data['closing_balance'], $currencyCode, $displayCurrency),
+                        'total_inflow' => \App\Helpers\CurrencyHelper::convertWithHistoricalRate($data['total_inflow'], $currencyCode, $displayCurrency, $conversionDate),
+                        'total_outflow' => \App\Helpers\CurrencyHelper::convertWithHistoricalRate($data['total_outflow'], $currencyCode, $displayCurrency, $conversionDate),
+                        'net_flow' => \App\Helpers\CurrencyHelper::convertWithHistoricalRate($data['net_flow'], $currencyCode, $displayCurrency, $conversionDate),
+                        'opening_balance' => \App\Helpers\CurrencyHelper::convertWithHistoricalRate($data['opening_balance'], $currencyCode, $displayCurrency, $conversionDate),
+                        'closing_balance' => \App\Helpers\CurrencyHelper::convertWithHistoricalRate($data['closing_balance'], $currencyCode, $displayCurrency, $conversionDate),
                         'exchange_rate_used' => $conversionRate,
                     ];
                     

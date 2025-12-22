@@ -282,60 +282,6 @@
         @endforeach
     @endif
 
-    <!-- المجموع الكلي بكل العملات المتاحة -->
-    @if(isset($financialResultsInAllCurrencies) && count($financialResultsInAllCurrencies) > 0 && (!isset($displayCurrency) || !$displayCurrency))
-        <div class="report-card mb-4">
-            <div class="report-card-header">
-                <h5 class="mb-0">
-                    <i class="fas fa-globe mr-2"></i>المجموع الكلي (بكل العملات)
-                </h5>
-            </div>
-            <div class="report-card-body">
-                <div class="row">
-                    @foreach($financialResultsInAllCurrencies as $currencyCode => $totals)
-                        <div class="col-md-4 mb-4">
-                            <div class="summary-card {{ $currencyCode == $defaultCurrency ? 'border-primary' : '' }}">
-                                <div class="report-card-header">
-                                    <h6 class="mb-0">
-                                        <i class="fas fa-coins mr-2 text-primary"></i>
-                                        {{ $currencyCode }} 
-                                        @if($currencyCode == $defaultCurrency)
-                                            <span class="badge badge-light">افتراضي</span>
-                                        @endif
-                                    </h6>
-                                </div>
-                                <div class="report-card-body">
-                                    <table class="table table-sm table-borderless mb-0">
-                                        <tr>
-                                            <td class="text-success">
-                                                <i class="fas fa-arrow-up mr-2"></i>الإيرادات
-                                            </td>
-                                            <td class="text-end text-success fw-bold">{{ number_format($totals['revenue'], 2) }}</td>
-                                        </tr>
-                                        <tr>
-                                            <td class="text-danger">
-                                                <i class="fas fa-arrow-down mr-2"></i>المصروفات
-                                            </td>
-                                            <td class="text-end text-danger fw-bold">{{ number_format($totals['expense'], 2) }}</td>
-                                        </tr>
-                                        <tr style="border-top: 2px solid #e9ecef; margin-top: 8px; padding-top: 8px;">
-                                            <td class="{{ $totals['net'] >= 0 ? 'text-success' : 'text-danger' }} fw-bold">
-                                                <i class="fas fa-{{ $totals['net'] >= 0 ? 'check-circle' : 'exclamation-triangle' }} mr-2"></i>
-                                                {{ $totals['net'] >= 0 ? 'ربح صافي' : 'خسارة صافية' }}
-                                            </td>
-                                            <td class="text-end {{ $totals['net'] >= 0 ? 'text-success' : 'text-danger' }} fw-bold" style="font-size: 16px;">
-                                                {{ number_format(abs($totals['net']), 2) }}
-                                            </td>
-                                        </tr>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    @endforeach
-                </div>
-            </div>
-        </div>
-    @endif
     
     @if((!isset($displayCurrency) || !$displayCurrency) && (!isset($rowsByCurrency) || $rowsByCurrency->isEmpty()) && (!isset($allRowsInDisplayCurrency) || count($allRowsInDisplayCurrency) == 0))
         <div class="report-card">
