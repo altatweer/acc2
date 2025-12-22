@@ -19,16 +19,6 @@
             <div class="stat-value">{{ number_format($stats['total_entries']) }}</div>
             <div class="stat-label">إجمالي القيود</div>
         </div>
-        <div class="stat-card success">
-            <div class="stat-icon"><i class="fas fa-arrow-up"></i></div>
-            <div class="stat-value amount-debit">{{ number_format($stats['total_debit'], 2) }}</div>
-            <div class="stat-label">إجمالي المدين</div>
-        </div>
-        <div class="stat-card warning">
-            <div class="stat-icon"><i class="fas fa-arrow-down"></i></div>
-            <div class="stat-value amount-credit">{{ number_format($stats['total_credit'], 2) }}</div>
-            <div class="stat-label">إجمالي الدائن</div>
-        </div>
         <div class="stat-card info">
             <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
             <div class="stat-value">{{ number_format($stats['active_entries']) }}</div>

@@ -57,6 +57,9 @@ return [
     'accounting_settings' => 'إعدادات الحسابات',
     'system_settings_page' => 'إعدادات النظام',
     
+    'financial_transactions' => 'المعاملات المالية',
+    'invoices_sales' => 'الفواتير والمبيعات',
+    
     'reports' => 'التقارير',
     'trial_balance' => 'تقرير الأرصدة',
     'balance_sheet' => 'ميزان المراجعة',

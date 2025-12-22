@@ -57,6 +57,9 @@ return [
     'accounting_settings' => 'Accounting Settings',
     'system_settings_page' => 'System Settings',
     
+    'financial_transactions' => 'Financial Transactions',
+    'invoices_sales' => 'Invoices & Sales',
+    
     'reports' => 'Reports',
     'trial_balance' => 'Trial Balance',
     'balance_sheet' => 'Balance Sheet',
