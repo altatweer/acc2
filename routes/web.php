@@ -329,6 +329,7 @@ Route::prefix('install')->middleware('web')->group(function () {
     Route::match(['get', 'post'], '/backup', [\App\Http\Controllers\InstallController::class, 'backup'])->name('install.backup');
     Route::match(['get', 'post'], '/update', [\App\Http\Controllers\InstallController::class, 'update'])->name('install.update');
     Route::post('/clear-cache', [\App\Http\Controllers\InstallController::class, 'clearCache'])->name('install.clear_cache');
+    Route::post('/create-lock', [\App\Http\Controllers\InstallController::class, 'createLockFile'])->name('install.create_lock');
     Route::post('/chart/skip', [\App\Http\Controllers\InstallController::class, 'skipChart'])->name('install.skipChart');
     Route::get('/finish', [\App\Http\Controllers\InstallController::class, 'finish'])->name('install.finish');
 });

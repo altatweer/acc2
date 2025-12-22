@@ -30,6 +30,12 @@ class InstallController extends Controller
 
     public function index(Request $request)
     {
+        // إذا كان النظام مثبتاً بالفعل، إعادة التوجيه للصفحة الرئيسية
+        $lockPath = storage_path('app/install.lock');
+        if (file_exists($lockPath)) {
+            return redirect('/')->with('success', 'النظام مثبت بالفعل.');
+        }
+        
         // Check required folders and permissions
         $requiredDirs = [
             storage_path(),
@@ -510,6 +516,43 @@ class InstallController extends Controller
     }
 
     // ============== أدوات الصيانة والإدارة ==============
+    
+    /**
+     * إنشاء ملف install.lock يدوياً (للمساعدة في حل مشاكل التثبيت)
+     */
+    public function createLockFile(Request $request)
+    {
+        $lockPath = storage_path('app/install.lock');
+        
+        // التحقق من أن النظام مثبت بالفعل (وجود جداول في قاعدة البيانات)
+        try {
+            $tablesExist = Schema::hasTable('users') && Schema::hasTable('accounts');
+            
+            if ($tablesExist) {
+                // إنشاء مجلد app إذا لم يكن موجود
+                if (!is_dir(storage_path('app'))) {
+                    mkdir(storage_path('app'), 0755, true);
+                }
+                
+                file_put_contents($lockPath, date('Y-m-d H:i:s') . " - Installation lock file created manually");
+                
+                return response()->json([
+                    'success' => true,
+                    'message' => 'تم إنشاء ملف install.lock بنجاح'
+                ]);
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'النظام غير مثبت. يجب إكمال التثبيت أولاً.'
+                ], 400);
+            }
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'خطأ: ' . $e->getMessage()
+            ], 500);
+        }
+    }
     
     /**
      * صفحة أدوات الصيانة الرئيسية

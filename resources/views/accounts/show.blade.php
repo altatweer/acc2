@@ -113,13 +113,19 @@
                                 <div class="row">
                                     @foreach($allCurrencies as $currency)
                                         @php
-                                            $currencyBalance = $account->balance($currency);
+                                            // حساب الرصيد البسيط: المدين - الدائن (بغض النظر عن طبيعة الحساب)
+                                            $currencyLines = $account->journalEntryLines()->where('currency', $currency)->get();
+                                            $currencyBalance = $currencyLines->sum('debit') - $currencyLines->sum('credit');
                                         @endphp
                                         {{-- عرض جميع العملات النشطة، سواء كان لها رصيد أم لا --}}
                                         <div class="col-6 mb-3">
                                             <div class="small-box bg-{{ $currencyBalance >= 0 ? 'success' : 'danger' }}">
                                                 <div class="inner">
-                                                    <h4>{{ number_format(abs($currencyBalance), 2) }}</h4>
+                                                    @if($currencyBalance >= 0)
+                                                        <h4>+{{ number_format($currencyBalance, 2) }}</h4>
+                                                    @else
+                                                        <h4>{{ number_format($currencyBalance, 2) }}</h4>
+                                                    @endif
                                                     <p>{{ $currency }}</p>
                                                 </div>
                                                 <div class="icon">
@@ -168,9 +174,15 @@
                                 </button>
                             </div>
                             <div class="col-md-7 text-right">
-                                <span class="badge badge-info">
-                                    الرصيد المعروض: {{ number_format($balance, 2) }} {{ $selectedCurrency ?: 'مختلط' }}
-                                </span>
+                                @if($balance >= 0)
+                                    <span class="badge badge-success" style="font-size: 16px; padding: 10px 15px; font-weight: bold;">
+                                        الرصيد المعروض: +{{ number_format($balance, 2) }} {{ $selectedCurrency ?: 'مختلط' }}
+                                    </span>
+                                @else
+                                    <span class="badge badge-danger" style="font-size: 16px; padding: 10px 15px; font-weight: bold;">
+                                        الرصيد المعروض: {{ number_format($balance, 2) }} {{ $selectedCurrency ?: 'مختلط' }}
+                                    </span>
+                                @endif
                             </div>
                         </form>
                     </div>
@@ -206,9 +218,12 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @php $runningBalance = 0; @endphp
+                                    @php 
+                                        $runningBalance = 0;
+                                    @endphp
                                     @foreach($lines as $line)
                                         @php
+                                            // الرصيد التراكمي = المدين - الدائن (بغض النظر عن طبيعة الحساب)
                                             $runningBalance += $line->debit - $line->credit;
                                         @endphp
                                         <tr>
@@ -233,35 +248,59 @@
                                             </td>
                                             <td class="text-success">
                                                 @if($line->debit > 0)
-                                                    <strong>{{ number_format($line->debit, 2) }}</strong>
+                                                    <strong>+{{ number_format($line->debit, 2) }}</strong>
                                                 @else
                                                     -
                                                 @endif
                                             </td>
                                             <td class="text-danger">
                                                 @if($line->credit > 0)
-                                                    <strong>{{ number_format($line->credit, 2) }}</strong>
+                                                    <strong>-{{ number_format($line->credit, 2) }}</strong>
                                                 @else
                                                     -
                                                 @endif
                                             </td>
                                             <td>
-                                                <span class="badge badge-{{ $runningBalance >= 0 ? 'success' : 'danger' }}">
-                                                    {{ number_format($runningBalance, 2) }}
-                                                </span>
+                                                @if($runningBalance >= 0)
+                                                    <span class="badge badge-success">
+                                                        +{{ number_format($runningBalance, 2) }}
+                                                    </span>
+                                                @else
+                                                    <span class="badge badge-danger">
+                                                        {{ number_format($runningBalance, 2) }}
+                                                    </span>
+                                                @endif
                                             </td>
                                         </tr>
                                     @endforeach
                                 </tbody>
                                 <tfoot class="thead-light">
-                                    <tr>
-                                        <th colspan="5">الإجمالي</th>
-                                        <th class="text-success">{{ number_format($lines->sum('debit'), 2) }}</th>
-                                        <th class="text-danger">{{ number_format($lines->sum('credit'), 2) }}</th>
-                                        <th>
-                                            <span class="badge badge-{{ $balance >= 0 ? 'success' : 'danger' }}">
-                                                {{ number_format($balance, 2) }}
-                                            </span>
+                                    <tr style="background-color: #f8f9fa; font-weight: bold;">
+                                        <th colspan="5" style="font-size: 16px; padding: 15px 8px;">الإجمالي</th>
+                                        <th class="text-success" style="font-size: 16px; padding: 15px 8px;">
+                                            @if($lines->sum('debit') > 0)
+                                                +{{ number_format($lines->sum('debit'), 2) }}
+                                            @else
+                                                -
+                                            @endif
+                                        </th>
+                                        <th class="text-danger" style="font-size: 16px; padding: 15px 8px;">
+                                            @if($lines->sum('credit') > 0)
+                                                -{{ number_format($lines->sum('credit'), 2) }}
+                                            @else
+                                                -
+                                            @endif
+                                        </th>
+                                        <th style="font-size: 16px; padding: 15px 8px;">
+                                            @if($balance >= 0)
+                                                <span class="badge badge-success" style="font-size: 16px; padding: 8px 12px;">
+                                                    +{{ number_format($balance, 2) }}
+                                                </span>
+                                            @else
+                                                <span class="badge badge-danger" style="font-size: 16px; padding: 8px 12px;">
+                                                    {{ number_format($balance, 2) }}
+                                                </span>
+                                            @endif
                                         </th>
                                     </tr>
                                 </tfoot>

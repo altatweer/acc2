@@ -541,8 +541,8 @@ class AccountController extends Controller
         
         $lines = $linesQuery->get();
 
-        // حساب الرصيد حسب العملة المختارة أو العملة الافتراضية
-        $balance = $account->balance($selectedCurrency ?: $account->default_currency);
+        // حساب الرصيد البسيط: المدين - الدائن (بغض النظر عن طبيعة الحساب)
+        $balance = $lines->sum('debit') - $lines->sum('credit');
 
         // جلب جميع العملات المتاحة في النظام
         // التحقق من وجود العمود is_active أولاً
