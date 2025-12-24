@@ -903,32 +903,49 @@ $(function(){
                 exchangeRateField.val('1');
                 showNotification('نفس العملة - لا حاجة للتحويل', 'success');
             } else {
-                // عملات مختلفة - إظهار قسم سعر الصرف مع عرض محسن
-                exchangeRateSection.slideDown(300);
+                // عملات مختلفة - التحقق إذا كانت USD <-> IQD فقط
+                const isUsdIqd = (cashCurrency === 'USD' && targetCurrency === 'IQD') || 
+                                (cashCurrency === 'IQD' && targetCurrency === 'USD');
                 
-                // تحديد بيانات سعر الصرف
-                const rateKey = `${cashCurrency}_${targetCurrency}`;
-                let rateData = exchangeRateData[rateKey];
-                
-                if (!rateData) {
-                    // قيمة افتراضية إذا لم توجد
-                    rateData = { rate: 1.0000, display: `1 ${cashCurrency} = 1 ${targetCurrency}`, inverse: false };
-                }
-                
-                // حساب السعر المناسب للعرض
-                let displayRate;
-                if (rateData.inverse) {
-                    // للعملات المقلوبة مثل IQD → USD، نعرض السعر الأساسي
-                    displayRate = rateData.rate.toFixed(4);
-                } else {
-                    displayRate = rateData.rate.toFixed(4);
-                }
-                
-                // تعيين السعر إذا كان الحقل فارغاً أو يحتوي على القيمة الافتراضية
-                if (!exchangeRateField.val() || exchangeRateField.val() === '1') {
-                    exchangeRateField.val(displayRate);
-                }
-                
+                if (isUsdIqd) {
+                    // USD <-> IQD: إظهار قسم سعر الصرف
+                    exchangeRateSection.slideDown(300);
+                    
+                    // تحديد بيانات سعر الصرف
+                    const rateKey = `${cashCurrency}_${targetCurrency}`;
+                    let rateData = exchangeRateData[rateKey];
+                    
+                    if (!rateData) {
+                        // إذا لم توجد في البيانات، جلب من data-rate في select
+                        const cashCurrencySelect = card.find('.cash-currency-select');
+                        const targetCurrencySelect = card.find('.target-currency-select');
+                        const cashOption = cashCurrencySelect.find('option:selected');
+                        const targetOption = targetCurrencySelect.find('option:selected');
+                        
+                        let rate = 1400; // افتراضي
+                        if (cashCurrency === 'USD' && cashOption.length) {
+                            rate = parseFloat(cashOption.data('rate')) || 1400;
+                        } else if (targetCurrency === 'USD' && targetOption.length) {
+                            rate = parseFloat(targetOption.data('rate')) || 1400;
+                        }
+                        
+                        rateData = {
+                            rate: rate,
+                            display: cashCurrency === 'USD' 
+                                ? `1 دولار = ${rate.toFixed(0)} دينار`
+                                : `${rate.toFixed(0)} دينار = 1 دولار`,
+                            inverse: cashCurrency === 'IQD'
+                        };
+                    }
+                    
+                    // استخدام السعر مباشرة (1400) بدون قسمة
+                    const displayRate = rateData.rate.toFixed(4);
+                    
+                    // تعيين السعر إذا كان الحقل فارغاً أو يحتوي على القيمة الافتراضية
+                    if (!exchangeRateField.val() || exchangeRateField.val() === '1' || exchangeRateField.val() === '') {
+                        exchangeRateField.val(displayRate);
+                    }
+                    
                     // عرض الملاحظة بشكل واضح
                     let noteText;
                     if (rateData.inverse) {
@@ -947,7 +964,12 @@ $(function(){
                     card.data('rate-info', rateData);
                     
                     showNotification(`💱 ${rateData.display}`, 'info');
+                } else {
+                    // عملات أخرى غير USD/IQD: إخفاء قسم سعر الصرف
+                    exchangeRateSection.slideUp(300);
+                    exchangeRateField.val('1');
                 }
+            }
             } else {
                 exchangeRateSection.hide();
                 exchangeRateField.val('');
