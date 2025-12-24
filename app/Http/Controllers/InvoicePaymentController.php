@@ -49,19 +49,30 @@ class InvoicePaymentController extends Controller
         $paymentAmount = $validated['payment_amount']; // المبلغ بعملة السداد المختارة
         $exchangeRate = $validated['exchange_rate'];
         
-        // استخدام CurrencyHelper للتحويل الصحيح
+        // استخدام سعر الصرف المحدد من المستخدم مباشرة
         if ($paymentCurrency === $invoice->currency) {
             // نفس العملة - لا حاجة للتحويل
             $convertedAmount = $paymentAmount;
             $exchangeRate = 1.0;
         } else {
-            // عملات مختلفة - استخدام CurrencyHelper للتحويل مع السعر التاريخي
-            $convertedAmount = \App\Helpers\CurrencyHelper::convertWithHistoricalRate(
-                $paymentAmount,
-                $paymentCurrency,
-                $invoice->currency,
-                $validated['date']
-            );
+            // عملات مختلفة - استخدام سعر الصرف المحدد من المستخدم
+            // التحويل: من IQD إلى USD = المبلغ / سعر الصرف
+            // مثال: 4,104,703 IQD / 1450 = 2,830.83 USD
+            if ($paymentCurrency === 'IQD' && $invoice->currency === 'USD') {
+                // من IQD إلى USD: القسمة على سعر الصرف
+                $convertedAmount = $paymentAmount / $exchangeRate;
+            } elseif ($paymentCurrency === 'USD' && $invoice->currency === 'IQD') {
+                // من USD إلى IQD: الضرب في سعر الصرف
+                $convertedAmount = $paymentAmount * $exchangeRate;
+            } else {
+                // عملات أخرى - استخدام CurrencyHelper كبديل
+                $convertedAmount = \App\Helpers\CurrencyHelper::convertWithHistoricalRate(
+                    $paymentAmount,
+                    $paymentCurrency,
+                    $invoice->currency,
+                    $validated['date']
+                );
+            }
         }
 
         \Log::info('Conversion calculation:', [
@@ -172,14 +183,23 @@ class InvoicePaymentController extends Controller
                 $isMultiCurrency = $paymentCurrency !== $invoice->currency;
                 
                 // تحويل المبلغ المدفوع إلى عملة الفاتورة للتحقق من التوازن
-                $debitInInvoiceCurrency = $paymentCurrency === $invoice->currency 
-                    ? $paymentAmount 
-                    : \App\Helpers\CurrencyHelper::convertWithHistoricalRate(
+                if ($paymentCurrency === $invoice->currency) {
+                    $debitInInvoiceCurrency = $paymentAmount;
+                } elseif ($paymentCurrency === 'IQD' && $invoice->currency === 'USD') {
+                    // من IQD إلى USD: القسمة على سعر الصرف
+                    $debitInInvoiceCurrency = $paymentAmount / $exchangeRate;
+                } elseif ($paymentCurrency === 'USD' && $invoice->currency === 'IQD') {
+                    // من USD إلى IQD: الضرب في سعر الصرف
+                    $debitInInvoiceCurrency = $paymentAmount * $exchangeRate;
+                } else {
+                    // عملات أخرى - استخدام CurrencyHelper
+                    $debitInInvoiceCurrency = \App\Helpers\CurrencyHelper::convertWithHistoricalRate(
                         $paymentAmount, 
                         $paymentCurrency, 
                         $invoice->currency, 
                         $validated['date']
                     );
+                }
                 
                 $creditInInvoiceCurrency = $convertedAmount; // بالفعل بعملة الفاتورة
                 
