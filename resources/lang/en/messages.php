@@ -842,4 +842,20 @@ return [
     'account_name' => 'Account Name',
     'all_currencies' => 'All Currencies',
     'in_all_currencies' => 'In All Currencies',
-]; 
+    // Expense Attachment
+    'expense_attachment' => 'Expense Attachment',
+    'add_expense' => 'Add Expense',
+    'expense_description' => 'Expense Description',
+    'expense_cash_account' => 'Cash Account',
+    'expense_account' => 'Expense Account',
+    'enable_invoice_expense_attachment' => 'Enable Invoice Expense Attachment',
+    'enable_invoice_expense_attachment_hint' => 'Allows adding expense attachments to invoices. The attachment creates a separate payment voucher and journal entry and does not appear in the invoice print for the customer.',
+    'no_results' => 'No results found',
+    'searching' => 'Searching...',
+    'min_one_item_required' => 'At least one item must be added',
+    'min_one_expense_required' => 'At least one expense must be added',
+    'invoice_must_have_items' => 'Invoice must have items',
+    'exchange_rate_auto' => 'Exchange rate is automatically updated when currency is selected',
+    'invoice_number_placeholder' => 'Invoice number (optional)',
+    'errors_found' => 'Errors found',
+];

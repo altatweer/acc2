@@ -580,4 +580,21 @@ return [
     'logged_in' => 'متصل',
     'online' => 'متصل',
     'offline' => 'غير متصل',
-]; 
+    
+    // Expense Attachment
+    'expense_attachment' => 'ملحق المصاريف',
+    'add_expense' => 'إضافة مصروف',
+    'expense_description' => 'وصف المصروف',
+    'expense_cash_account' => 'حساب النقد',
+    'expense_account' => 'حساب المصروف',
+    'enable_invoice_expense_attachment' => 'تفعيل ملحق مصاريف الفواتير',
+    'enable_invoice_expense_attachment_hint' => 'يسمح بإضافة ملحق مصاريف للفواتير. الملحق ينشئ سند صرف وقيد محاسبي منفصل ولا يظهر في طباعة الفاتورة للعميل.',
+    'no_results' => 'لا توجد نتائج',
+    'searching' => 'جاري البحث...',
+    'min_one_item_required' => 'يجب إضافة بند واحد على الأقل',
+    'min_one_expense_required' => 'يجب إضافة مصروف واحد على الأقل',
+    'invoice_must_have_items' => 'يجب أن تحتوي الفاتورة على بنود',
+    'exchange_rate_auto' => 'يتم تحديث سعر الصرف تلقائياً عند اختيار العملة',
+    'invoice_number_placeholder' => 'رقم الفاتورة (اختياري)',
+    'errors_found' => 'تم العثور على أخطاء',
+];

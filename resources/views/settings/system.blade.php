@@ -55,6 +55,18 @@
                                 <strong>طبيعة الحركات:</strong> الرصيد = المدين - الدائن دائماً (بغض النظر عن nature الحساب)
                             </small>
                         </div>
+                        <div class="form-group">
+                            <div class="form-check">
+                                <input type="checkbox" name="enable_invoice_expense_attachment" value="1" class="form-check-input" id="enable_invoice_expense_attachment" 
+                                    {{ ($settings['enable_invoice_expense_attachment'] ?? false) ? 'checked' : '' }}>
+                                <label class="form-check-label" for="enable_invoice_expense_attachment">
+                                    @lang('messages.enable_invoice_expense_attachment')
+                                </label>
+                            </div>
+                            <small class="form-text text-muted">
+                                @lang('messages.enable_invoice_expense_attachment_hint')
+                            </small>
+                        </div>
                         <button type="submit" class="btn btn-success">@lang('messages.save_settings')</button>
                     </form>
                 </div>
