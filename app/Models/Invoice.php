@@ -51,4 +51,16 @@ class Invoice extends Model
     {
         return $this->hasMany(Transaction::class, 'invoice_id');
     }
+
+    // Relationship with expense attachments
+    public function expenseAttachments()
+    {
+        return $this->hasMany(InvoiceExpenseAttachment::class);
+    }
+
+    // Check if invoice has expense attachments
+    public function hasExpenseAttachments()
+    {
+        return $this->expenseAttachments()->exists();
+    }
 }
