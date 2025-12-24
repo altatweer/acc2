@@ -402,37 +402,50 @@ class VoucherController extends Controller
                $exchangeRate = floatval($tx['exchange_rate'] ?? 1);
                
                if ($cashCurrency !== $targetCurrency) {
-                   // تحديد اتجاه التحويل بناءً على exchange_rate في الجدول
-                   $cashCurrencyModel = Currency::where('code', $cashCurrency)->first();
-                   $targetCurrencyModel = Currency::where('code', $targetCurrency)->first();
+                   // تحديد اتجاه التحويل بناءً على exchange_rate المدخل من المستخدم
+                   // قاعدة بسيطة: إذا كان exchange_rate > 1، فهذا يعني أن العملة المصدر أقوى من الهدف
+                   // مثال: 1 USD = 1450 IQD، exchange_rate = 1450
+                   // إذا كان الصندوق USD والهدف IQD: convertedAmount = amount * exchangeRate
+                   // إذا كان الصندوق IQD والهدف USD: convertedAmount = amount / exchangeRate
                    
-                   if ($cashCurrencyModel && $targetCurrencyModel) {
-                       // تحديد الاتجاه: إذا كان exchange_rate للعملة المصدر أصغر من الهدف، يكون inverse
-                       $isInverse = ($cashCurrency === 'IQD' && $targetCurrency === 'USD') || 
-                                   ($cashCurrencyModel->exchange_rate < $targetCurrencyModel->exchange_rate);
-                       
-                       // إعادة حساب converted_amount بناءً على exchange_rate المدخل
-                       if ($isInverse) {
-                           // للعملات المقلوبة: convertedAmount = amount / exchangeRate
-                           $tx['converted_amount'] = round($amount / $exchangeRate, 2);
+                   // تحديد الاتجاه بناءً على العملات
+                   if (($cashCurrency === 'USD' && $targetCurrency === 'IQD') || 
+                       ($cashCurrency === 'IQD' && $targetCurrency === 'USD')) {
+                       // USD <-> IQD: استخدام قاعدة واضحة
+                       if ($cashCurrency === 'USD' && $targetCurrency === 'IQD') {
+                           // من USD إلى IQD: الضرب في سعر الصرف
+                           $tx['converted_amount'] = round($amount * $exchangeRate, 2);
                        } else {
-                           // للعملات العادية: convertedAmount = amount * exchangeRate
+                           // من IQD إلى USD: القسمة على سعر الصرف
+                           $tx['converted_amount'] = round($amount / $exchangeRate, 2);
+                       }
+                   } else {
+                       // عملات أخرى: استخدام exchange_rate من الجدول لتحديد الاتجاه
+                       $cashCurrencyModel = Currency::where('code', $cashCurrency)->first();
+                       $targetCurrencyModel = Currency::where('code', $targetCurrency)->first();
+                       
+                       if ($cashCurrencyModel && $targetCurrencyModel) {
+                           $isInverse = ($cashCurrencyModel->exchange_rate < $targetCurrencyModel->exchange_rate);
+                           
+                           if ($isInverse) {
+                               $tx['converted_amount'] = round($amount / $exchangeRate, 2);
+                           } else {
+                               $tx['converted_amount'] = round($amount * $exchangeRate, 2);
+                           }
+                       } else {
+                           // افتراضي: الضرب في سعر الصرف
                            $tx['converted_amount'] = round($amount * $exchangeRate, 2);
                        }
-                       
-                       \Log::info('Recalculated converted_amount in voucher', [
-                           'transaction_index' => $index,
-                           'cash_currency' => $cashCurrency,
-                           'target_currency' => $targetCurrency,
-                           'amount' => $amount,
-                           'exchange_rate' => $exchangeRate,
-                           'is_inverse' => $isInverse,
-                           'calculated_converted_amount' => $tx['converted_amount']
-                       ]);
-                   } else {
-                       // إذا لم نجد العملات، استخدم القيمة المرسلة
-                       $tx['converted_amount'] = floatval($tx['converted_amount'] ?? $amount);
                    }
+                   
+                   \Log::info('Recalculated converted_amount in voucher', [
+                       'transaction_index' => $index,
+                       'cash_currency' => $cashCurrency,
+                       'target_currency' => $targetCurrency,
+                       'amount' => $amount,
+                       'exchange_rate' => $exchangeRate,
+                       'calculated_converted_amount' => $tx['converted_amount']
+                   ]);
                } else {
                    // نفس العملة - يجب أن يكونا متساويين
                    $tx['converted_amount'] = $amount;
@@ -467,64 +480,54 @@ class VoucherController extends Controller
                            // المهم: يجب استخدام سعر الصرف المدخل من المستخدم لتحويل عملة الصندوق
                            // لأن المبلغ المحول (convertedAmount) تم حسابه بناءً على exchange_rate المدخل
                            
-                           // تحديد اتجاه التحويل
-                           $cashCurrencyModel = Currency::where('code', $txCashCurrency)->first();
-                           $targetCurrencyModel = Currency::where('code', $txTargetCurrency)->first();
+                           // تحديد اتجاه التحويل بناءً على العملات وسعر الصرف المدخل
+                           // قاعدة بسيطة: إذا كان الصندوق USD والهدف IQD: baseAmount = amount * exchangeRate
+                           // إذا كان الصندوق IQD والهدف USD: baseAmount = amount / exchangeRate
                            
-                           if ($cashCurrencyModel && $targetCurrencyModel) {
-                               $isInverse = ($txCashCurrency === 'IQD' && $txTargetCurrency === 'USD') || 
-                                           ($cashCurrencyModel->exchange_rate < $targetCurrencyModel->exchange_rate);
-                               
-                               if ($isInverse) {
-                                   // للعملات المقلوبة: إذا كان الصندوق USD والهدف IQD
-                                   // والـ exchange_rate هو 1450 (يعني 1 USD = 1450 IQD)
-                                   // لتحويل USD إلى IQD (العملة الأساسية): baseAmount = amount * exchangeRate
+                           if (($txCashCurrency === 'USD' && $txTargetCurrency === 'IQD') || 
+                               ($txCashCurrency === 'IQD' && $txTargetCurrency === 'USD')) {
+                               // USD <-> IQD: استخدام قاعدة واضحة
+                               if ($txCashCurrency === 'USD' && $txTargetCurrency === 'IQD') {
+                                   // من USD إلى IQD (العملة الأساسية): baseAmount = amount * exchangeRate
                                    $debitInBase = $debit * $txExchangeRate;
                                    $creditInBase = $credit * $txExchangeRate;
-                                   
-                                   \Log::info('Converting cash currency to base (inverse)', [
-                                       'line_index' => $lineIndex,
-                                       'debit' => $debit,
-                                       'credit' => $credit,
-                                       'cash_currency' => $txCashCurrency,
-                                       'base_currency' => $baseCurrency,
-                                       'exchange_rate' => $txExchangeRate,
-                                       'debit_in_base' => $debitInBase,
-                                       'credit_in_base' => $creditInBase
-                                   ]);
                                } else {
-                                   // للعملات العادية: إذا كان الصندوق IQD والهدف USD
-                                   // لتحويل IQD إلى IQD (العملة الأساسية): baseAmount = amount
-                                   // أو لتحويل USD إلى IQD: baseAmount = amount / exchangeRate
+                                   // من IQD إلى USD: baseAmount = amount / exchangeRate
                                    $debitInBase = $debit / $txExchangeRate;
                                    $creditInBase = $credit / $txExchangeRate;
-                                   
-                                   \Log::info('Converting cash currency to base (normal)', [
-                                       'line_index' => $lineIndex,
-                                       'debit' => $debit,
-                                       'credit' => $credit,
-                                       'cash_currency' => $txCashCurrency,
-                                       'base_currency' => $baseCurrency,
-                                       'exchange_rate' => $txExchangeRate,
-                                       'debit_in_base' => $debitInBase,
-                                       'credit_in_base' => $creditInBase
-                                   ]);
                                }
                            } else {
-                               // حل احتياطي: استخدام CurrencyHelper
-                               $debitInBase = \App\Helpers\CurrencyHelper::convertWithHistoricalRate(
-                                   $debit, 
-                                   $txCashCurrency, 
-                                   $baseCurrency, 
-                                   $validated['date']
-                               );
-                               $creditInBase = \App\Helpers\CurrencyHelper::convertWithHistoricalRate(
-                                   $credit, 
-                                   $txCashCurrency, 
-                                   $baseCurrency, 
-                                   $validated['date']
-                               );
+                               // عملات أخرى: استخدام exchange_rate من الجدول
+                               $cashCurrencyModel = Currency::where('code', $txCashCurrency)->first();
+                               $targetCurrencyModel = Currency::where('code', $txTargetCurrency)->first();
+                               
+                               if ($cashCurrencyModel && $targetCurrencyModel) {
+                                   $isInverse = ($cashCurrencyModel->exchange_rate < $targetCurrencyModel->exchange_rate);
+                                   
+                                   if ($isInverse) {
+                                       $debitInBase = $debit * $txExchangeRate;
+                                       $creditInBase = $credit * $txExchangeRate;
+                                   } else {
+                                       $debitInBase = $debit / $txExchangeRate;
+                                       $creditInBase = $credit / $txExchangeRate;
+                                   }
+                               } else {
+                                   // افتراضي: الضرب في سعر الصرف
+                                   $debitInBase = $debit * $txExchangeRate;
+                                   $creditInBase = $credit * $txExchangeRate;
+                               }
                            }
+                           
+                           \Log::info('Converting cash currency to base', [
+                               'line_index' => $lineIndex,
+                               'debit' => $debit,
+                               'credit' => $credit,
+                               'cash_currency' => $txCashCurrency,
+                               'base_currency' => $baseCurrency,
+                               'exchange_rate' => $txExchangeRate,
+                               'debit_in_base' => $debitInBase,
+                               'credit_in_base' => $creditInBase
+                           ]);
                        }
                    }
                    // إذا كان السطر بعملة الهدف
