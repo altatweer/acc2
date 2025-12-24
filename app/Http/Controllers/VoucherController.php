@@ -210,15 +210,25 @@ class VoucherController extends Controller
                $cashAccount = Account::find($tx['account_id']);
                $cashCurrency = $tx['cash_currency'];
                
-               // احتساب الرصيد من القيود المحاسبية حسب عملة الصندوق
-               $currentBalance = $cashAccount->journalEntryLines()
-                   ->where('currency', $cashCurrency)
-                   ->selectRaw('SUM(debit - credit) as balance')
-                   ->value('balance') ?? 0;
-                   
-               if ($currentBalance < $tx['amount']) {
+               // استخدام دالة balance() من Account model التي تأخذ في الاعتبار طبيعة الحساب
+               $currentBalance = $cashAccount->balance($cashCurrency);
+               
+               // تقريب الرصيد والمبلغ للمقارنة الدقيقة
+               $currentBalance = round($currentBalance, 2);
+               $requestedAmount = round(floatval($tx['amount']), 2);
+               
+               \Log::info('Checking cash account balance for withdrawal', [
+                   'account_id' => $cashAccount->id,
+                   'account_name' => $cashAccount->name,
+                   'currency' => $cashCurrency,
+                   'current_balance' => $currentBalance,
+                   'requested_amount' => $requestedAmount,
+                   'account_nature' => $cashAccount->nature
+               ]);
+               
+               if ($currentBalance < $requestedAmount) {
                    throw \Illuminate\Validation\ValidationException::withMessages([
-                       "transactions.$index.amount" => ["رصيد الصندوق {$cashAccount->name} لا يكفي للسحب. الرصيد الحالي: " . number_format($currentBalance, 3) . " " . $cashCurrency]
+                       "transactions.$index.amount" => ["رصيد الصندوق {$cashAccount->name} لا يكفي للسحب. الرصيد الحالي: " . number_format($currentBalance, 2) . " " . $cashCurrency]
                    ]);
                }
            }
