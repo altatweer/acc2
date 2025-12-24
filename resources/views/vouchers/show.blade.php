@@ -456,23 +456,29 @@
                                             </td>
                                             <td class="text-center">
                                                 @php
-                                                    // إظهار سعر الصرف فقط في السطر الأول (USD) وليس في السطر الثاني (IQD)
-                                                    // للتحقق: إذا كانت العملة USD، أو إذا كانت العملة IQD ولكن السطر السابق كان USD
+                                                    // إظهار سعر الصرف فقط في السطر الأول (USD أو IQD حسب الاتجاه)
+                                                    $allLines = $voucher->journalEntry->lines->sortBy('id')->values();
+                                                    $currentIndex = $allLines->search(function($item) use ($line) {
+                                                        return $item->id === $line->id;
+                                                    });
+                                                    
                                                     $showExchangeRate = false;
-                                                    if ($line->currency === 'USD' && $line->exchange_rate && $line->exchange_rate != 1.0) {
-                                                        $showExchangeRate = true;
-                                                    } elseif ($line->currency === 'IQD') {
-                                                        // التحقق من السطر السابق: إذا كان USD، لا نعرض سعر الصرف في IQD
-                                                        $previousLine = $voucher->journalEntry->lines->where('id', '<', $line->id)->last();
-                                                        if (!$previousLine || $previousLine->currency !== 'USD') {
-                                                            // لا يوجد سطر سابق USD، لا نعرض
-                                                            $showExchangeRate = false;
-                                                        } else {
-                                                            // السطر السابق USD، لا نعرض سعر الصرف في IQD
-                                                            $showExchangeRate = false;
+                                                    
+                                                    // إذا كان هذا السطر الأول
+                                                    if ($currentIndex === 0) {
+                                                        // السطر الأول: نعرض سعر الصرف إذا كان USD أو IQD
+                                                        if (($line->currency === 'USD' || $line->currency === 'IQD') && 
+                                                            $line->exchange_rate && $line->exchange_rate != 1.0) {
+                                                            $showExchangeRate = true;
                                                         }
-                                                    } elseif ($line->exchange_rate && $line->exchange_rate != 1.0) {
-                                                        // للعملات الأخرى، نعرض إذا كان السعر موجوداً
+                                                    } else {
+                                                        // السطر الثاني: لا نعرض سعر الصرف
+                                                        $showExchangeRate = false;
+                                                    }
+                                                    
+                                                    // للعملات الأخرى غير USD/IQD، نعرض إذا كان السعر موجوداً
+                                                    if (!$showExchangeRate && $line->currency !== 'USD' && $line->currency !== 'IQD' && 
+                                                        $line->exchange_rate && $line->exchange_rate != 1.0) {
                                                         $showExchangeRate = true;
                                                     }
                                                 @endphp
