@@ -484,13 +484,34 @@ class InstallController extends Controller
         }
         
         $lockPath = storage_path('app/install.lock');
-        if (!file_exists($lockPath)) {
+        
+        // إنشاء ملف install.lock
+        try {
             // إنشاء مجلد app إذا لم يكن موجود
             if (!is_dir(storage_path('app'))) {
                 mkdir(storage_path('app'), 0755, true);
             }
             
-            file_put_contents($lockPath, date('Y-m-d H:i:s') . " - Installation completed");
+            // إنشاء الملف مع المحتوى
+            $lockContent = date('Y-m-d H:i:s') . " - Installation completed\n";
+            $lockContent .= "Installed by: " . (auth()->check() ? auth()->user()->email : 'System') . "\n";
+            $lockContent .= "Version: 2.2.1\n";
+            
+            $result = file_put_contents($lockPath, $lockContent);
+            
+            if ($result === false) {
+                \Log::error('Failed to create install.lock file at: ' . $lockPath);
+                return redirect()->route('install.index')->with('install_notice', 'فشل إنشاء ملف التثبيت. تحقق من صلاحيات المجلد storage/app');
+            }
+            
+            // ضبط الصلاحيات
+            @chmod($lockPath, 0644);
+            
+            // التحقق من أن الملف تم إنشاؤه بنجاح
+            if (!file_exists($lockPath)) {
+                \Log::error('install.lock file was not created successfully');
+                return redirect()->route('install.index')->with('install_notice', 'فشل إنشاء ملف التثبيت. تحقق من صلاحيات المجلد storage/app');
+            }
             
             // Seed permissions after install
             try {
@@ -499,12 +520,21 @@ class InstallController extends Controller
             } catch (\Exception $e) {
                 \Log::warning('Failed to run seeders during installation: ' . $e->getMessage());
             }
+            
+            // مسح الكاش للتأكد من أن النظام يتحقق من الملف الجديد
+            \Artisan::call('config:clear');
+            \Artisan::call('cache:clear');
+            
+        } catch (\Exception $e) {
+            \Log::error('Error creating install.lock: ' . $e->getMessage());
+            return redirect()->route('install.index')->with('install_notice', 'حدث خطأ أثناء إنشاء ملف التثبيت: ' . $e->getMessage());
         }
         
         // مسح بيانات التثبيت من الجلسة
         session()->forget(['license_key', 'license_verified', 'install_step']);
         
-        return view('install.finish');
+        // إعادة التوجيه إلى صفحة تسجيل الدخول بدلاً من عرض صفحة finish
+        return redirect('/login')->with('success', 'تم تثبيت النظام بنجاح! يمكنك الآن تسجيل الدخول.');
     }
 
     // حماية جميع خطوات التثبيت
