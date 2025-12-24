@@ -908,43 +908,50 @@ $(function(){
                                 (cashCurrency === 'IQD' && targetCurrency === 'USD');
                 
                 if (isUsdIqd) {
-                    // USD <-> IQD: إظهار قسم سعر الصرف
+                    // USD <-> IQD: إظهار قسم سعر الصرف دائماً
                     exchangeRateSection.slideDown(300);
                     
                     // تحديد بيانات سعر الصرف
                     const rateKey = `${cashCurrency}_${targetCurrency}`;
                     let rateData = exchangeRateData[rateKey];
                     
+                    // إذا لم توجد في البيانات، جلب من data-rate في select أو استخدام القيمة الافتراضية
                     if (!rateData) {
-                        // إذا لم توجد في البيانات، جلب من data-rate في select
                         const cashCurrencySelect = card.find('.cash-currency-select');
                         const targetCurrencySelect = card.find('.target-currency-select');
                         const cashOption = cashCurrencySelect.find('option:selected');
                         const targetOption = targetCurrencySelect.find('option:selected');
                         
                         let rate = 1400; // افتراضي
+                        
+                        // محاولة جلب السعر من data-rate
                         if (cashCurrency === 'USD' && cashOption.length) {
-                            rate = parseFloat(cashOption.data('rate')) || 1400;
+                            const dataRate = cashOption.attr('data-rate');
+                            if (dataRate) {
+                                rate = parseFloat(dataRate) || 1400;
+                            }
                         } else if (targetCurrency === 'USD' && targetOption.length) {
-                            rate = parseFloat(targetOption.data('rate')) || 1400;
+                            const dataRate = targetOption.attr('data-rate');
+                            if (dataRate) {
+                                rate = parseFloat(dataRate) || 1400;
+                            }
                         }
                         
+                        // إنشاء rateData
                         rateData = {
                             rate: rate,
                             display: cashCurrency === 'USD' 
-                                ? `1 دولار = ${rate.toFixed(0)} دينار`
-                                : `${rate.toFixed(0)} دينار = 1 دولار`,
+                                ? `1 دولار = ${Math.round(rate)} دينار`
+                                : `${Math.round(rate)} دينار = 1 دولار`,
                             inverse: cashCurrency === 'IQD'
                         };
                     }
                     
                     // استخدام السعر مباشرة (1400) بدون قسمة
-                    const displayRate = rateData.rate.toFixed(4);
+                    const displayRate = parseFloat(rateData.rate).toFixed(4);
                     
-                    // تعيين السعر إذا كان الحقل فارغاً أو يحتوي على القيمة الافتراضية
-                    if (!exchangeRateField.val() || exchangeRateField.val() === '1' || exchangeRateField.val() === '') {
-                        exchangeRateField.val(displayRate);
-                    }
+                    // تعيين السعر دائماً (لضمان ظهوره)
+                    exchangeRateField.val(displayRate);
                     
                     // عرض الملاحظة بشكل واضح
                     let noteText;
