@@ -454,30 +454,8 @@ class VoucherController extends Controller
                            $debitInBase = $debit;
                            $creditInBase = $credit;
                        } else {
-                           // استخدام CurrencyHelper للتحويل الصحيح
-                           $debitInBase = \App\Helpers\CurrencyHelper::convertWithHistoricalRate(
-                               $debit, 
-                               $txCashCurrency, 
-                               $baseCurrency, 
-                               $validated['date']
-                           );
-                           $creditInBase = \App\Helpers\CurrencyHelper::convertWithHistoricalRate(
-                               $credit, 
-                               $txCashCurrency, 
-                               $baseCurrency, 
-                               $validated['date']
-                           );
-                       }
-                   }
-                   // إذا كان السطر بعملة الهدف
-                   elseif ($lineCurrency === $txTargetCurrency) {
-                       // تحويل المبلغ بعملة الهدف إلى العملة الأساسية
-                       if ($txTargetCurrency === $baseCurrency) {
-                           $debitInBase = $debit;
-                           $creditInBase = $credit;
-                       } else {
-                           // المهم: يجب استخدام سعر الصرف المدخل من المستخدم، وليس من الجدول!
-                           // لأن convertedAmount تم حسابه بناءً على exchange_rate المدخل
+                           // المهم: يجب استخدام سعر الصرف المدخل من المستخدم لتحويل عملة الصندوق
+                           // لأن المبلغ المحول (convertedAmount) تم حسابه بناءً على exchange_rate المدخل
                            
                            // تحديد اتجاه التحويل
                            $cashCurrencyModel = Currency::where('code', $txCashCurrency)->first();
@@ -488,10 +466,90 @@ class VoucherController extends Controller
                                            ($cashCurrencyModel->exchange_rate < $targetCurrencyModel->exchange_rate);
                                
                                if ($isInverse) {
-                                   // للعملات المقلوبة: convertedAmount = amount / exchangeRate
-                                   // للتحويل العكسي إلى العملة الأساسية: baseAmount = convertedAmount * exchangeRate
+                                   // للعملات المقلوبة: إذا كان الصندوق USD والهدف IQD
+                                   // والـ exchange_rate هو 1450 (يعني 1 USD = 1450 IQD)
+                                   // لتحويل USD إلى IQD (العملة الأساسية): baseAmount = amount * exchangeRate
                                    $debitInBase = $debit * $txExchangeRate;
                                    $creditInBase = $credit * $txExchangeRate;
+                                   
+                                   \Log::info('Converting cash currency to base (inverse)', [
+                                       'line_index' => $lineIndex,
+                                       'debit' => $debit,
+                                       'credit' => $credit,
+                                       'cash_currency' => $txCashCurrency,
+                                       'base_currency' => $baseCurrency,
+                                       'exchange_rate' => $txExchangeRate,
+                                       'debit_in_base' => $debitInBase,
+                                       'credit_in_base' => $creditInBase
+                                   ]);
+                               } else {
+                                   // للعملات العادية: إذا كان الصندوق IQD والهدف USD
+                                   // لتحويل IQD إلى IQD (العملة الأساسية): baseAmount = amount
+                                   // أو لتحويل USD إلى IQD: baseAmount = amount / exchangeRate
+                                   $debitInBase = $debit / $txExchangeRate;
+                                   $creditInBase = $credit / $txExchangeRate;
+                                   
+                                   \Log::info('Converting cash currency to base (normal)', [
+                                       'line_index' => $lineIndex,
+                                       'debit' => $debit,
+                                       'credit' => $credit,
+                                       'cash_currency' => $txCashCurrency,
+                                       'base_currency' => $baseCurrency,
+                                       'exchange_rate' => $txExchangeRate,
+                                       'debit_in_base' => $debitInBase,
+                                       'credit_in_base' => $creditInBase
+                                   ]);
+                               }
+                           } else {
+                               // حل احتياطي: استخدام CurrencyHelper
+                               $debitInBase = \App\Helpers\CurrencyHelper::convertWithHistoricalRate(
+                                   $debit, 
+                                   $txCashCurrency, 
+                                   $baseCurrency, 
+                                   $validated['date']
+                               );
+                               $creditInBase = \App\Helpers\CurrencyHelper::convertWithHistoricalRate(
+                                   $credit, 
+                                   $txCashCurrency, 
+                                   $baseCurrency, 
+                                   $validated['date']
+                               );
+                           }
+                       }
+                   }
+                   // إذا كان السطر بعملة الهدف
+                   elseif ($lineCurrency === $txTargetCurrency) {
+                       // تحويل المبلغ بعملة الهدف إلى العملة الأساسية
+                       if ($txTargetCurrency === $baseCurrency) {
+                           // إذا كانت عملة الهدف هي نفس العملة الأساسية، لا حاجة للتحويل
+                           $debitInBase = $debit;
+                           $creditInBase = $credit;
+                       } else {
+                           // إذا كانت عملة الهدف مختلفة عن العملة الأساسية
+                           // يجب استخدام سعر الصرف المدخل من المستخدم للتحويل العكسي
+                           
+                           // تحديد اتجاه التحويل بناءً على كيفية حساب convertedAmount
+                           $cashCurrencyModel = Currency::where('code', $txCashCurrency)->first();
+                           $targetCurrencyModel = Currency::where('code', $txTargetCurrency)->first();
+                           
+                           if ($cashCurrencyModel && $targetCurrencyModel) {
+                               $isInverse = ($txCashCurrency === 'IQD' && $txTargetCurrency === 'USD') || 
+                                           ($cashCurrencyModel->exchange_rate < $targetCurrencyModel->exchange_rate);
+                               
+                               if ($isInverse) {
+                                   // للعملات المقلوبة: convertedAmount = amount / exchangeRate
+                                   // للتحويل العكسي إلى العملة الأساسية: baseAmount = convertedAmount * exchangeRate
+                                   // لكن إذا كانت العملة الأساسية هي IQD والهدف هو USD، فالمبلغ بالفعل بالعملة الأساسية
+                                   // لأن convertedAmount تم حسابه من USD إلى IQD
+                                   if ($baseCurrency === $txCashCurrency) {
+                                       // العملة الأساسية هي عملة الصندوق، المبلغ بالفعل محول
+                                       $debitInBase = $debit * $txExchangeRate;
+                                       $creditInBase = $credit * $txExchangeRate;
+                                   } else {
+                                       // العملة الأساسية هي عملة الهدف، لا حاجة للتحويل
+                                       $debitInBase = $debit;
+                                       $creditInBase = $credit;
+                                   }
                                    
                                    \Log::info('Converting target currency to base (inverse)', [
                                        'line_index' => $lineIndex,
@@ -499,6 +557,7 @@ class VoucherController extends Controller
                                        'credit' => $credit,
                                        'target_currency' => $txTargetCurrency,
                                        'base_currency' => $baseCurrency,
+                                       'cash_currency' => $txCashCurrency,
                                        'exchange_rate' => $txExchangeRate,
                                        'debit_in_base' => $debitInBase,
                                        'credit_in_base' => $creditInBase
@@ -506,8 +565,15 @@ class VoucherController extends Controller
                                } else {
                                    // للعملات العادية: convertedAmount = amount * exchangeRate
                                    // للتحويل العكسي إلى العملة الأساسية: baseAmount = convertedAmount / exchangeRate
-                                   $debitInBase = $debit / $txExchangeRate;
-                                   $creditInBase = $credit / $txExchangeRate;
+                                   if ($baseCurrency === $txTargetCurrency) {
+                                       // العملة الأساسية هي عملة الهدف، لا حاجة للتحويل
+                                       $debitInBase = $debit;
+                                       $creditInBase = $credit;
+                                   } else {
+                                       // العملة الأساسية هي عملة الصندوق، نحتاج للتحويل العكسي
+                                       $debitInBase = $debit / $txExchangeRate;
+                                       $creditInBase = $credit / $txExchangeRate;
+                                   }
                                    
                                    \Log::info('Converting target currency to base (normal)', [
                                        'line_index' => $lineIndex,
@@ -515,6 +581,7 @@ class VoucherController extends Controller
                                        'credit' => $credit,
                                        'target_currency' => $txTargetCurrency,
                                        'base_currency' => $baseCurrency,
+                                       'cash_currency' => $txCashCurrency,
                                        'exchange_rate' => $txExchangeRate,
                                        'debit_in_base' => $debitInBase,
                                        'credit_in_base' => $creditInBase
