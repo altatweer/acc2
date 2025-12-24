@@ -787,15 +787,49 @@ body {
 
 <script>
 $(function(){
-    // تهيئة المتغيرات مع أسعار الصرف المحسنة للوضوح
-    const exchangeRateData = {
-        'USD_IQD': { rate: 1310.0000, display: '1 دولار = 1310 دينار' },
-        'IQD_USD': { rate: 1310.0000, display: '1310 دينار = 1 دولار', inverse: true },
-        'EUR_IQD': { rate: 1420.0000, display: '1 يورو = 1420 دينار' },
-        'IQD_EUR': { rate: 1420.0000, display: '1420 دينار = 1 يورو', inverse: true },
-        'USD_EUR': { rate: 0.9200, display: '1 دولار = 0.92 يورو' },
-        'EUR_USD': { rate: 1.0870, display: '1 يورو = 1.087 دولار' }
-    };
+    // تهيئة أسعار الصرف من قاعدة البيانات
+    @php
+        $exchangeRateData = [];
+        $currenciesArray = $currencies->toArray();
+        foreach ($currenciesArray as $from) {
+            foreach ($currenciesArray as $to) {
+                if ($from['code'] !== $to['code']) {
+                    $fromRate = floatval($from['exchange_rate'] ?? 1);
+                    $toRate = floatval($to['exchange_rate'] ?? 1);
+                    
+                    // حساب سعر الصرف: من عملة إلى أخرى
+                    // إذا كانت العملة الأساسية هي IQD (exchange_rate = 1)
+                    // USD (exchange_rate = 1400) يعني 1 USD = 1400 IQD
+                    // لذلك USD_IQD = 1400 / 1 = 1400
+                    // و IQD_USD = 1 / 1400 = 0.000714
+                    if ($toRate == 0) $toRate = 1;
+                    $rate = $fromRate / $toRate;
+                    
+                    $key = $from['code'] . '_' . $to['code'];
+                    $fromName = $from['name'] ?? $from['code'];
+                    $toName = $to['name'] ?? $to['code'];
+                    
+                    // تحديد إذا كان inverse (IQD إلى USD)
+                    $isInverse = ($from['code'] === 'IQD' && $to['code'] === 'USD') || 
+                                 ($fromRate < $toRate);
+                    
+                    if ($isInverse) {
+                        $display = number_format($rate, 0) . ' ' . $fromName . ' = 1 ' . $toName;
+                    } else {
+                        $display = '1 ' . $fromName . ' = ' . number_format($rate, 0) . ' ' . $toName;
+                    }
+                    
+                    $exchangeRateData[$key] = [
+                        'rate' => $rate,
+                        'display' => $display,
+                        'inverse' => $isInverse
+                    ];
+                }
+            }
+        }
+    @endphp
+    
+    const exchangeRateData = @json($exchangeRateData);
     
     let idx = 1;
 
