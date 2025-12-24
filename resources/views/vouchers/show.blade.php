@@ -455,7 +455,28 @@
                                                 <span class="badge badge-light">{{ $line->currency }}</span>
                                             </td>
                                             <td class="text-center">
-                                                @if($line->exchange_rate && $line->exchange_rate != 1.0)
+                                                @php
+                                                    // إظهار سعر الصرف فقط في السطر الأول (USD) وليس في السطر الثاني (IQD)
+                                                    // للتحقق: إذا كانت العملة USD، أو إذا كانت العملة IQD ولكن السطر السابق كان USD
+                                                    $showExchangeRate = false;
+                                                    if ($line->currency === 'USD' && $line->exchange_rate && $line->exchange_rate != 1.0) {
+                                                        $showExchangeRate = true;
+                                                    } elseif ($line->currency === 'IQD') {
+                                                        // التحقق من السطر السابق: إذا كان USD، لا نعرض سعر الصرف في IQD
+                                                        $previousLine = $voucher->journalEntry->lines->where('id', '<', $line->id)->last();
+                                                        if (!$previousLine || $previousLine->currency !== 'USD') {
+                                                            // لا يوجد سطر سابق USD، لا نعرض
+                                                            $showExchangeRate = false;
+                                                        } else {
+                                                            // السطر السابق USD، لا نعرض سعر الصرف في IQD
+                                                            $showExchangeRate = false;
+                                                        }
+                                                    } elseif ($line->exchange_rate && $line->exchange_rate != 1.0) {
+                                                        // للعملات الأخرى، نعرض إذا كان السعر موجوداً
+                                                        $showExchangeRate = true;
+                                                    }
+                                                @endphp
+                                                @if($showExchangeRate)
                                                     <span class="badge badge-info" title="سعر الصرف المستخدم في التحويل">
                                                         {{ number_format($line->exchange_rate, 4) }}
                                                     </span>
