@@ -1024,6 +1024,8 @@ class VoucherController extends Controller
        $validated = $request->validate([
            'account_id' => 'required|exists:accounts,id',
            'target_account_id' => 'required|exists:accounts,id|different:account_id',
+           'cash_currency' => 'required|string|max:3|exists:currencies,code',
+           'target_currency' => 'required|string|max:3|exists:currencies,code',
            'amount' => 'required|numeric|min:0.01',
            'date' => 'required|date',
            'description' => 'nullable|string',
@@ -1034,6 +1036,8 @@ class VoucherController extends Controller
        \Log::info('Transfer Debug - Input Data', [
            'account_id' => $validated['account_id'],
            'target_account_id' => $validated['target_account_id'],
+           'cash_currency' => $validated['cash_currency'],
+           'target_currency' => $validated['target_currency'],
            'amount' => $validated['amount'],
            'exchange_rate' => $validated['exchange_rate'],
            'date' => $validated['date'],
@@ -1049,14 +1053,24 @@ class VoucherController extends Controller
            return back()->withErrors(['target_account_id' => 'لا يمكن التحويل إلى نفس الصندوق.']);
        }
 
-       $fromCurrency = $from->default_currency;
-       $toCurrency = $to->default_currency;
+       $fromCurrency = $validated['cash_currency'];
+       $toCurrency = $validated['target_currency'];
        $amountFrom = $validated['amount'];
        $exchangeRate = $validated['exchange_rate'] ?? 1;
        $amountTo = $amountFrom;
+       
        if ($fromCurrency !== $toCurrency) {
-           // تحويل عملة: احسب المبلغ المستلم بناءً على سعر الصرف مع دقة عالية
-           $amountTo = $exchangeRate ? round($amountFrom * $exchangeRate, 6) : $amountFrom;
+           // تحويل عملة: احسب المبلغ المستلم بناءً على سعر الصرف
+           // إذا كانت USD -> IQD: amountTo = amountFrom * exchangeRate
+           // إذا كانت IQD -> USD: amountTo = amountFrom / exchangeRate
+           if ($fromCurrency === 'USD' && $toCurrency === 'IQD') {
+               $amountTo = $exchangeRate ? round($amountFrom * $exchangeRate, 6) : $amountFrom;
+           } else if ($fromCurrency === 'IQD' && $toCurrency === 'USD') {
+               $amountTo = $exchangeRate ? round($amountFrom / $exchangeRate, 6) : $amountFrom;
+           } else {
+               // للعملات الأخرى، استخدام سعر الصرف بشكل مباشر
+               $amountTo = $exchangeRate ? round($amountFrom * $exchangeRate, 6) : $amountFrom;
+           }
        }
 
        // Debug: سجل تفاصيل العملة والحسابات
