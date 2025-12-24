@@ -791,41 +791,36 @@ $(function(){
     @php
         $exchangeRateData = [];
         $currenciesArray = $currencies->toArray();
-        foreach ($currenciesArray as $from) {
-            foreach ($currenciesArray as $to) {
-                if ($from['code'] !== $to['code']) {
-                    $fromRate = floatval($from['exchange_rate'] ?? 1);
-                    $toRate = floatval($to['exchange_rate'] ?? 1);
-                    
-                    // حساب سعر الصرف: من عملة إلى أخرى
-                    // إذا كانت العملة الأساسية هي IQD (exchange_rate = 1)
-                    // USD (exchange_rate = 1400) يعني 1 USD = 1400 IQD
-                    // لذلك USD_IQD = 1400 / 1 = 1400
-                    // و IQD_USD = 1 / 1400 = 0.000714
-                    if ($toRate == 0) $toRate = 1;
-                    $rate = $fromRate / $toRate;
-                    
-                    $key = $from['code'] . '_' . $to['code'];
-                    $fromName = $from['name'] ?? $from['code'];
-                    $toName = $to['name'] ?? $to['code'];
-                    
-                    // تحديد إذا كان inverse (IQD إلى USD)
-                    $isInverse = ($from['code'] === 'IQD' && $to['code'] === 'USD') || 
-                                 ($fromRate < $toRate);
-                    
-                    if ($isInverse) {
-                        $display = number_format($rate, 0) . ' ' . $fromName . ' = 1 ' . $toName;
-                    } else {
-                        $display = '1 ' . $fromName . ' = ' . number_format($rate, 0) . ' ' . $toName;
-                    }
-                    
-                    $exchangeRateData[$key] = [
-                        'rate' => $rate,
-                        'display' => $display,
-                        'inverse' => $isInverse
-                    ];
-                }
+        
+        // البحث عن USD و IQD في العملات
+        $usdCurrency = null;
+        $iqdCurrency = null;
+        foreach ($currenciesArray as $currency) {
+            if ($currency['code'] === 'USD') {
+                $usdCurrency = $currency;
             }
+            if ($currency['code'] === 'IQD') {
+                $iqdCurrency = $currency;
+            }
+        }
+        
+        // فقط لـ USD <-> IQD: استخدام سعر الصرف مباشرة من جدول USD
+        if ($usdCurrency && $iqdCurrency) {
+            $usdRate = floatval($usdCurrency['exchange_rate'] ?? 1400);
+            
+            // USD → IQD: السعر هو exchange_rate من USD مباشرة (مثلاً 1400)
+            $exchangeRateData['USD_IQD'] = [
+                'rate' => $usdRate,
+                'display' => '1 دولار = ' . number_format($usdRate, 0) . ' دينار',
+                'inverse' => false
+            ];
+            
+            // IQD → USD: نفس السعر (1400) لأن المستخدم يريد أن يظهر 1400 دائماً
+            $exchangeRateData['IQD_USD'] = [
+                'rate' => $usdRate,
+                'display' => number_format($usdRate, 0) . ' دينار = 1 دولار',
+                'inverse' => true
+            ];
         }
     @endphp
     
@@ -934,30 +929,30 @@ $(function(){
                     exchangeRateField.val(displayRate);
                 }
                 
-                // عرض الملاحظة بشكل واضح
-                let noteText;
-                if (rateData.inverse) {
-                    noteText = `${rateData.display} (السعر: ${displayRate})`;
-                } else {
-                    noteText = `${rateData.display}`;
+                    // عرض الملاحظة بشكل واضح
+                    let noteText;
+                    if (rateData.inverse) {
+                        noteText = `${rateData.display} (السعر: ${displayRate})`;
+                    } else {
+                        noteText = `${rateData.display}`;
+                    }
+                    
+                    exchangeNote.html(`
+                        <span class="text-warning">💰</span>
+                        ${noteText}
+                    `);
+                    
+                    // تخزين السعر الافتراضي في البيانات
+                    card.data('default-rate', displayRate);
+                    card.data('rate-info', rateData);
+                    
+                    showNotification(`💱 ${rateData.display}`, 'info');
                 }
-                
-                exchangeNote.html(`
-                    <span class="text-warning">💰</span>
-                    ${noteText}
-                `);
-                
-                // تخزين السعر الافتراضي في البيانات
-                card.data('default-rate', displayRate);
-                card.data('rate-info', rateData);
-                
-                showNotification(`💱 ${rateData.display}`, 'info');
+            } else {
+                exchangeRateSection.hide();
+                exchangeRateField.val('');
+                targetCurrencyDisplay.text('---');
             }
-        } else {
-            exchangeRateSection.hide();
-            exchangeRateField.val('');
-            targetCurrencyDisplay.text('---');
-        }
         
         updateConvertedAmount(card);
     }
