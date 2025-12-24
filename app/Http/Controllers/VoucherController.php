@@ -285,8 +285,11 @@ class VoucherController extends Controller
                $exchangeRate = $tx['exchange_rate'] ?? 1;
                
                // تحديد سعر الصرف لكل سطر
-               // السطر بعملة الصندوق: سعر الصرف الافتراضي (1.0 للعملة الأساسية)
-               $cashExchangeRate = ($cashCurrency === $baseCurrency) ? 1.0 : (Currency::where('code', $cashCurrency)->value('exchange_rate') ?? 1);
+               // المهم: يجب استخدام نفس سعر الصرف المدخل من المستخدم لكلا السطرين
+               // لأن هذا السعر هو المستخدم فعلياً في التحويل
+               // السطر بعملة الصندوق: إذا كانت نفس العملة الأساسية، استخدم 1.0
+               // وإلا استخدم سعر الصرف المدخل (لتوضيح السعر المستخدم في التحويل)
+               $cashExchangeRate = ($cashCurrency === $baseCurrency) ? 1.0 : $exchangeRate;
                // السطر بعملة الهدف: استخدام سعر الصرف الذي أدخله المستخدم
                $targetExchangeRate = $exchangeRate;
                
