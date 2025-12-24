@@ -14,14 +14,6 @@ return new class extends Migration
         // Drop table if exists to avoid conflicts during migration
         Schema::dropIfExists('invoice_expense_attachment_lines');
         
-        // Check if required tables exist
-        if (!Schema::hasTable('invoice_expense_attachments')) {
-            throw new \Exception('Table "invoice_expense_attachments" must be created before "invoice_expense_attachment_lines"');
-        }
-        if (!Schema::hasTable('accounts')) {
-            throw new \Exception('Table "accounts" must be created before "invoice_expense_attachment_lines"');
-        }
-        
         Schema::create('invoice_expense_attachment_lines', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('invoice_expense_attachment_id');
@@ -32,19 +24,17 @@ return new class extends Migration
             $table->decimal('exchange_rate', 15, 6)->default(1);
             $table->text('description')->nullable();
             $table->timestamps();
-
+        });
+        
+        // Add foreign keys after table creation to ensure referenced tables exist
+        Schema::table('invoice_expense_attachment_lines', function (Blueprint $table) {
             // Foreign keys (using shorter names to avoid MySQL 64 character limit)
-            // Only create foreign key if the referenced table exists
-            if (Schema::hasTable('invoice_expense_attachments')) {
-                $table->foreign('invoice_expense_attachment_id', 'ieal_attachment_id_fk')
-                    ->references('id')->on('invoice_expense_attachments')->onDelete('cascade');
-            }
-            if (Schema::hasTable('accounts')) {
-                $table->foreign('cash_account_id', 'ieal_cash_account_id_fk')
-                    ->references('id')->on('accounts')->onDelete('restrict');
-                $table->foreign('expense_account_id', 'ieal_expense_account_id_fk')
-                    ->references('id')->on('accounts')->onDelete('restrict');
-            }
+            $table->foreign('invoice_expense_attachment_id', 'ieal_attachment_id_fk')
+                ->references('id')->on('invoice_expense_attachments')->onDelete('cascade');
+            $table->foreign('cash_account_id', 'ieal_cash_account_id_fk')
+                ->references('id')->on('accounts')->onDelete('restrict');
+            $table->foreign('expense_account_id', 'ieal_expense_account_id_fk')
+                ->references('id')->on('accounts')->onDelete('restrict');
         });
     }
 
