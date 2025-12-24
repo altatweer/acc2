@@ -424,10 +424,49 @@
                                         $totalDebit = 0;
                                         $totalCredit = 0;
                                     @endphp
-                                    @foreach($voucher->journalEntry->lines as $line)
+                                    @php
+                                        $linesArray = $voucher->journalEntry->lines->sortBy('id')->values()->all();
+                                    @endphp
+                                    @foreach($linesArray as $index => $line)
                                         @php
                                             $totalDebit += $line->debit;
                                             $totalCredit += $line->credit;
+                                            
+                                            // إظهار سعر الصرف فقط في السطر الأول (USD أو IQD حسب الاتجاه)
+                                            $showExchangeRate = false;
+                                            
+                                            // إذا كان هذا السطر الأول
+                                            if ($index === 0) {
+                                                // السطر الأول: نعرض سعر الصرف إذا كان USD أو IQD
+                                                // التحقق من أن هناك سطر ثاني بعملة مختلفة
+                                                $hasSecondLine = isset($linesArray[1]);
+                                                $secondLineCurrency = $hasSecondLine ? $linesArray[1]->currency : null;
+                                                
+                                                // إذا كان السطر الأول USD أو IQD والسطر الثاني بعملة مختلفة (USD/IQD)
+                                                if (($line->currency === 'USD' || $line->currency === 'IQD') && 
+                                                    $hasSecondLine && 
+                                                    ($secondLineCurrency === 'USD' || $secondLineCurrency === 'IQD') &&
+                                                    $secondLineCurrency !== $line->currency) {
+                                                    // البحث عن سعر الصرف في أي من السطرين
+                                                    $exchangeRate = $line->exchange_rate;
+                                                    if (!$exchangeRate || $exchangeRate == 1.0) {
+                                                        $exchangeRate = $linesArray[1]->exchange_rate ?? null;
+                                                    }
+                                                    
+                                                    if ($exchangeRate && $exchangeRate != 1.0) {
+                                                        $showExchangeRate = true;
+                                                    }
+                                                }
+                                            } else {
+                                                // السطر الثاني: لا نعرض سعر الصرف
+                                                $showExchangeRate = false;
+                                            }
+                                            
+                                            // للعملات الأخرى غير USD/IQD، نعرض إذا كان السعر موجوداً
+                                            if (!$showExchangeRate && $line->currency !== 'USD' && $line->currency !== 'IQD' && 
+                                                $line->exchange_rate && $line->exchange_rate != 1.0) {
+                                                $showExchangeRate = true;
+                                            }
                                         @endphp
                                         <tr>
                                             <td>
@@ -455,36 +494,16 @@
                                                 <span class="badge badge-light">{{ $line->currency }}</span>
                                             </td>
                                             <td class="text-center">
-                                                @php
-                                                    // إظهار سعر الصرف فقط في السطر الأول (USD أو IQD حسب الاتجاه)
-                                                    $allLines = $voucher->journalEntry->lines->sortBy('id')->values();
-                                                    $currentIndex = $allLines->search(function($item) use ($line) {
-                                                        return $item->id === $line->id;
-                                                    });
-                                                    
-                                                    $showExchangeRate = false;
-                                                    
-                                                    // إذا كان هذا السطر الأول
-                                                    if ($currentIndex === 0) {
-                                                        // السطر الأول: نعرض سعر الصرف إذا كان USD أو IQD
-                                                        if (($line->currency === 'USD' || $line->currency === 'IQD') && 
-                                                            $line->exchange_rate && $line->exchange_rate != 1.0) {
-                                                            $showExchangeRate = true;
-                                                        }
-                                                    } else {
-                                                        // السطر الثاني: لا نعرض سعر الصرف
-                                                        $showExchangeRate = false;
-                                                    }
-                                                    
-                                                    // للعملات الأخرى غير USD/IQD، نعرض إذا كان السعر موجوداً
-                                                    if (!$showExchangeRate && $line->currency !== 'USD' && $line->currency !== 'IQD' && 
-                                                        $line->exchange_rate && $line->exchange_rate != 1.0) {
-                                                        $showExchangeRate = true;
-                                                    }
-                                                @endphp
                                                 @if($showExchangeRate)
+                                                    @php
+                                                        // استخدام سعر الصرف من السطر الأول أو الثاني
+                                                        $displayRate = $line->exchange_rate;
+                                                        if (!$displayRate || $displayRate == 1.0) {
+                                                            $displayRate = $linesArray[1]->exchange_rate ?? $line->exchange_rate;
+                                                        }
+                                                    @endphp
                                                     <span class="badge badge-info" title="سعر الصرف المستخدم في التحويل">
-                                                        {{ number_format($line->exchange_rate, 4) }}
+                                                        {{ number_format($displayRate, 4) }}
                                                     </span>
                                                 @else
                                                     <span class="text-muted">-</span>
