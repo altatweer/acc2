@@ -123,15 +123,8 @@ class JournalEntryController extends Controller
         if (count($validated['lines']) < 2 || !$hasDebit || !$hasCredit || $uniqueAccounts < 2) {
             return back()->withErrors(['lines'=>'يجب أن يحتوي القيد على سطرين على الأقل (مدين ودائن) ولكل منهما حساب مختلف.'])->withInput();
         }
-        // تحقق من مطابقة العملة مع الحساب
-        foreach ($validated['lines'] as $idx => $line) {
-            $account = \App\Models\Account::find($line['account_id']);
-            if (!$account || $account->currency !== $line['currency']) {
-                throw \Illuminate\Validation\ValidationException::withMessages([
-                    "lines.$idx.account_id" => ["عملة الحساب يجب أن تطابق العملة المدخلة في السطر."]
-                ]);
-            }
-        }
+        // ملاحظة: في القيد متعدد العملات، لا نتحقق من مطابقة عملة الحساب مع عملة السطر
+        // لأن الهدف هو السماح بعملات مختلفة لكل سطر
         // تحقق من توازن القيد بعد التحويل للعملة الأساسية (IQD)
         $totalDebitIQD = 0;
         $totalCreditIQD = 0;
